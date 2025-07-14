@@ -1,0 +1,268 @@
+.shared-recipes-page {
+  min-height: 100vh;
+  background:  #CF996C;
+  padding: 2.5rem 0 3rem 0;
+  width: 100%;
+
+  h2 {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 2.3rem;
+    font-weight: 900;
+    color: #e2dcd7;
+    margin-bottom: 2.5rem;
+    text-align: center;
+    letter-spacing: -1px;
+    text-shadow: 0 2px 8px rgba(207,153,108,0.08);
+  }
+
+  .recipes-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+    margin: 0 auto;
+    max-width: 1400px;
+    padding: 0 2vw;
+    transition: grid-template-columns 0.3s;
+  }
+
+  .recipe-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 6px 24px rgba(207,153,108,0.13);
+    overflow: hidden;
+    transition: transform 0.22s, box-shadow 0.22s;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    height: 350px;
+    position: relative;
+    border: 1.5px solid #f3d2b0;
+
+    &:hover {
+      transform: translateY(-8px) scale(1.03);
+      box-shadow: 0 14px 36px rgba(207,153,108,0.22);
+      border-color: #cf996c;
+    }
+
+    .recipe-image {
+      height: 170px;
+      background: #f7e7d1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: filter 0.2s;
+        border-bottom: 1px solid #f3d2b0;
+        background: #f3e6d6;
+      }
+    }
+
+    .recipe-content {
+      padding: 1.1rem 1.1rem 0.7rem 1.1rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+
+      .recipe-title {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        font-size: 1.18rem;
+        font-weight: 800;
+        color: #b86b1b;
+        margin-bottom: 0.35rem;
+        line-height: 1.25;
+        letter-spacing: -0.5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .recipe-desc {
+        color: #6b5c4d;
+        font-size: 0.97rem;
+        margin-bottom: 0.6rem;
+        line-height: 1.5;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+
+      .recipe-category {
+        display: inline-block;
+        background: #cf996c;
+        color: #fff;
+        padding: 0.22rem 0.8rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        width: fit-content;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 8px rgba(207,153,108,0.07);
+      }
+
+      .recipe-meta {
+        margin-top: 0.3rem;
+        font-size: 0.93em;
+        color: #7c7c7c;
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+
+        i {
+          margin-right: 0.3em;
+          color: #cf996c;
+          font-size: 1.1em;
+        }
+      }
+    }
+  }
+
+  // No recipes state
+  .no-recipes-enhanced {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    background: linear-gradient(135deg, #fff7f0 0%, #ffe7d1 100%);
+    border-radius: 24px;
+    border: 2px solid #f3d2b0;
+    margin: 2rem auto;
+    max-width: 700px;
+    box-shadow: 0 8px 32px rgba(207,153,108,0.10);
+
+    .no-recipes-animation {
+      margin-bottom: 2rem;
+
+      .chef-hat i {
+        font-size: 4rem;
+        color: #cf996c;
+        filter: drop-shadow(0 4px 10px rgba(207,153,108,0.18));
+        animation: bob 2.5s ease-in-out infinite;
+      }
+
+      .floating-ingredients {
+        position: relative;
+        width: 180px;
+        height: 80px;
+        margin: 0 auto;
+
+        .ingredient-float {
+          position: absolute;
+          font-size: 1.5rem;
+          animation: float 4s infinite alternate;
+        }
+        .ing-1 { left: 0; top: 0; animation-delay: 0s; }
+        .ing-2 { left: 60px; top: 10px; animation-delay: 0.7s; }
+        .ing-3 { left: 120px; top: 0; animation-delay: 1.4s; }
+        .ing-4 { left: 90px; top: 40px; animation-delay: 2.1s; }
+      }
+    }
+
+    .no-recipes-content {
+      .no-recipes-title {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        font-size: 2rem;
+        font-weight: 900;
+        color: #b86b1b;
+        margin-bottom: 0.7rem;
+        letter-spacing: -0.5px;
+      }
+      .no-recipes-subtitle {
+        font-size: 1.1rem;
+        color: #7c7c7c;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+// Animations
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes float {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-18px) scale(1.1); }
+}
+
+// Responsive
+@media (max-width: 1200px) {
+  .shared-recipes-page .recipes-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.3rem;
+  }
+  .shared-recipes-page .recipe-card {
+    height: 300px;
+    .recipe-image { height: 100px; }
+    .recipe-content { padding: 0.9rem 0.9rem 0.6rem 0.9rem; }
+  }
+}
+
+// Responsive grid for tablets
+@media (max-width: 900px) {
+  .shared-recipes-page .recipes-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  .shared-recipes-page .recipe-card {
+    height: 250px;
+    .recipe-image { height: 90px; }
+    .recipe-content { padding: 0.8rem 0.8rem 0.5rem 0.8rem; }
+  }
+}
+
+// Responsive grid for mobile
+@media (max-width: 600px) {
+  .shared-recipes-page {
+    padding: 1.2rem 0 2rem 0;
+    padding-bottom: 110px; // <-- Add this line for extra space above the navbar
+    h2 { font-size: 1.3rem; }
+    .recipes-grid { 
+      grid-template-columns: 1fr; 
+      gap: 1.1rem; 
+      padding: 0 0.5rem; 
+    }
+    .recipe-card { 
+      height: auto;
+      min-height: 210px;
+      border-radius: 16px;
+      .recipe-image { 
+        height: 110px;
+        border-radius: 14px 14px 0 0;
+      }
+      .recipe-content { 
+        padding: 0.9rem 0.9rem 0.6rem 0.9rem;
+        .recipe-title { font-size: 1.08rem; }
+        .recipe-desc { font-size: 0.93rem; }
+        .recipe-category {
+          font-size: 0.82rem;
+          margin-bottom: 0.4rem;
+        }
+        .recipe-meta {
+          font-size: 0.91em;
+          margin-top: 0.2rem;
+          flex-wrap: wrap;
+          gap: 0.4rem;
+          i { font-size: 1em; }
+        }
+      }
+    }
+    .no-recipes-enhanced { 
+      min-height: 180px; 
+      padding: 1.2rem 0.5rem; 
+      .no-recipes-title { font-size: 1.2rem; }
+      .no-recipes-subtitle { font-size: 0.95rem; }
+    }
+  }
+}

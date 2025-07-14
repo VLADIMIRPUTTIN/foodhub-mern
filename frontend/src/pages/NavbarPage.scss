@@ -1,0 +1,605 @@
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, hsl(67, 36%, 86%) 0%, #fefefe 100%);
+    padding: 8px 24px;
+    box-shadow: 0 2px 8px rgba(207, 153, 108, 0.12);
+    position: sticky;
+    top: 0;
+    font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+    z-index: 100;
+    flex-wrap: nowrap;
+    min-height: 120px;
+    height: 120px;
+    border-bottom: 1px solid rgba(207, 153, 108, 0.08);
+
+    .nav-logo {
+        .logo-image {
+            height: 80px; // Adjust size as needed
+            width: auto;
+            max-width: 150px; // Prevent logo from being too wide
+            object-fit: contain;
+            transition: all 0.3s ease;
+
+            &:hover {
+                transform: scale(1.05);
+                filter: brightness(1.1);
+            }
+        }
+
+        // Keep the old logo-text styles as fallback or remove if not needed
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #CF996C 0%, #BB8860 100%);
+                -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            letter-spacing: -0.5px;
+            font-family: 'Poppins', 'Inter', sans-serif;
+
+            &:hover {
+                transform: scale(1.05);
+                filter: brightness(1.1);
+            }
+        }
+    }
+
+    .nav-links {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        position: relative;
+        transition: all 0.3s ease;
+
+        .nav-link {
+            text-decoration: none;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            background: #BB8860;
+            backdrop-filter: blur(10px);
+            margin-top: -15px; // Adjust to align with the navbar height
+
+            &:hover,
+            &.active {
+                color: #CF996C;
+                background: rgba(207, 153, 108, 0.08);
+                // REMOVE transform and transition for active state
+                transform: none;
+                box-shadow: 0 4px 12px rgba(207, 153, 108, 0.15);
+                transition: none;
+            }
+
+            &:after {
+                content: "";
+                position: absolute;
+                bottom: 0;
+                left: 50%;
+                width: 0%;
+                height: 3px;
+                background: linear-gradient(90deg, #CF996C, #BB8860);
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                border-radius: 2px;
+            }
+
+            &:hover:after,
+            &.active:after {
+                width: 100%;
+                left: 0;
+            }
+
+            .icon {
+                font-size: 16px;
+                margin-right: 8px;
+                transition: all 0.3s ease;
+                color: #CF996C;
+            }
+
+            .text {
+                display: inline;
+                font-weight: 600;
+                letter-spacing: 0.2px;
+                transition: opacity 0.3s ease;
+            }
+        }
+    }
+
+    .profile-section {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px; // Adjust to align with the navbar height
+        
+    
+     
+        .create-recipe {
+            display: flex;
+            background: linear-gradient(135deg, #CF996C 0%, #BB8860 100%);
+            border-radius: 25px;
+            align-items: center;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(207, 153, 108, 0.25);
+            margin-top: 0;
+
+            &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(207, 153, 108, 0.35);
+            }
+    
+            .create-link {
+                text-decoration: none;
+                color: #ffffff;
+                font-size: 14px;
+                font-weight: 600;
+                padding: 10px 20px;
+                border-radius: 25px;
+                position: relative;
+                overflow: hidden;
+                display: flex;
+                align-items: center;
+                transition: all 0.3s ease;
+                white-space: nowrap;
+                letter-spacing: 0.3px;
+    
+                &:hover {
+                    color: #fff;
+                    background-color: rgba(255, 255, 255, 0.15);
+                }
+
+                &:before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: -100%;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+                    transition: left 0.5s;
+                }
+
+                &:hover:before {
+                    left: 100%;
+                }
+    
+                .icon {
+                    font-size: 14px;
+                    margin-right: 8px;
+                    transition: transform 0.3s ease;
+                }
+
+                &:hover .icon {
+                    transform: rotate(5deg) scale(1.1);
+                }
+    
+                .text {
+                    display: inline;
+                    font-weight: 600;
+                    transition: opacity 0.3s ease;
+                }
+            }
+        }
+
+        .profile-container {
+            position: relative;
+            margin-top: -125px; // Adjust to align with the navbar height
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            .profile-image {
+                width: 40px;
+                margin-top: 95px; // Adjust to align with the navbar height
+                height: 40px;
+                border-radius: 50%;
+                overflow: hidden;
+                cursor: pointer;
+                border: 3px solid transparent;
+                background: linear-gradient(white, white) padding-box,
+                           linear-gradient(135deg, #CF996C, #BB8860) border-box;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 4px 12px rgba(207, 153, 108, 0.2);
+
+                &:hover {
+                    transform: scale(1.1) rotate(2deg);
+                    box-shadow: 0 6px 16px rgba(207, 153, 108, 0.3);
+                }
+
+                img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+            }
+
+            .dropdown-toggle {
+                background: none;
+                border: none;
+                color: #CF996C;
+                cursor: pointer;
+                padding: 8px;
+                display: flex;
+                align-items: center;
+                transition: all 0.3s ease;
+                border-radius: 8px;
+                margin-top: 6rem;
+
+                &:hover {
+                    background: rgba(207, 153, 108, 0.1);
+                    transform: scale(1.1);
+                }
+
+                .chevron {
+                    font-size: 14px;
+                    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+                    &.rotated {
+                        transform: rotate(180deg);
+                    }
+                }
+
+                i {
+                    font-size: 14px;
+                    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+                    &.rotated {
+                        transform: rotate(180deg);
+                    }
+                }
+            }
+
+            // SINGLE, CLEANED PROFILE DROPDOWN
+            .profile-dropdown {
+                position: absolute;
+                left: 38%; // adjust as needed for more left shift
+                top: 100%;
+                transform: translateX(-50%) translateY(8px); // vertical gap
+                min-width: 140px;
+                max-width: 170px;
+                z-index: 1000;
+                background: #fff;
+                border-radius: 12px;
+                box-shadow: 0 4px 16px rgba(207,153,108,0.14);
+                padding: 4px 0;
+                border: none;
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                animation: dropdownFade 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+                // Dropdown items
+                .dropdown-item, .logout-btn {
+                    width: 100%;
+                    padding: 8px 14px;
+                    font-size: 13px;
+                    gap: 8px;
+                    border: none;
+                    background: none;
+                    color: #7a5a36;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    font-weight: 600;
+                    letter-spacing: 0.2px;
+                    border-radius: 0;
+                    transition: background 0.2s, color 0.2s, transform 0.2s;
+
+                    i {
+                        font-size: 16px;
+                        color: #cf996c;
+                        background: linear-gradient(135deg, #ffe1b8 0%, #cf996c 100%);
+                        border-radius: 50%;
+                        padding: 2px;
+                        margin-right: 4px;
+                        transition: background 0.2s, color 0.2s, transform 0.2s;
+                    }
+
+                    &:hover {
+                        background: linear-gradient(90deg, #fff7ed 60%, #ffe1b8 100%);
+                        color: #cf996c;
+                        transform: translateX(4px);
+
+                        i {
+                            color: #bb8860;
+                            background: #fff3e0;
+                            transform: scale(1.15) rotate(-8deg);
+                        }
+                    }
+                }
+
+                .logout-btn {
+                    color: #d9534f;
+                    font-weight: 700;
+
+                    i {
+                        color: #d9534f;
+                        background: #fff0ee;
+                    }
+
+                    &:hover {
+                        background: linear-gradient(90deg, #fff0ee 60%, #ffe1b8 100%);
+                        color: #b52a1d;
+
+                        i {
+                            color: #b52a1d;
+                            background: #ffe1b8;
+                        }
+                    }
+                }
+
+                .dropdown-divider {
+                    margin: 6px 0;
+                    border: none;
+                    border-top: 1px solid #f3e3d1;
+                }
+            }
+
+            // Expanded dropdown (if you use it elsewhere)
+            .profile-dropdown.expanded {
+                min-width: 320px !important;
+                max-height: 70vh;
+                overflow-y: auto;
+                padding: 0;
+                // ...rest of expanded styles...
+            }
+        }
+    }
+
+    @keyframes dropdownFade {
+        from {
+            opacity: 0;
+            transform: translateY(-10px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    // Tablet Breakpoint
+    @media (max-width: 1024px) {
+        padding: 6px 20px;
+        min-height: 55px;
+        height: 55px;
+
+        .nav-logo .logo-text {
+            font-size: 22px;
+        }
+
+        .nav-links {
+            gap: 16px;
+            
+
+            .nav-link {
+                font-size: 14px;
+                padding: 6px 12px;
+                m
+
+                .icon {
+                    font-size: 15px;
+                }
+            }
+        }
+
+        .profile-section {
+            gap: 14px;
+            
+
+            .create-recipe .create-link {
+                font-size: 13px;
+                padding: 8px 16px;
+
+                .icon {
+                    font-size: 13px;
+                }
+            }
+
+            .profile-container .profile-image {
+                width: 36px;
+                height: 36px;
+            }
+        }
+    }
+
+    // Mobile Breakpoint
+    @media (max-width: 768px) {
+        display: none;
+    }
+}
+
+// Bottom Navigation Bar for Mobile - Enhanced
+.bottom-navbar {
+    display: none;
+    
+    @media (max-width: 768px) {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: linear-gradient(135deg, rgba(255, 245, 230, 0.95), rgba(254, 248, 235, 0.95));
+        backdrop-filter: blur(20px);
+        justify-content: space-around;
+        align-items: center;
+        padding: 16px 0 20px 0;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        border-top: 1px solid rgba(207, 153, 108, 0.2);
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #6B7280;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 16px;
+
+            .icon {
+                font-size: 17px; // dati 20px
+                margin-bottom: 4px;
+                color: #CF996C;
+                transition: all 0.3s ease;
+            }
+
+            .text {
+                font-size: 11px; // dati 12px
+                font-weight: 600;
+                letter-spacing: 0.2px;
+            }
+
+            &:hover {
+                color: #CF996C;
+                background: rgba(207, 153, 108, 0.13);
+                transform: scale(1.08); // scale lang, hindi translateY
+                box-shadow: 0 2px 12px rgba(207, 153, 108, 0.10);
+                transition: 
+                  background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                  color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                  transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+                  box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+
+                .icon {
+                  transform: scale(1.18);
+                  color: #BB8860;
+                  transition: color 0.2s, transform 0.2s;
+                }
+              }
+
+              // Optional: subtle tap effect
+              &:active {
+                transform: scale(0.96);
+                background: rgba(207, 153, 108, 0.18);
+              }
+
+              &.active {
+                color: #CF996C;
+                background: rgba(207, 153, 108, 0.13);
+                // REMOVE transform and transition for active state
+                transform: none;
+                box-shadow: 0 2px 12px rgba(207, 153, 108, 0.10);
+                transition: none;
+
+                .icon {
+                  transform: none;
+                  color: #BB8860;
+                  transition: none;
+                }
+            }
+        }
+
+        .create-recipe-btn {
+            background: linear-gradient(135deg, #CF996C 0%, #BB8860 100%);
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 8px 20px rgba(207, 153, 108, 0.4);
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+            &:hover {
+                transform: translateX(-50%) scale(1.1) translateY(-2px);
+                box-shadow: 0 12px 24px rgba(207, 153, 108, 0.5);
+            }
+
+            .icon {
+                color: #ffffff;
+                font-size: 22px;
+            }
+        }
+
+        .profile-image {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid #CF996C;
+            box-shadow: 0 2px 8px rgba(207, 153, 108, 0.3);
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+        }
+
+        // Usog pa-kaliwa ang unang dalawang button
+        .nav-item:first-child {
+            margin-left: 10px;   // dagdag space sa kaliwa
+            margin-right: 6px;   // dagdag space sa kanan
+        }
+        .nav-item:nth-child(2) {
+            margin-left: 0;
+            margin-right: 100px; // dati 10px, gawin 38px para mas malayo sa gitna
+        }
+
+        // Usog pa-kanan ang Shared at Profile
+        .nav-item:nth-last-child(2) {
+            margin-left: 38px;   // dati 28px, dagdagan para mas malayo sa gitna
+            margin-right: 8px;   // dagdagan ng kaunti para may space sa kanan
+        }
+        .nav-item:last-child {
+            margin-left: 8px;    // dagdagan ng kaunti para may space sa kaliwa
+            margin-right: 22px;  // mas malayo sa kanan
+        }
+    }
+}
+
+// Mobile profile dropdown overlay
+.overlay-mobile {
+    @media (max-width: 768px) {
+        display: block;
+    }
+}
+
+/* Custom scrollbar */
+.profile-dropdown {
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #CF996C;
+        border-radius: 3px;
+
+        &:hover {
+            background: #BB8860;
+        }
+    }
+}
+
+i[class^="bx-"], i[class*=" bx-"] {
+  font-family: 'boxicons' !important;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

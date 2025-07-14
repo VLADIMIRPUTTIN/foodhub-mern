@@ -1,0 +1,36 @@
+.create-ingredient-admin {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    max-width: 350px;
+    margin-bottom: 2rem;
+
+    h2 {
+        font-size: 1.3rem;
+        color: #c97a2b;
+        margin-bottom: 1rem;
+    }
+
+    form {
+        display: flex;
+        gap: 0.5rem;
+        input {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        button {
+            background: #c97a2b;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+    }
+    .error-msg { color: #d32f2f; margin-top: 0.5rem; }
+    .success-msg { color: #388e3c; margin-top: 0.5rem; }
+}

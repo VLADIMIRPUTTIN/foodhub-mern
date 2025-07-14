@@ -1,0 +1,321 @@
+// =============================================================================
+// SELECTED INGREDIENTS COMPONENT - COMPACT VERSION
+// =============================================================================
+.selected-ingredients-section {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 248, 238, 0.93) 100%);
+  border: 1.5px solid rgba(207, 153, 108, 0.25); // Thinner border
+  border-radius: 14px; // Smaller border radius
+  padding: 0.8rem 1rem; // Reduced padding
+  margin: 0.5rem 0 1rem 0; // Reduced margins
+  box-shadow: 
+    0 4px 12px rgba(207, 153, 108, 0.08), // Reduced shadow
+    0 2px 6px rgba(255, 183, 122, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  // Smaller decorative background elements
+  &::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px; // Reduced size
+    width: 60px; height: 60px; // Smaller
+    background: radial-gradient(circle, rgba(255, 183, 122, 0.06) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -20px; left: -20px; // Reduced size
+    width: 50px; height: 50px; // Smaller
+    background: radial-gradient(circle, rgba(207, 153, 108, 0.05) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  
+  &:hover {
+    transform: translateY(-1px); // Reduced hover effect
+    box-shadow: 
+      0 6px 18px rgba(207, 153, 108, 0.12),
+      0 3px 8px rgba(255, 183, 122, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+  
+  .selected-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; // Reduced gap
+    margin-bottom: 0.7rem; // Reduced margin
+    position: relative;
+    z-index: 2;
+    
+    .selected-icon {
+      font-size: 1rem; // Smaller icon
+      filter: drop-shadow(0 1px 2px rgba(207, 153, 108, 0.2));
+    }
+    
+    .selected-label {
+      font-weight: 600; // Reduced font weight
+      color: #b86b1b;
+      font-size: 0.95rem; // Smaller font
+      background: linear-gradient(135deg, #c97a2b 0%, #e26a00 50%, #ff9800 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 0.2px;
+    }
+    
+    .selected-count {
+      background: linear-gradient(135deg, #e26a00 0%, #ff9800 100%);
+      color: white;
+      font-size: 0.7rem; // Smaller font
+      font-weight: 600;
+      padding: 0.15rem 0.4rem; // Reduced padding
+      border-radius: 10px; // Smaller radius
+      box-shadow: 0 1px 4px rgba(226, 106, 0, 0.2);
+      margin-left: auto;
+    }
+  }
+  
+  .chips-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem; // Reduced gap
+    position: relative;
+    z-index: 2;
+  }
+  
+  .selected-chip {
+    background: linear-gradient(135deg, #fff8ee 0%, #fff3e0 100%);
+    color: #c97a2b;
+    border: 1.5px solid rgba(207, 153, 108, 0.3); // Thinner border
+    border-radius: 16px; // Smaller radius
+    padding: 0.35rem 0.7rem; // Reduced padding
+    font-size: 0.8rem; // Smaller font
+    font-weight: 500; // Reduced font weight
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem; // Reduced gap
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(207, 153, 108, 0.06); // Reduced shadow
+    backdrop-filter: blur(4px);
+    
+    // Shimmer effect
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
+      transition: left 0.5s ease;
+    }
+    
+    &:hover {
+      background: linear-gradient(135deg, #fff3e0 0%, #ffecb3 100%);
+      border-color: #e26a00;
+      color: #d4691b;
+      transform: translateY(-1px); // Reduced hover effect
+      box-shadow: 
+        0 3px 8px rgba(207, 153, 108, 0.12),
+        0 2px 6px rgba(255, 183, 122, 0.08);
+      
+      &::before {
+        left: 100%;
+      }
+    }
+    
+    .chip-text {
+      font-weight: 500;
+      letter-spacing: 0.1px;
+      line-height: 1.2;
+    }
+    
+    .remove-chip {
+      background: linear-gradient(135deg, rgba(226, 106, 0, 0.08) 0%, rgba(255, 152, 0, 0.08) 100%);
+      border: none;
+      color: #e26a00;
+      font-size: 0.9rem; // Smaller font
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+      width: 18px; // Smaller size
+      height: 18px; // Smaller size
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(135deg, #e26a00, #ff9800);
+        border-radius: 50%;
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      
+      i {
+        position: relative;
+        z-index: 1;
+        transition: color 0.25s ease;
+        font-size: 0.8rem; // Smaller icon
+      }
+      
+      &:hover {
+        transform: scale(1.1);
+        
+        &::before {
+          opacity: 1;
+          transform: scale(1);
+        }
+        
+        i {
+          color: white;
+        }
+      }
+      
+      &:active {
+        transform: scale(0.9);
+      }
+    }
+  }
+}
+
+// =============================================================================
+// MOBILE RESPONSIVE STYLES - HIDE ON MOBILE
+// =============================================================================
+
+// Hide SelectedIngredients component on mobile (768px and below)
+@media (max-width: 768px) {
+  .selected-ingredients-section {
+    display: none !important;
+  }
+}
+
+// Also hide on tablet if needed (optional)
+@media (max-width: 900px) {
+  .selected-ingredients-section {
+    display: none !important;
+  }
+}
+
+// =============================================================================
+// ANIMATIONS - OPTIMIZED FOR COMPACT SIZE
+// =============================================================================
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes chipSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.selected-ingredients-section {
+  animation: fadeInUp 0.2s ease-out;
+}
+
+.selected-chip {
+  animation: chipSlideIn 0.15s ease-out;
+  
+  &:nth-child(2) { animation-delay: 0.02s; }
+  &:nth-child(3) { animation-delay: 0.04s; }
+  &:nth-child(4) { animation-delay: 0.06s; }
+  &:nth-child(5) { animation-delay: 0.08s; }
+  &:nth-child(n+6) { animation-delay: 0.1s; }
+}
+
+// =============================================================================
+// ACCESSIBILITY & PERFORMANCE
+// =============================================================================
+
+// Reduce motion for users who prefer it
+@media (prefers-reduced-motion: reduce) {
+  .selected-ingredients-section,
+  .selected-chip {
+    animation: none;
+    transition: none;
+  }
+  
+  .selected-chip::before,
+  .remove-chip::before {
+    transition: none;
+  }
+  
+  .selected-chip:hover,
+  .remove-chip:hover {
+    transform: none;
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .selected-ingredients-section {
+    border: 2px solid #CF996C;
+    background: white;
+    box-shadow: none;
+    
+    .selected-chip {
+      border: 1.5px solid #CF996C;
+      background: white;
+      color: #CF996C;
+      box-shadow: none;
+      
+      .remove-chip {
+        background: #CF996C;
+        color: white;
+        
+        &::before {
+          display: none;
+        }
+      }
+    }
+    
+    .selected-count {
+      background: #CF996C;
+      color: white;
+    }
+  }
+}
+
+// Touch device optimizations
+@media (hover: none) and (pointer: coarse) {
+  .selected-chip {
+    .remove-chip {
+      width: 20px;
+      height: 20px;
+      
+      &:active {
+        transform: scale(0.95);
+        background: linear-gradient(135deg, #e26a00, #ff9800);
+        
+        i {
+          color: white;
+        }
+      }
+    }
+  }
+}

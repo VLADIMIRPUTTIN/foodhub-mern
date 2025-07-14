@@ -1,0 +1,173 @@
+.create-recipe-admin {
+    background: #d09c6b;
+    min-height: 100vh;
+    padding: 2rem 0;
+
+    h2 {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: #ffffff;
+    }
+
+    .section-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 1.5rem;
+        margin-left: 2rem;
+    }
+
+    .create-recipe-form {
+        max-width: 800px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+
+        .form-card {
+            background: #fcf5ea;
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 2px 8px rgba(207,153,108,0.07);
+
+            .form-label {
+                font-weight: 600;
+                color: #b86b1b;
+                margin-bottom: 0.5rem;
+                display: block;
+            }
+            .form-note {
+                color: #b86b1b;
+                font-size: 0.95rem;
+                margin-top: 0.5rem;
+            }
+            .preview-img {
+                margin-top: 1rem;
+                max-width: 180px;
+                border-radius: 10px;
+                border: 1px solid #e0c3a0;
+            }
+            .card-title {
+                font-size: 1.3rem;
+                font-weight: 700;
+                color: #c97a2b;
+                margin-bottom: 1.2rem;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+
+            input, select, textarea {
+                border-radius: 12px;
+                border: 1px solid #e0c3a0;
+                padding: 0.5rem 0.8rem;
+                font-size: 1rem;
+                background: #fff;
+                color: #7a5a36;
+                transition: border 0.2s;
+                &:focus {
+                    border-color: #c97a2b;
+                    outline: none;
+                }
+            }
+            textarea {
+                min-height: 70px;
+                resize: vertical;
+            }
+        }
+
+        .dynamic-field {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .ingredient-row, .step-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            align-items: flex-start;
+
+            input, select, textarea {
+                flex: 1;
+                font-size: 0.95rem;
+                padding: 0.4rem 0.7rem;
+            }
+            .ingredient-amount, .ingredient-unit, .ingredient-name {
+                min-width: 120px;
+            }
+            .step-instruction {
+                min-width: 200px;
+            }
+            .step-details {
+                min-width: 300px;
+            }
+            .remove-btn {
+                background: #a33b3b;
+                color: #fff;
+                border: none;
+                border-radius: 20px;
+                padding: 0.5rem 1.2rem;
+                font-weight: 600;
+                cursor: pointer;
+                margin-left: 0.5rem;
+                transition: background 0.2s;
+                &:hover {
+                    background: #c0392b;
+                }
+            }
+        }
+
+        .add-btn, .remove-btn {
+            background: #764ba2;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 0.3rem 0.8rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .remove-btn {
+            background: #dc3545;
+        }
+
+        .add-btn {
+            background: #e7b57a;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            padding: 0.5rem 1.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-top: 0.5rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            &:hover {
+                background: #c97a2b;
+            }
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: #e7b57a;
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            padding: 0.5rem 1.2rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-top: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            &:hover {
+                background: #c97a2b;
+            }
+        }
+    }
+}
