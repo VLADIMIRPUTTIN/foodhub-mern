@@ -38,7 +38,10 @@ const SharedRecipePage = () => {
             return recipe.imageUrl;
         }
         const cleanPath = recipe.imageUrl.startsWith('/') ? recipe.imageUrl.slice(1) : recipe.imageUrl;
-        return `http://localhost:5000/${cleanPath}`;
+        if (import.meta.env.MODE === "development") {
+            return `http://localhost:5000/${cleanPath}`;
+        }
+        return `/${cleanPath}`;
     };
 
     return (
