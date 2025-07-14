@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import FoodHubLogo from '/Users/PCWORX/Music/mern-advanced-auth/frontend/public/Img/FoodHub-Full.png';
+import FoodHubFull from '../../public/Img/FoodHub-Full.png';
 import './NavbarPage.scss';
 import ProtectedCreateButton from '../components/ProtectedCreateButton';
 import { Share2 } from "lucide-react";
@@ -52,7 +52,7 @@ const Navbar = () => {
             <div className="navbar">
                 <div className="nav-logo">
                     <Link to="/dashboard">
-                        <img src={FoodHubLogo} alt="FoodHub" className="logo-image" />
+                        <img src={FoodHubFull} alt="FoodHub" className="logo-image" />
                     </Link>
                 </div>
                 
