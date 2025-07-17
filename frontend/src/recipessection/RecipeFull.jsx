@@ -8,36 +8,33 @@ const RecipeFull = () => {
   const navigate = useNavigate();
   const [recipe, setRecipe] = useState(null);
 
-  // Helper function to construct proper image URL (same as in RecipePage.jsx)
+  // Helper function to construct proper image URL
   const getImageUrl = (recipe) => {
     if (!recipe.imageUrl) {
-      // Return a default placeholder image if no image URL
       return 'https://via.placeholder.com/800x400?text=No+Image';
     }
-    
-    // If imageUrl is already a full URL (starts with http), use it as is
     if (recipe.imageUrl.startsWith('http')) {
       return recipe.imageUrl;
     }
-    
-    // If imageUrl is a relative path, construct the full URL
-    // Remove leading slash if present to avoid double slashes
     const cleanPath = recipe.imageUrl.startsWith('/') ? recipe.imageUrl.slice(1) : recipe.imageUrl;
-    return `http://localhost:5000/${cleanPath}`;
+    if (import.meta.env.MODE === "development") {
+      return `http://localhost:5000/${cleanPath}`;
+    }
+    return `/${cleanPath}`;
   };
 
   useEffect(() => {
+    const baseURL = import.meta.env.MODE === "development"
+      ? "http://localhost:5000"
+      : "";
     const fetchRecipe = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/recipes/${id}`);
-        console.log('Full recipe response:', response.data); // Debug log
+        const response = await axios.get(`${baseURL}/api/recipes/${id}`);
         setRecipe(response.data.recipe);
       } catch (error) {
-        console.error('Error fetching recipe:', error);
         setRecipe(null);
       }
     };
-    
     fetchRecipe();
   }, [id]);
 
