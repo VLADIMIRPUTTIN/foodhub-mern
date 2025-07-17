@@ -3,34 +3,18 @@ import { User } from "../models/user.model.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import cloudinary from '../utils/cloudinary.js';
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        const uploadPath = 'uploads/recipes/';
-        if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
-        }
-        cb(null, uploadPath);
+        cb(null, '/tmp'); // temp folder
     },
     filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'recipe-' + uniqueSuffix + path.extname(file.originalname));
+        cb(null, Date.now() + '-' + file.originalname);
     }
 });
-
-const upload = multer({ 
-    storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-    fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith('image/')) {
-            cb(null, true);
-        } else {
-            cb(new Error('Only image files are allowed!'), false);
-        }
-    }
-});
-
+const upload = multer({ storage });
 export const uploadMiddleware = upload.single('image');
 
 export const createRecipe = async (req, res) => {
@@ -60,7 +44,11 @@ export const createRecipe = async (req, res) => {
         // Handle image upload
         let imageUrl = null;
         if (req.file) {
-            imageUrl = `/uploads/recipes/${req.file.filename}`;
+            // Upload to Cloudinary
+            const result = await cloudinary.uploader.upload(req.file.path, {
+                folder: 'foodhub/recipes',
+            });
+            imageUrl = result.secure_url;
         }
 
         // Get user info to determine visibility
