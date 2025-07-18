@@ -39,11 +39,11 @@ const Navbar = () => {
         navigate('/profile');
     };
 
-    const DEFAULT_PROFILE_IMAGE = "/Img/profile-icon.jpg";
+    const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/WvG991xq/profile-default.png";
 
     const getProfileImageUrl = () => {
         if (!user) return DEFAULT_PROFILE_IMAGE;
-        return user.profileImage || 'https://via.placeholder.com/40x40/CF996C/ffffff?text=' + (user?.name?.charAt(0).toUpperCase() || 'U');
+        return user.profileImage || DEFAULT_PROFILE_IMAGE;
     };
 
     return (

@@ -16,8 +16,6 @@ const SignUpPage = () => {
 
     const { signup, isLoading, error, setUser } = useAuthStore();
 
-    const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/WvG991xq/profile-icon.jpg";
-
     const handleSignUp = async (e) => {
         e.preventDefault();
 
@@ -25,8 +23,7 @@ const SignUpPage = () => {
         console.log("Form data:", { name, email, password: "***" });
 
         try {
-            // Pass default profile image to backend on manual signup
-            await signup(email, password, name, DEFAULT_PROFILE_IMAGE);
+            await signup(email, password, name);
             console.log("✅ Signup successful, navigating to verification...");
             navigate("/verify-email");
         } catch (error) {

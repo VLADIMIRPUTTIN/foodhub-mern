@@ -10,6 +10,8 @@ import { Share2, Trash2 } from "lucide-react"; // Add Trash2 icon
 import { toast } from "react-hot-toast";
 import ConfirmDialog from "../components/ConfirmDialog";
 
+const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/WvG991xq/profile-default.png";
+
 const UserProfilePage = () => {
     const { user, logout, setUser } = useAuthStore();
     const navigate = useNavigate();
@@ -158,7 +160,8 @@ const UserProfilePage = () => {
 
     const getProfileImageUrl = () => {
         if (imagePreview) return imagePreview;
-        return user?.profileImage || `https://via.placeholder.com/120x120/CF996C/ffffff?text=${user?.name?.charAt(0).toUpperCase() || 'U'}`;
+        // Use default image if no profileImage
+        return user?.profileImage || DEFAULT_PROFILE_IMAGE;
     };
 
     const getRecipeImageUrl = (imageUrl) => {
