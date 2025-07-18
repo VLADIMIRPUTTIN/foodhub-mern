@@ -316,9 +316,11 @@ $transition: all 0.3s ease;
     // Install App Notification
     .install-app-notif {
         position: fixed;
-        left: 50%;
-        bottom: 24px;
-        transform: translateX(-50%);
+        top: 24px;
+        right: 24px;
+        left: auto;
+        bottom: auto;
+        transform: none;
         z-index: 9999;
         background: #fff;
         border-radius: 14px;
@@ -357,16 +359,16 @@ $transition: all 0.3s ease;
             background: linear-gradient(135deg, #CF996C 0%, #BB8860 100%);
             color: white;
             border: none;
-            padding: 8px 18px;
+            padding: 15px 30px;
             border-radius: 30px;
-            font-size: 0.98rem;
+            font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 7px;
+            gap: 10px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(207, 153, 108, 0.18);
+            box-shadow: 0 8px 20px rgba(207, 153, 108, 0.3);
 
             i {
                 font-size: 1rem;
@@ -374,7 +376,11 @@ $transition: all 0.3s ease;
 
             &:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 8px 18px rgba(207, 153, 108, 0.22);
+                box-shadow: 0 12px 25px rgba(207, 153, 108, 0.4);
+            }
+
+            &:active {
+                transform: translateY(0);
             }
         }
 
