@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +8,37 @@ import './DashboardPage.scss';
 const DashboardPage = () => {
     const { user, logout } = useAuthStore();
     const navigate = useNavigate();
+
+    // PWA install prompt state
+    const [deferredPrompt, setDeferredPrompt] = useState(null);
+    const [showInstallBtn, setShowInstallBtn] = useState(false);
+
+    useEffect(() => {
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+            setShowInstallBtn(true);
+        });
+
+        window.addEventListener('appinstalled', () => {
+            setShowInstallBtn(false);
+        });
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', () => {});
+            window.removeEventListener('appinstalled', () => {});
+        };
+    }, []);
+
+    const handleInstallApp = async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                setShowInstallBtn(false);
+            }
+        }
+    };
 
     const handleLogout = () => {
         logout();
@@ -43,27 +75,62 @@ const DashboardPage = () => {
                         >
                             Discover delicious recipes based on what's already in your kitchen. Save time, reduce waste, and cook with confidence.
                         </motion.p>
-                        <motion.button
-                            initial={{ opacity: 0, y: 30, scale: 0.8 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            transition={{ 
-                                duration: 0.8, 
-                                delay: 0.4,
-                                type: "spring",
-                                stiffness: 200
-                            }}
-                            whileHover={{ 
-                                scale: 1.05,
-                                y: -3,
-                                boxShadow: "0 15px 30px rgba(207, 153, 108, 0.4)"
-                            }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={handleGetStarted}
-                            className="get-started-btn"
-                        >
-                            <i className="bx bx-rocket"></i>
-                            {user ? 'Get Started' : 'Join Now'}
-                        </motion.button>
+                        <div style={{ display: "flex", gap: "1rem", alignItems: "center", marginTop: "1.2rem" }}>
+                            <motion.button
+                                initial={{ opacity: 0, y: 30, scale: 0.8 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                transition={{
+                                    duration: 0.8,
+                                    delay: 0.4,
+                                    type: "spring",
+                                    stiffness: 200
+                                }}
+                                whileHover={{
+                                    scale: 1.05,
+                                    y: -3,
+                                    boxShadow: "0 15px 30px rgba(207, 153, 108, 0.4)"
+                                }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={handleGetStarted}
+                                className="get-started-btn"
+                            >
+                                <i className="bx bx-rocket"></i>
+                                {user ? 'Get Started' : 'Join Now'}
+                            </motion.button>
+                            {showInstallBtn && (
+                                <motion.button
+                                    initial={{ opacity: 0, y: 30, scale: 0.8 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    transition={{
+                                        duration: 0.8,
+                                        delay: 0.5,
+                                        type: "spring",
+                                        stiffness: 200
+                                    }}
+                                    whileHover={{
+                                        scale: 1.05,
+                                        y: -3,
+                                        boxShadow: "0 15px 30px rgba(207, 153, 108, 0.4)"
+                                    }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={handleInstallApp}
+                                    className="install-app-btn"
+                                    style={{
+                                        background: "#10b981",
+                                        color: "#fff",
+                                        borderRadius: "30px",
+                                        padding: "0.7rem 1.2rem",
+                                        fontWeight: 700,
+                                        fontSize: "1rem",
+                                        border: "none",
+                                        cursor: "pointer"
+                                    }}
+                                >
+                                    <i className="bx bx-download"></i>
+                                    Install App
+                                </motion.button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </section>
