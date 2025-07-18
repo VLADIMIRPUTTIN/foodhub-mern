@@ -70,60 +70,31 @@ const DashboardPage = () => {
             {/* Install App Notification */}
             {showInstallNotif && (
                 <motion.div
-                    initial={{ opacity: 0, y: -30 }}
+                    initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -30 }}
+                    exit={{ opacity: 0, y: 30 }}
                     transition={{ duration: 0.4 }}
                     className="install-app-notif"
-                    style={{
-                        position: "fixed",
-                        top: "24px",
-                        right: "24px",
-                        zIndex: 9999,
-                        background: "#fff",
-                        borderRadius: "18px",
-                        boxShadow: "0 8px 32px rgba(44,32,16,0.18)",
-                        padding: "1.2rem 2rem",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "1.2rem",
-                        border: "2px solid #e7b57a"
-                    }}
                 >
-                    <i className="bx bx-download" style={{ fontSize: "2rem", color: "#e7b57a" }}></i>
-                    <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "#b86b1b" }}>
+                    <i className="bx bx-download"></i>
+                    <div className="notif-text">
+                        <div className="notif-title">
                             Install FoodHub App
                         </div>
-                        <div style={{ fontSize: "0.98rem", color: "#7a5a36" }}>
+                        <div className="notif-desc">
                             Get the best experience by installing FoodHub on your device!
                         </div>
                     </div>
                     <button
                         onClick={handleInstallApp}
-                        style={{
-                            background: "#e7b57a",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: "30px",
-                            padding: "0.5rem 1.2rem",
-                            fontWeight: 700,
-                            fontSize: "1rem",
-                            cursor: "pointer",
-                            marginRight: "0.5rem"
-                        }}
+                        className="install-app-btn"
                     >
+                        <i className="bx bx-download"></i>
                         Install
                     </button>
                     <button
                         onClick={handleCloseNotif}
-                        style={{
-                            background: "none",
-                            border: "none",
-                            color: "#b86b1b",
-                            fontSize: "1.5rem",
-                            cursor: "pointer"
-                        }}
+                        className="close-btn"
                         aria-label="Close"
                     >
                         <i className="bx bx-x"></i>

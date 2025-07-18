@@ -317,34 +317,56 @@ $transition: all 0.3s ease;
     .install-app-notif {
         position: fixed;
         left: 50%;
-        bottom: 32px;
+        bottom: 24px;
         transform: translateX(-50%);
         z-index: 9999;
         background: #fff;
-        border-radius: 18px;
-        box-shadow: 0 8px 32px rgba(44,32,16,0.18);
-        padding: 1.2rem 2rem;
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(44,32,16,0.12);
+        padding: 0.7rem 1.2rem;
         display: flex;
         align-items: center;
-        gap: 1.2rem;
-        border: 2px solid #e7b57a;
-        min-width: 320px;
-        max-width: 90vw;
+        gap: 0.7rem;
+        border: 1.5px solid #e7b57a;
+        min-width: 220px;
+        max-width: 350px;
+
+        i.bx-download {
+            font-size: 1.5rem;
+            color: #e7b57a;
+            margin-right: 0.2rem;
+        }
+
+        .notif-text {
+            flex: 1;
+            min-width: 0;
+            .notif-title {
+                font-weight: 700;
+                font-size: 1rem;
+                color: #b86b1b;
+                margin-bottom: 0.1rem;
+            }
+            .notif-desc {
+                font-size: 0.92rem;
+                color: #7a5a36;
+                line-height: 1.3;
+            }
+        }
 
         .install-app-btn {
             background: linear-gradient(135deg, #CF996C 0%, #BB8860 100%);
             color: white;
             border: none;
-            padding: 15px 30px;
+            padding: 8px 18px;
             border-radius: 30px;
-            font-size: 1.1rem;
+            font-size: 0.98rem;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 7px;
             transition: all 0.3s ease;
-            box-shadow: 0 8px 20px rgba(207, 153, 108, 0.3);
+            box-shadow: 0 4px 12px rgba(207, 153, 108, 0.18);
 
             i {
                 font-size: 1rem;
@@ -352,11 +374,7 @@ $transition: all 0.3s ease;
 
             &:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 12px 25px rgba(207, 153, 108, 0.4);
-            }
-
-            &:active {
-                transform: translateY(0);
+                box-shadow: 0 8px 18px rgba(207, 153, 108, 0.22);
             }
         }
 
@@ -364,8 +382,10 @@ $transition: all 0.3s ease;
             background: none;
             border: none;
             color: #b86b1b;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             cursor: pointer;
+            margin-left: 0.2rem;
+            padding: 0 2px;
         }
     }
 
@@ -471,9 +491,28 @@ $transition: all 0.3s ease;
         }
 
         .install-app-notif {
-            padding: 0.8rem 1rem;
-            min-width: 220px;
-            font-size: 0.95rem;
+            padding: 0.5rem 0.7rem;
+            min-width: 160px;
+            max-width: 95vw;
+            font-size: 0.92rem;
+            gap: 0.5rem;
+
+            .notif-title {
+                font-size: 0.95rem;
+            }
+            .notif-desc {
+                font-size: 0.85rem;
+            }
+            .install-app-btn {
+                padding: 7px 14px;
+                font-size: 0.92rem;
+            }
+            i.bx-download {
+                font-size: 1.2rem;
+            }
+            .close-btn {
+                font-size: 1.1rem;
+            }
         }
     }
 
