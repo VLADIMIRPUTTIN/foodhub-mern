@@ -313,6 +313,38 @@ $transition: all 0.3s ease;
         }
     }
 
+    // Install App Notification
+    .install-app-notif {
+        position: fixed;
+        left: 50%;
+        bottom: 32px;
+        transform: translateX(-50%);
+        z-index: 9999;
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 8px 32px rgba(44,32,16,0.18);
+        padding: 1.2rem 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        border: 2px solid #e7b57a;
+        min-width: 320px;
+        max-width: 90vw;
+
+        .install-btn {
+            @extend .install-app-btn;
+            margin-right: 0.5rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #b86b1b;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+    }
+
     // Responsive Styles
     @media (max-width: 768px) {
         .hero-section {
