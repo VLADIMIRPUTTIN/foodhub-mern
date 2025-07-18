@@ -12,21 +12,27 @@ const DashboardPage = () => {
     // PWA install prompt state
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [showInstallBtn, setShowInstallBtn] = useState(false);
+    const [showInstallNotif, setShowInstallNotif] = useState(false);
 
     useEffect(() => {
-        window.addEventListener('beforeinstallprompt', (e) => {
+        const handleBeforeInstallPrompt = (e) => {
             e.preventDefault();
             setDeferredPrompt(e);
             setShowInstallBtn(true);
-        });
+            setShowInstallNotif(true); // Show notification
+        };
 
-        window.addEventListener('appinstalled', () => {
+        const handleAppInstalled = () => {
             setShowInstallBtn(false);
-        });
+            setShowInstallNotif(false);
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        window.addEventListener('appinstalled', handleAppInstalled);
 
         return () => {
-            window.removeEventListener('beforeinstallprompt', () => {});
-            window.removeEventListener('appinstalled', () => {});
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+            window.removeEventListener('appinstalled', handleAppInstalled);
         };
     }, []);
 
@@ -36,8 +42,13 @@ const DashboardPage = () => {
             const { outcome } = await deferredPrompt.userChoice;
             if (outcome === 'accepted') {
                 setShowInstallBtn(false);
+                setShowInstallNotif(false);
             }
         }
+    };
+
+    const handleCloseNotif = () => {
+        setShowInstallNotif(false);
     };
 
     const handleLogout = () => {
@@ -56,6 +67,70 @@ const DashboardPage = () => {
         <div className="dashboard-page">
             <Navbar />
             
+            {/* Install App Notification */}
+            {showInstallNotif && (
+                <motion.div
+                    initial={{ opacity: 0, y: -30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -30 }}
+                    transition={{ duration: 0.4 }}
+                    className="install-app-notif"
+                    style={{
+                        position: "fixed",
+                        top: "24px",
+                        right: "24px",
+                        zIndex: 9999,
+                        background: "#fff",
+                        borderRadius: "18px",
+                        boxShadow: "0 8px 32px rgba(44,32,16,0.18)",
+                        padding: "1.2rem 2rem",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "1.2rem",
+                        border: "2px solid #e7b57a"
+                    }}
+                >
+                    <i className="bx bx-download" style={{ fontSize: "2rem", color: "#e7b57a" }}></i>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "#b86b1b" }}>
+                            Install FoodHub App
+                        </div>
+                        <div style={{ fontSize: "0.98rem", color: "#7a5a36" }}>
+                            Get the best experience by installing FoodHub on your device!
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleInstallApp}
+                        style={{
+                            background: "#e7b57a",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: "30px",
+                            padding: "0.5rem 1.2rem",
+                            fontWeight: 700,
+                            fontSize: "1rem",
+                            cursor: "pointer",
+                            marginRight: "0.5rem"
+                        }}
+                    >
+                        Install
+                    </button>
+                    <button
+                        onClick={handleCloseNotif}
+                        style={{
+                            background: "none",
+                            border: "none",
+                            color: "#b86b1b",
+                            fontSize: "1.5rem",
+                            cursor: "pointer"
+                        }}
+                        aria-label="Close"
+                    >
+                        <i className="bx bx-x"></i>
+                    </button>
+                </motion.div>
+            )}
+
             {/* Hero Section */}
             <section className="hero-section">
                 <div className="overlay"></div>

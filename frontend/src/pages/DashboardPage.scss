@@ -55,7 +55,8 @@ $transition: all 0.3s ease;
                     opacity: 0.9;
                 }
 
-                .get-started-btn {
+                .get-started-btn,
+                .install-app-btn {
                     background: linear-gradient(135deg, #CF996C 0%, #BB8860 100%);
                     color: white;
                     border: none;
