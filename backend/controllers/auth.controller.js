@@ -1,6 +1,7 @@
 import bcryptjs from "bcryptjs";
 import crypto from "crypto";
 import { OAuth2Client } from "google-auth-library";
+import cloudinary from "cloudinary";
 
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
 import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendResetSuccessEmail } from "../mailtrap/emails.js";
@@ -337,7 +338,7 @@ export const checkAuth = async (req, res) => {
 };
 
 export const googleLogin = async (req, res) => {
-    const { credential, profileImage } = req.body;
+    const { credential } = req.body;
     try {
         const ticket = await client.verifyIdToken({
             idToken: credential,
@@ -346,7 +347,36 @@ export const googleLogin = async (req, res) => {
         const payload = ticket.getPayload();
         const { email, name, sub, picture } = payload;
 
+        // Upload Google image to Cloudinary (optional)
+        let profileImageUrl = picture;
+        if (picture) {
+            // Upload to Cloudinary and get secure_url
+            const cloudinaryRes = await cloudinary.uploader.upload(picture, {
+                folder: "foodhub-profile-images",
+                public_id: sub,
+                overwrite: true,
+            });
+            profileImageUrl = cloudinaryRes.secure_url;
+        }
+
         let user = await User.findOne({ email });
+        if (!user) {
+            user = new User({
+                email,
+                name,
+                password: "google-oauth",
+                isVerified: false,
+                profileImage: profileImageUrl,
+                // ...other fields...
+            });
+            await user.save();
+        } else {
+            // Update profile image if not set
+            if (!user.profileImage) {
+                user.profileImage = profileImageUrl;
+                await user.save();
+            }
+        }
 
         let isNewUser = false;
         let verificationToken;
@@ -357,26 +387,19 @@ export const googleLogin = async (req, res) => {
             user = new User({
                 email,
                 name,
-                password: "google-oauth",
+                password: "google-oauth", // or any placeholder
                 isVerified: false,
                 verificationToken,
                 verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000,
-                profileImage: profileImage || picture, // Save Google image
             });
             await user.save();
             isNewUser = true;
-        } else {
-            // Update profile image if not set or changed
-            if (!user.profileImage || user.profileImage !== (profileImage || picture)) {
-                user.profileImage = profileImage || picture;
-                await user.save();
-            }
-            if (!user.isVerified) {
-                verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
-                user.verificationToken = verificationToken;
-                user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000;
-                await user.save();
-            }
+        } else if (!user.isVerified) {
+            // Existing user but not verified
+            verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+            user.verificationToken = verificationToken;
+            user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000;
+            await user.save();
         }
 
         // Send verification email if not verified
@@ -384,6 +407,7 @@ export const googleLogin = async (req, res) => {
             await sendVerificationEmail(user.email, user.verificationToken);
         }
 
+        // Set JWT cookie, etc.
         generateTokenAndSetCookie(res, user._id);
 
         res.status(200).json({
