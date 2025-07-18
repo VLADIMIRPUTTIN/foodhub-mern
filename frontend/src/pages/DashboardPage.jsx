@@ -190,16 +190,6 @@ const DashboardPage = () => {
                                     whileTap={{ scale: 0.95 }}
                                     onClick={handleInstallApp}
                                     className="install-app-btn"
-                                    style={{
-                                        background: "#10b981",
-                                        color: "#fff",
-                                        borderRadius: "30px",
-                                        padding: "0.7rem 1.2rem",
-                                        fontWeight: 700,
-                                        fontSize: "1rem",
-                                        border: "none",
-                                        cursor: "pointer"
-                                    }}
                                 >
                                     <i className="bx bx-download"></i>
                                     Install App

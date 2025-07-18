@@ -55,7 +55,8 @@ $transition: all 0.3s ease;
                     opacity: 0.9;
                 }
 
-                .get-started-btn {
+                .get-started-btn,
+                .install-app-btn {
                     background: linear-gradient(135deg, #CF996C 0%, #BB8860 100%);
                     color: white;
                     border: none;
@@ -312,6 +313,62 @@ $transition: all 0.3s ease;
         }
     }
 
+    // Install App Notification
+    .install-app-notif {
+        position: fixed;
+        left: 50%;
+        bottom: 32px;
+        transform: translateX(-50%);
+        z-index: 9999;
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 8px 32px rgba(44,32,16,0.18);
+        padding: 1.2rem 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        border: 2px solid #e7b57a;
+        min-width: 320px;
+        max-width: 90vw;
+
+        .install-app-btn {
+            background: linear-gradient(135deg, #CF996C 0%, #BB8860 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(207, 153, 108, 0.3);
+
+            i {
+                font-size: 1rem;
+            }
+
+            &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 12px 25px rgba(207, 153, 108, 0.4);
+            }
+
+            &:active {
+                transform: translateY(0);
+            }
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #b86b1b;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+    }
+
     // Responsive Styles
     @media (max-width: 768px) {
         .hero-section {
@@ -411,6 +468,12 @@ $transition: all 0.3s ease;
                     font-size: 1.1rem;
                 }
             }
+        }
+
+        .install-app-notif {
+            padding: 0.8rem 1rem;
+            min-width: 220px;
+            font-size: 0.95rem;
         }
     }
 
