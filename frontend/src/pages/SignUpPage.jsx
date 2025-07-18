@@ -16,6 +16,8 @@ const SignUpPage = () => {
 
     const { signup, isLoading, error, setUser } = useAuthStore();
 
+    const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/WvG991xq/profile-icon.jpg";
+
     const handleSignUp = async (e) => {
         e.preventDefault();
 
@@ -23,7 +25,8 @@ const SignUpPage = () => {
         console.log("Form data:", { name, email, password: "***" });
 
         try {
-            await signup(email, password, name);
+            // Pass default profile image to backend on manual signup
+            await signup(email, password, name, DEFAULT_PROFILE_IMAGE);
             console.log("✅ Signup successful, navigating to verification...");
             navigate("/verify-email");
         } catch (error) {
@@ -39,6 +42,7 @@ const SignUpPage = () => {
     const handleGoogleSignUp = async (credentialResponse) => {
         try {
             console.log("Starting Google signup process...");
+            
             // Send the credential to your backend for verification
             const response = await axios.post(
                 `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/auth/google-login" : "/api/auth/google-login"}`,
@@ -49,13 +53,6 @@ const SignUpPage = () => {
             // Set user in auth store so verification page knows the email
             if (response.data.user) {
                 setUser(response.data.user);
-                // If backend sends profileImage, use it for profile
-                if (response.data.user.profileImage) {
-                    setUser(prev => ({
-                        ...prev,
-                        profileImage: response.data.user.profileImage
-                    }));
-                }
             }
 
             if (response.data.user && response.data.user.isVerified) {
