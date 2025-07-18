@@ -18,7 +18,23 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const __dirname = path.resolve();
 
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+const allowedOrigins = [
+    "http://localhost:5173",
+    "https://foodhub-mern-production.up.railway.app"
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        } else {
+            return callback(new Error("Not allowed by CORS"));
+        }
+    },
+    credentials: true
+}));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
