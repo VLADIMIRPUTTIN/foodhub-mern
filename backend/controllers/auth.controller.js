@@ -337,7 +337,7 @@ export const checkAuth = async (req, res) => {
 };
 
 export const googleLogin = async (req, res) => {
-    const { credential } = req.body;
+    const { credential, profileImage } = req.body;
     try {
         const ticket = await client.verifyIdToken({
             idToken: credential,
@@ -357,19 +357,26 @@ export const googleLogin = async (req, res) => {
             user = new User({
                 email,
                 name,
-                password: "google-oauth", // or any placeholder
+                password: "google-oauth",
                 isVerified: false,
                 verificationToken,
                 verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000,
+                profileImage: profileImage || picture, // Save Google image
             });
             await user.save();
             isNewUser = true;
-        } else if (!user.isVerified) {
-            // Existing user but not verified
-            verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
-            user.verificationToken = verificationToken;
-            user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000;
-            await user.save();
+        } else {
+            // Update profile image if not set or changed
+            if (!user.profileImage || user.profileImage !== (profileImage || picture)) {
+                user.profileImage = profileImage || picture;
+                await user.save();
+            }
+            if (!user.isVerified) {
+                verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+                user.verificationToken = verificationToken;
+                user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000;
+                await user.save();
+            }
         }
 
         // Send verification email if not verified
@@ -377,7 +384,6 @@ export const googleLogin = async (req, res) => {
             await sendVerificationEmail(user.email, user.verificationToken);
         }
 
-        // Set JWT cookie, etc.
         generateTokenAndSetCookie(res, user._id);
 
         res.status(200).json({

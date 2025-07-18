@@ -23,9 +23,17 @@ const LoginPage = () => {
 
     const handleGoogleLogin = async (credentialResponse) => {
         try {
+            // Get Google profile info from credential
+            const googleToken = credentialResponse.credential;
+            const googleUser = await axios.get(
+                `https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=${googleToken}`
+            );
+            const { picture } = googleUser.data;
+
+            // Send credential and image to backend
             const response = await axios.post(
                 `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/auth/google-login" : "/api/auth/google-login"}`,
-                { credential: credentialResponse.credential },
+                { credential: googleToken, profileImage: picture },
                 { withCredentials: true }
             );
             if (response.data.user) {
