@@ -44,11 +44,14 @@ export const createRecipe = async (req, res) => {
         // Handle image upload
         let imageUrl = null;
         if (req.file) {
-            // Upload to Cloudinary
-            const result = await cloudinary.uploader.upload(req.file.path, {
-                folder: 'foodhub/recipes',
-            });
-            imageUrl = result.secure_url;
+            try {
+                const result = await cloudinary.uploader.upload(req.file.path, {
+                    folder: 'foodhub/recipes',
+                });
+                imageUrl = result.secure_url;
+            } catch (err) {
+                return res.status(500).json({ success: false, message: "Image upload failed" });
+            }
         }
 
         // Get user info to determine visibility
