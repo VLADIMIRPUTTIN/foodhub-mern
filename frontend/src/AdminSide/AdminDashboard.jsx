@@ -9,6 +9,10 @@ import Swal from 'sweetalert2';
 import ManageUsersPage from './ManageUsersPage';
 import ManageRecipeAndIngredientsPage from './ManageRecipeAndIngredientsPage';
 
+const baseURL = import.meta.env.MODE === "development"
+  ? "http://localhost:5000"
+  : ""; // Use relative URL for production
+
 const AdminDashboard = () => {
     const { user, isAdmin, logout } = useAuthStore();
     const [activeTab, setActiveTab] = useState('overview');
@@ -29,14 +33,13 @@ const AdminDashboard = () => {
     // Fetch functions
     const fetchRecipes = async () => {
         try {
-            // Use the new admin endpoint to get ALL recipes
-            const res = await axios.get('http://localhost:5000/api/recipes/admin/all', {
+            const res = await axios.get(`${baseURL}/api/recipes/admin/all`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
             });
             setRecipes(res.data.recipes);
-            updateStats(users, res.data.recipes); // update stats after fetching recipes
+            updateStats(users, res.data.recipes);
         } catch {
             setRecipes([]);
             updateStats(users, []);
@@ -44,7 +47,7 @@ const AdminDashboard = () => {
     };
     const fetchIngredients = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/ingredients');
+            const res = await axios.get(`${baseURL}/api/ingredients`);
             setIngredients(res.data.ingredients);
         } catch {
             setIngredients([]);
@@ -52,9 +55,13 @@ const AdminDashboard = () => {
     };
     const fetchUsers = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/users');
+            const res = await axios.get(`${baseURL}/api/users`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
             setUsers(res.data.users);
-            updateStats(res.data.users, recipes); // update stats after fetching users
+            updateStats(res.data.users, recipes);
         } catch {
             setUsers([]);
             updateStats([], recipes);
@@ -79,12 +86,17 @@ const AdminDashboard = () => {
     const handleUserAction = async (userId, action) => {
         try {
             if (action === 'active') {
-                await axios.patch(`http://localhost:5000/api/users/${userId}/activate`);
+                await axios.patch(`${baseURL}/api/users/${userId}/activate`, {}, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
             } else if (action === 'banned') {
-                await axios.patch(`http://localhost:5000/api/users/${userId}/ban`, { reason: "Banned by admin" });
-            } else if (action === 'suspended') {
-                // For suspend, call from ManageUsersPage with minutes
-                // See below
+                await axios.patch(`${baseURL}/api/users/${userId}/ban`, { reason: "Banned by admin" }, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
             }
             await fetchUsers();
         } catch (err) {
@@ -94,7 +106,11 @@ const AdminDashboard = () => {
 
     const handleDeleteUser = async (userId) => {
         try {
-            await axios.delete(`http://localhost:5000/api/users/${userId}`);
+            await axios.delete(`${baseURL}/api/users/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
             await fetchUsers();
             updateStats();
         } catch {
@@ -102,7 +118,6 @@ const AdminDashboard = () => {
         }
     };
 
-    // Delete handlers (implement backend delete endpoints for production)
     const handleDeleteRecipe = async (id) => {
         const result = await Swal.fire({
             title: 'Are you sure?',
@@ -126,7 +141,7 @@ const AdminDashboard = () => {
                     }
                 });
 
-                const response = await axios.delete(`http://localhost:5000/api/recipes/${id}`, {
+                const response = await axios.delete(`${baseURL}/api/recipes/${id}`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json'
@@ -187,7 +202,11 @@ const AdminDashboard = () => {
         });
         if (result.isConfirmed) {
             try {
-                await axios.delete(`http://localhost:5000/api/ingredients/${id}`);
+                await axios.delete(`${baseURL}/api/ingredients/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
                 setIngredients(ingredients.filter(i => i._id !== id));
                 Swal.fire('Deleted!', 'Ingredient has been deleted.', 'success');
             } catch {
@@ -210,7 +229,11 @@ const AdminDashboard = () => {
         });
         if (newTitle && newTitle !== (recipe.title || recipe.name)) {
             try {
-                await axios.patch(`http://localhost:5000/api/recipes/${recipe._id}`, { title: newTitle });
+                await axios.patch(`${baseURL}/api/recipes/${recipe._id}`, { title: newTitle }, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
                 setRecipes(recipes.map(r => r._id === recipe._id ? { ...r, title: newTitle } : r));
                 Swal.fire('Saved!', 'Recipe title updated.', 'success');
             } catch {
@@ -233,7 +256,11 @@ const AdminDashboard = () => {
         });
         if (newName && newName !== ingredient.name) {
             try {
-                await axios.patch(`http://localhost:5000/api/ingredients/${ingredient._id}`, { name: newName });
+                await axios.patch(`${baseURL}/api/ingredients/${ingredient._id}`, { name: newName }, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
                 setIngredients(ingredients.map(i => i._id === ingredient._id ? { ...i, name: newName } : i));
                 Swal.fire('Saved!', 'Ingredient name updated.', 'success');
             } catch {
