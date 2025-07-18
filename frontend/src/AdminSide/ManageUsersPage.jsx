@@ -1,6 +1,10 @@
 import Swal from 'sweetalert2';
 import axios from 'axios';
 
+const baseURL = import.meta.env.MODE === "development"
+  ? "http://localhost:5000"
+  : ""; // Use relative URL for production
+
 const ManageUsersPage = ({
     users,
     fetchUsers // Pass this from AdminDashboard
@@ -24,7 +28,11 @@ const ManageUsersPage = ({
         });
         if (minutes) {
             try {
-                await axios.patch(`http://localhost:5000/api/users/${userId}/suspend`, { minutes });
+                await axios.patch(`${baseURL}/api/users/${userId}/suspend`, { minutes }, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
                 await fetchUsers();
                 Swal.fire('Suspended!', `User suspended for ${minutes} minutes.`, 'success');
             } catch {
@@ -46,7 +54,11 @@ const ManageUsersPage = ({
         });
         if (result.isConfirmed) {
             try {
-                await axios.patch(`http://localhost:5000/api/users/${userId}/ban`, { reason: "Banned by admin" });
+                await axios.patch(`${baseURL}/api/users/${userId}/ban`, { reason: "Banned by admin" }, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
                 await fetchUsers();
                 Swal.fire('Banned!', 'User has been banned.', 'success');
             } catch {
@@ -68,7 +80,11 @@ const ManageUsersPage = ({
         });
         if (result.isConfirmed) {
             try {
-                await axios.delete(`http://localhost:5000/api/users/${userId}`);
+                await axios.delete(`${baseURL}/api/users/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
                 await fetchUsers();
                 Swal.fire('Deleted!', 'User account deleted.', 'success');
             } catch {
@@ -80,7 +96,11 @@ const ManageUsersPage = ({
     // Handler for activate
     const handleActivate = async (userId) => {
         try {
-            await axios.patch(`http://localhost:5000/api/users/${userId}/activate`);
+            await axios.patch(`${baseURL}/api/users/${userId}/activate`, {}, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
             await fetchUsers();
             Swal.fire('Activated!', 'User account is now active.', 'success');
         } catch {
