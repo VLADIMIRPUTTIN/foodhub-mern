@@ -97,28 +97,29 @@ const RecipePage = () => {
             // Return a default placeholder image if no image URL
             return 'https://via.placeholder.com/300x200?text=No+Image';
         }
-        
         // If imageUrl is already a full URL (starts with http), use it as is
         if (recipe.imageUrl.startsWith('http')) {
             return recipe.imageUrl;
         }
-        
         // If imageUrl is a relative path, construct the full URL
-        // Remove leading slash if present to avoid double slashes
         const cleanPath = recipe.imageUrl.startsWith('/') ? recipe.imageUrl.slice(1) : recipe.imageUrl;
-        return `http://localhost:5000/${cleanPath}`;
+        const baseURL = import.meta.env.MODE === "development"
+            ? "http://localhost:5000"
+            : "";
+        return `${baseURL}/${cleanPath}`;
     };
 
     useEffect(() => {
+        const baseURL = import.meta.env.MODE === "development"
+            ? "http://localhost:5000"
+            : "";
         const fetchRecipes = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/recipes');
-                console.log('Raw API response:', response.data); // Debug log
-                
+                // Only display admin-created (public) recipes
+                const response = await axios.get(`${baseURL}/api/recipes`);
                 if (response.data.success && response.data.recipes) {
                     setRecipes(response.data.recipes);
                 } else {
-                    // Handle different response structure
                     setRecipes(response.data || []);
                 }
             } catch (error) {
@@ -126,12 +127,14 @@ const RecipePage = () => {
                 setRecipes([]);
             }
         };
-        
         fetchRecipes();
     }, []);
 
     useEffect(() => {
-        axios.get('http://localhost:5000/api/ingredients')
+        const baseURL = import.meta.env.MODE === "development"
+            ? "http://localhost:5000"
+            : "";
+        axios.get(`${baseURL}/api/ingredients`)
             .then(res => {
                 setIngredients(res.data.ingredients.map(i => i.name));
                 setFilteredIngredients(res.data.ingredients.map(i => i.name));
