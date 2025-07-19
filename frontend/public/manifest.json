@@ -8,14 +8,14 @@
   "description": "FoodHub - Recipe Management",
   "icons": [
     {
-      "src": "/vite.svg",
+      "src": "https://i.ibb.co/PsrWV9wx/Food-Hub-Full.png",
       "sizes": "192x192",
-      "type": "image/svg+xml"
+      "type": "image/png"
     },
     {
-      "src": "/vite.svg",
+      "src": "https://i.ibb.co/PsrWV9wx/Food-Hub-Full.png",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/png"
     }
   ]
 }
