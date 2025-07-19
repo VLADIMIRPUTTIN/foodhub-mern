@@ -11,6 +11,8 @@ import recipeRoutes from "./routes/recipe.route.js";
 import ingredientRoutes from "./routes/ingredient.route.js";
 import userRoutes from "./routes/user.route.js";
 import favoriteRoutes from './routes/favoriteRoutes.js';
+import geminiRoutes from "./routes/gemini.route.js";
+import visionRoutes from "./routes/vision.route.js";
 
 dotenv.config();
 
@@ -47,6 +49,8 @@ app.use("/api/recipes", recipeRoutes);
 app.use("/api/ingredients", ingredientRoutes);
 app.use("/api/favorites", favoriteRoutes); // Add this line
 app.use("/api/users", userRoutes);
+app.use("/api/gemini", geminiRoutes);
+app.use("/api/vision", visionRoutes); // <-- Add this line
 
 if (process.env.NODE_ENV === "production") {
     app.use(express.static(path.join(__dirname, "/frontend/dist")));
