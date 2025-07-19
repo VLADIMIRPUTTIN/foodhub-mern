@@ -183,15 +183,14 @@ const UserProfilePage = () => {
 
     const handleRemoveFromFavorites = async (recipeId, event) => {
         event.stopPropagation();
-
+        
         try {
-            await axios.delete(
-                `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/favorites/" : "/api/favorites/"}${recipeId}`,
-                {
-                    withCredentials: true // <-- This is the key part!
+            await axios.delete(`http://localhost:5000/api/favorites/${recipeId}`, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
                 }
-            );
-
+            });
+            
             // Refresh favorites data
             await fetchUserFavorites();
             await fetchFavoriteCount();
