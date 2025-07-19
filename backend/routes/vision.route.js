@@ -1,10 +1,20 @@
 import express from "express";
 import vision from "@google-cloud/vision";
+import fs from "fs";
 
 const router = express.Router();
-const client = new vision.ImageAnnotatorClient({
-    keyFilename: "backend/foohub-459300-dc81b1fcaa38.json" // Use your actual key file
-});
+
+let client;
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+    // Load credentials from env variable
+    const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    client = new vision.ImageAnnotatorClient({ credentials });
+} else {
+    // Fallback to file
+    client = new vision.ImageAnnotatorClient({
+        keyFilename: "backend/foohub-459300-dc81b1fcaa38.json" // Use your actual key file
+    });
+}
 
 // List of food/cookable items to filter
 const COOKABLE_CLASSES = [
@@ -21,6 +31,8 @@ router.post("/detect", async (req, res) => {
         const [result] = await client.objectLocalization({
             image: { content: imageBase64 }
         });
+        // Log the full Vision API response for debugging
+        console.log("Vision API result:", JSON.stringify(result, null, 2));
         // Filter only cookable food items
         const objects = result.localizedObjectAnnotations
             .filter(obj => COOKABLE_CLASSES.includes(obj.name.toLowerCase()))
@@ -31,7 +43,12 @@ router.post("/detect", async (req, res) => {
 
         res.json({ success: true, objects });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        // Log the full error object, not just error.message
+        console.error("Vision API error:", error);
+        if (error.response) {
+            console.error("Vision API error response:", error.response.data);
+        }
+        res.status(500).json({ success: false, message: error.message, error });
     }
 });
 
