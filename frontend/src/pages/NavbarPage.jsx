@@ -56,7 +56,7 @@ const Navbar = () => {
         navigate('/profile');
     };
 
-    // Handle profile image click
+    // Handle profile image clicks
     const handleProfileImageClick = (e) => {
         e.stopPropagation();
         navigate('/profile');
