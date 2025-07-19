@@ -106,18 +106,12 @@ const Navbar = () => {
         setLastDetectionStatus("");
         if (webcamRef.current) {
             const imageSrc = webcamRef.current.getScreenshot();
-            if (!imageSrc) {
-                setLastDetectionStatus("error");
-                setIsDetecting(false);
-                console.error("Webcam image not available.");
-                return;
-            }
             // Remove base64 header
             const base64 = imageSrc.replace(/^data:image\/\w+;base64,/, "");
             try {
                 const baseURL = import.meta.env.MODE === "development"
                     ? "http://localhost:5000"
-                    : "";
+                    : "https://foodhub-mern-production.up.railway.app";
                 const res = await axios.post(`${baseURL}/api/vision/detect`, { imageBase64: base64 });
                 const objects = res.data.objects || [];
                 setDetectedObjects(objects);
@@ -157,7 +151,7 @@ const Navbar = () => {
         try {
             const baseURL = import.meta.env.MODE === "development"
                 ? "http://localhost:5000"
-                : "";
+                : "https://foodhub-mern-production.up.railway.app";
             // Step 1: Ask Gemini to identify food items (vegetables, meat, egg, etc.)
             const res = await axios.post(`${baseURL}/api/gemini/identify-vegetables`, { detectedObjects: allDetectedNames });
             const foodItems = res.data.vegetables; // Gemini returns only food items

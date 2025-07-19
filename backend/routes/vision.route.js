@@ -1,6 +1,7 @@
 import express from "express";
 import vision from "@google-cloud/vision";
 import fs from "fs";
+import Detection from '../models/Detection.js'; // create this model
 
 const router = express.Router();
 
@@ -49,6 +50,22 @@ router.post("/detect", async (req, res) => {
             console.error("Vision API error response:", error.response.data);
         }
         res.status(500).json({ success: false, message: error.message, error });
+    }
+});
+
+router.post("/save-detection", async (req, res) => {
+    const { imageBase64, objects, userId } = req.body;
+    try {
+        const detection = new Detection({
+            user: userId,
+            image: imageBase64,
+            objects,
+            detectedAt: new Date()
+        });
+        await detection.save();
+        res.json({ success: true, detection });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
 });
 
