@@ -1007,99 +1007,72 @@ i[class*=" bx-"] {
   }
 
   .favorite-btn {
-    position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 44px;
-  height: 44px;
-  background: rgba(27, 25, 25, 0.068);
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 6px 18px rgba(149, 133, 133, 0.436);
-  z-index: 20; // <-- Increase z-index ito yun
+    // Desktop styles (already present)
     position: absolute;
     top: 12px;
     right: 12px;
+    width: 44px;
+    height: 44px;
+    background: rgb(4, 4, 4);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 6px 18px rgba(149, 133, 133, 0.436);
+    z-index: 20;
 
     i {
-    font-size: 1.7rem;
-    color: #bbb;
-    transition: all 0.3s ease;
-    font-family: 'boxicons' !important;
-    filter: drop-shadow(0 0 6px rgba(255, 107, 107, 0.15));
-  }
-
-  &:hover {
-    background: rgba(44, 42, 42, 0.85);
-    box-shadow: 0 8px 24px rgba(255, 107, 107, 0.18);
-    i {
-      color: #ededed;
-      filter: drop-shadow(0 0 12px #ff6b6b88);
-      animation: heartPulse 0.5s;
+      font-size: 1.7rem;
+      color: #bbb;
+      transition: all 0.3s ease;
+      font-family: 'boxicons' !important;
+      filter: drop-shadow(0 0 6px rgba(255, 107, 107, 0.15));
     }
-  }
 
-  &:active {
-    transform: scale(0.96);
-  }
+    &:hover {
+      background: rgba(44, 42, 42, 0.85);
+      box-shadow: 0 8px 24px rgba(255, 107, 107, 0.18);
+      i {
+        color: #ededed;
+        filter: drop-shadow(0 0 12px #ff6b6b88);
+        animation: heartPulse 0.5s;
+      }
+    }
 
-  &.favorited {
-    background: rgba(255, 107, 107, 0.18);
-    border: 2px solid rgba(255, 107, 107, 0.25);
-    i {
-      color: #ff2d55;
-      filter: drop-shadow(0 0 16px #ff2d5588);
-      animation: heartPulse 0.7s;
-      text-shadow: 0 0 8px #ff2d55, 0 0 16px #ff6b6b55;
+    &:active {
+      transform: scale(0.96);
+    }
+
+    &.favorited {
+      background: rgba(255, 107, 107, 0.18);
+      border: 2px solid rgba(255, 107, 107, 0.25);
+      i {
+        color: #ff2d55;
+        filter: drop-shadow(0 0 16px #ff2d5588);
+        animation: heartPulse 0.7s;
+        text-shadow: 0 0 8px #ff2d55, 0 0 16px #ff6b6b55;
+      }
     }
   }
 }
-    
-  }
 
-
-// Mobile responsive adjustments
+// Mobile adjustments for favorite-btn
 @media (max-width: 768px) {
-  .recipes-grid {
-    grid-template-columns: repeat(2, 1fr); // 2 per row on mobile
-    gap: 0.75rem;
-  }
-  
   .recipe-card {
-    height: 280px;
-    
-    .recipe-image {
-      height: 150px;
-    }
-    
-    .recipe-content {
-      padding: 1rem;
-      
-      .recipe-title {
-        font-size: 1rem;
-      }
-      
-      .recipe-desc {
-        font-size: 0.8rem;
-      }
-    }
-  }
-}
+    .favorite-btn {
+      top: 8px;
+      right: 8px;
+      width: 34px;
+      height: 34px;
 
-// Tablet responsive adjustments
-@media (max-width: 1024px) and (min-width: 769px) {
-  .recipes-grid {
-    grid-template-columns: repeat(3, 1fr); // 3 per row on tablet
-    gap: 0.875rem;
+      i {
+        font-size: 1.2rem;
+      }
+    }
   }
 }
 
@@ -1480,6 +1453,5 @@ i[class*=" bx-"] {
   70% { transform: scale(1.22); }
   100% { transform: scale(1); }
 }
-
   }
 }
