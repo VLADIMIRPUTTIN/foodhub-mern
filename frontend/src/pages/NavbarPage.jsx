@@ -351,6 +351,9 @@ const Navbar = () => {
                                 ref={webcamRef}
                                 width={400}
                                 height={300}
+                                videoConstraints={{
+                                    facingMode: "environment" // Use back camera on mobile
+                                }}
                             />
                             <canvas
                                 ref={canvasRef}
