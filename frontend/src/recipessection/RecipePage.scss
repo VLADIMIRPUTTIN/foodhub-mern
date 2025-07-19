@@ -919,6 +919,7 @@ i[class*=" bx-"] {
 }
 
 .recipe-card {
+  position: relative;
   background: white;
   border-radius: 12px;
   overflow: hidden;
@@ -929,6 +930,7 @@ i[class*=" bx-"] {
   display: flex;
   flex-direction: column;
   position: relative; // Add this for heart positioning
+  overflow: visible; // <-- Make sure button is not clipped
 
   &:hover {
     transform: translateY(-4px);
@@ -936,6 +938,7 @@ i[class*=" bx-"] {
   }
 
   .recipe-image {
+    position: relative;
     height: 200px; // Increased image height
     overflow: hidden;
     flex-shrink: 0;
@@ -1002,7 +1005,67 @@ i[class*=" bx-"] {
       margin-top: auto;
     }
   }
+
+  .favorite-btn {
+    position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  background: rgba(27, 25, 25, 0.068);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 6px 18px rgba(149, 133, 133, 0.436);
+  z-index: 20; // <-- Increase z-index ito yun
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i {
+    font-size: 1.7rem;
+    color: #bbb;
+    transition: all 0.3s ease;
+    font-family: 'boxicons' !important;
+    filter: drop-shadow(0 0 6px rgba(255, 107, 107, 0.15));
+  }
+
+  &:hover {
+    background: rgba(44, 42, 42, 0.85);
+    box-shadow: 0 8px 24px rgba(255, 107, 107, 0.18);
+    i {
+      color: #ededed;
+      filter: drop-shadow(0 0 12px #ff6b6b88);
+      animation: heartPulse 0.5s;
+    }
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &.favorited {
+    background: rgba(255, 107, 107, 0.18);
+    border: 2px solid rgba(255, 107, 107, 0.25);
+    i {
+      color: #ff2d55;
+      filter: drop-shadow(0 0 16px #ff2d5588);
+      animation: heartPulse 0.7s;
+      text-shadow: 0 0 8px #ff2d55, 0 0 16px #ff6b6b55;
+    }
+  }
 }
+    
+  }
+
 
 // Mobile responsive adjustments
 @media (max-width: 768px) {
@@ -1409,103 +1472,14 @@ i[class*=" bx-"] {
   }
 }
 
-// =============================================================================
-// FAVORITE HEART BUTTON STYLES
-// =============================================================================
-.favorite-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 40px;
-  height: 40px;
-  background: rgba(24, 22, 22, 0.9);
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 10;
 
-  i {
-    font-size: 1.3rem;
-    color: #999;
-    transition: all 0.3s ease;
-    font-family: 'boxicons' !important;
-  }
-
-  &:hover {
-    transform: scale(1.1);
-    background: rgba(255, 255, 255, 1);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-
-    i {
-      color: #ff6b6b;
-      transform: scale(1.1);
-    }
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-
-  &.favorited {
-    background: rgba(255, 107, 107, 0.1);
-    border: 2px solid rgba(255, 107, 107, 0.3);
-
-    i {
-      color: #ff6b6b;
-      animation: heartBeat 0.6s ease-in-out;
-    }
-
-    &:hover {
-      background: rgba(255, 107, 107, 0.15);
-      border-color: rgba(255, 107, 107, 0.5);
-      
-      i {
-        color: #e55555;
-      }
-    }
-  }
+@keyframes heartPulse {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.25); }
+  50% { transform: scale(1.1); }
+  70% { transform: scale(1.22); }
+  100% { transform: scale(1); }
 }
 
-// Heart beat animation for when favorited
-@keyframes heartBeat {
-  0% {
-    transform: scale(1);
   }
-  20% {
-    transform: scale(1.3);
-  }
-  40% {
-    transform: scale(1.1);
-  }
-  60% {
-    transform: scale(1.25);
-  }
-  80% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-// Mobile responsive adjustments for heart button
-@media (max-width: 768px) {
-  .favorite-btn {
-    width: 35px;
-    height: 35px;
-    top: 8px;
-    right: 8px;
-
-    i {
-      font-size: 1.1rem;
-    }
-  }
-}
-}
 }

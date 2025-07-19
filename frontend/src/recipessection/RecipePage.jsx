@@ -499,17 +499,16 @@ const RecipePage = () => {
                                                 src={getImageUrl(recipe)} 
                                                 alt={recipe.title || recipe.name}
                                                 onError={(e) => {
-                                                    // Fallback to placeholder if image fails to load
                                                     e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
                                                 }}
                                             />
-                                            {/* Heart icon for favorites */}
                                             <button
-                                                className={`favorite-btn ${favoriteRecipes.includes(recipe._id) ? 'favorited' : ''}`}
-                                                onClick={(e) => handleFavoriteToggle(recipe._id, e)}
-                                                aria-label={favoriteRecipes.includes(recipe._id) ? 'Remove from favorites' : 'Add to favorites'}
+                                                className={`favorite-btn${favoriteRecipes.includes(recipe._id) ? ' favorited' : ''}`}
+                                                onClick={e => handleFavoriteToggle(recipe._id, e)}
+                                                aria-label={favoriteRecipes.includes(recipe._id) ? "Unfavorite" : "Favorite"}
+                                                tabIndex={0}
                                             >
-                                                <i className={`bx ${favoriteRecipes.includes(recipe._id) ? 'bxs-heart' : 'bx-heart'}`}></i>
+                                                <i className={favoriteRecipes.includes(recipe._id) ? "bx bxs-heart" : "bx bx-heart"}></i>
                                             </button>
                                         </div>
                                         <div className="recipe-content">
