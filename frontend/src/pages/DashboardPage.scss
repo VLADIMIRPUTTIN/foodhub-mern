@@ -11,6 +11,7 @@ $transition: all 0.3s ease;
     background-color: $background-light;
     font-family: 'Helvetica', sans-serif;
     padding-bottom: 80px; // Space for mobile navbar
+    
 
     // Hero Section
     .hero-section {
@@ -418,6 +419,7 @@ $transition: all 0.3s ease;
                 align-items: center;      // <-- ito ang palitan mo, dati flex-start
                 justify-content: center;  // <-- ito ang palitan mo, dati flex-start
                 z-index: 1;
+                margin-top: -4.6rem;
 
                 .hero-text {
                     width: 100%;

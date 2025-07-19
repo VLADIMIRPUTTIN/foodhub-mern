@@ -5,9 +5,11 @@ import FoodHubFull from '../../public/Img/FoodHub-Full.png';
 import './NavbarPage.scss';
 import ProtectedCreateButton from '../components/ProtectedCreateButton';
 import { Share2 } from "lucide-react";
+import SideNavbar from '../components/SideNavbar';
 
 const Navbar = () => {
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+    const [isSideNavOpen, setIsSideNavOpen] = useState(false);
     const { user, logout } = useAuthStore();
     const navigate = useNavigate();
 
@@ -46,6 +48,9 @@ const Navbar = () => {
         return user.profileImage || DEFAULT_PROFILE_IMAGE;
     };
 
+    const openSideNav = () => setIsSideNavOpen(true);
+    const closeSideNav = () => setIsSideNavOpen(false);
+
     return (
         <>
             {/* Desktop Navbar */}
@@ -79,13 +84,13 @@ const Navbar = () => {
                 <div className="profile-section">
                     {user ? (
                         <>
-                            <div className="create-recipe">
+                            {/* Create Recipe button only visible on desktop */}
+                            <div className="create-recipe desktop-only">
                                 <Link to="/create-recipe" className="create-link">
                                     <i className="bx bx-plus icon"></i>
                                     <span className="text">Create Recipe</span>
                                 </Link>
                             </div>
-                            
                             <div className="profile-container">
                                 <div className="profile-image" onClick={handleProfileImageClick} style={{ cursor: 'pointer' }}>
                                     <img src={getProfileImageUrl()} alt="User Profile" />
@@ -132,59 +137,53 @@ const Navbar = () => {
                         </>
                     ) : (
                         <>
-                            <div className="create-recipe">
+                            <div className="create-recipe desktop-only">
                                 <ProtectedCreateButton className="create-link">
                                     <i className="bx bx-plus icon"></i>
                                     <span className="text">Create Recipe</span>
                                 </ProtectedCreateButton>
                             </div>
-                            
                         </>
                     )}
                 </div>
             </div>
 
-            {/* Mobile Bottom Navbar */}
-            <div className="bottom-navbar">
-                <Link to="/dashboard" className="nav-item">
-                    <i className="bx bx-home icon"></i>
-                    <span className="text">Home</span>
-                </Link>
-                <Link to="/recipes" className="nav-item">
-                    <i className="bx bx-book icon"></i>
-                    <span className="text">Recipes</span>
-                </Link>
-                {/* Only show Shared Recipes in mobile if user is logged in */}
-                {user && (
-                    <Link to="/shared-recipes" className="nav-item">
-                        <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}>
-                            <Share2 size={20} style={{ verticalAlign: "middle" }} />
-                        </span>
-                        <span className="text">Shared</span>
-                    </Link>
-                )}
-                {/* Show Create Recipe button for all users, but redirect to login if not authenticated */}
-                <ProtectedCreateButton 
-                    className={`create-recipe-btn${!user ? ' logged-out' : ''}`}
+            {/* Mobile SideNavbar Menu Button (top left) */}
+            {!isSideNavOpen && (
+                <button 
+                    className="side-nav-toggle mobile-only"
+                    onClick={openSideNav}
+                    aria-label="Open menu"
                 >
-                    <i className="bx bx-plus icon"></i>
-                </ProtectedCreateButton>
-                
-                {user ? (
-                    <div className="nav-item" onClick={handleProfileImageClick} style={{ cursor: 'pointer' }}>
-                        <div className="profile-image">
-                            <img src={getProfileImageUrl()} alt="Profile" />
-                        </div>
-                        <span className="text">Profile</span>
-                    </div>
-                ) : null}
-            </div>
+                    <i 
+                        className="bx bx-menu icon"
+                    ></i>
+                </button>
+            )}
 
-            {/* Click outside handler for mobile */}
-            {isProfileMenuOpen && (
+            {/* Mobile Side Navbar */}
+            <SideNavbar 
+                open={isSideNavOpen}
+                onClose={closeSideNav}
+                user={user}
+                getProfileImageUrl={getProfileImageUrl}
+                handleProfileImageClick={handleProfileImageClick}
+            />
+
+            {/* Overlay for SideNavbar */}
+            {isSideNavOpen && (
                 <div 
                     className="overlay-mobile" 
-                    onClick={closeProfileMenu}
+                    onClick={closeSideNav}
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        background: "rgba(0,0,0,0.2)",
+                        zIndex: 1999
+                    }}
                 />
             )}
         </>

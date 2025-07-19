@@ -331,7 +331,7 @@ const RecipePage = () => {
                                 )}
                             </SheetTrigger>
                             <SheetContent
-                                side="left"
+                                side={isMobile ? "bottom" : "left"} // Show from bottom on mobile, left on desktop
                                 className={
                                     `ingredients-sheet-content` +
                                     (sheetAnimate && !sheetOut ? ' sheet-animate-in' : '') +

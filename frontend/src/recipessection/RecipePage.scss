@@ -550,9 +550,10 @@ i[class*=" bx-"] {
 
   // Move header background higher and adjust positioning
   .recipe-header-bg {
-    height: 120px; // Slightly reduced height for mobile
+    position: relative;
+    height: 110px; // Slightly reduced height for mobile
     margin-bottom: 1rem; // Reduced margin
-    margin-top: -1.5rem; // Remove any top margin
+    margin-top: -100px;
     
     .header-bg-text {
       margin-left: 0 !important; // Remove the negative margin on mobile
@@ -670,59 +671,72 @@ i[class*=" bx-"] {
   .main-content {
     padding-bottom: 6rem;
   }
+
+  // Sheet content styles
+  .ingredients-sheet-content {
+    border-radius: 24px 24px 0 0 !important; // Rounded top corners only
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100vw !important;
+    height: 60vh !important;
+    max-height: 80vh !important;
+    position: fixed !important;
+    box-shadow: 0 -8px 32px rgba(207, 153, 108, 0.12);
+
+    // Animate upwards instead of from the side
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &.sheet-animate-in {
+      transform: translateY(0);
+    }
+    &.sheet-animate-out {
+      transform: translateY(100%);
+    }
+  }
 }
 
 // =============================================================================
 // MOBILE SHEET BUTTON STYLES (FAB)
 // =============================================================================
 .ingredients-fab-btn {
-  position: fixed;
-  bottom: 2rem;
-  left: 1.5rem;
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, #e7b57a 0%, #CF996C 100%);
+  position: absolute;
+  background-color: #ffffff;
   border: none;
   border-radius: 50%;
-  color: white;
-  font-size: 1.8rem;
+  width: 42px;
+  height: 42px;
+  box-shadow: 0 2px 8px rgba(207,153,108,0.18);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 
-    0 8px 25px rgba(207, 153, 108, 0.4),
-    0 4px 15px rgba(226, 106, 0, 0.3);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 1000;
-  
-  &:hover {
-    transform: translateY(-2px) scale(1.05);
-    box-shadow: 
-      0 12px 35px rgba(207, 153, 108, 0.5),
-      0 6px 20px rgba(226, 106, 0, 0.4);
-  }
-  
+  margin-top: 1.2rem;
+  margin-right: 5px;
+
   &:active {
     transform: translateY(0) scale(0.98);
   }
-  
+
   i {
     font-family: 'boxicons' !important;
     transition: transform 0.3s ease;
+    font-size: 1.4rem;
+    color: #CF996C;
   }
-  
-  &.close-btn {
-    background: linear-gradient(135deg, #e8a94a 0%);
-    margin-left: 14.5rem;
-    
-    &.rotating i {
-      transform: rotate(90deg);
-    }
-    
-    &:hover {
-      background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
-    }
+}
+
+// For mobile, you can adjust size and position if needed:
+@media (max-width: 768px) {
+  .ingredients-fab-btn {
+    z-index: 10;
+    top: 0.8rem;
+    right: 1.5rem;
+    width: 38px;
+    height: 38px;
+    font-size: 1.1rem;
   }
 }
 
@@ -746,6 +760,17 @@ i[class*=" bx-"] {
   
   &.sheet-animate-out {
     transform: translateX(-100%);
+  }
+  
+  // Remove or override horizontal animation for mobile
+  @media (max-width: 768px) {
+    transform: translateY(100%);
+    &.sheet-animate-in {
+      transform: translateY(0);
+    }
+    &.sheet-animate-out {
+      transform: translateY(100%);
+    }
   }
   
   .sidebar-header {
@@ -854,13 +879,7 @@ i[class*=" bx-"] {
   }
   
   // Mobile FAB adjustments
-  .ingredients-fab-btn {
-    width: 40px;
-    height: 40px;
-    font-size: 1.6rem;
-    bottom: 54rem;
-    left: 1.5rem;
-  }
+  
   
   // Mobile sheet content adjustments
   .ingredients-sheet-content {
@@ -1079,18 +1098,7 @@ i[class*=" bx-"] {
   // Responsive: mas compact sa mobile
   @media (max-width: 768px) {
     padding: 1rem 0.5rem;
-    margin: 0.2rem 0 0.7rem 0;
-    transform: translateY(-20px);
-  }
-
-  .no-recipes-animation {
-    position: relative;
-    margin-bottom: 2.5rem; // Increased spacing 
-    
-    .chef-hat {
-      position: relative;
-      display: inline-block;
-      
+    margin: 0.2rem 0 0
       i {
         font-size: 6rem; // Increased icon size
         color: #CF996C;
@@ -1203,7 +1211,7 @@ i[class*=" bx-"] {
       }
     }
   }
-}
+
 
 // Mobile adjustments for no recipes state
 @media (max-width: 768px) {
@@ -1386,8 +1394,6 @@ i[class*=" bx-"] {
         color: #666;
         font-weight: 700;
       }
-    }
-  }
 }
 
 // Mobile pagination adjustments
@@ -1500,4 +1506,6 @@ i[class*=" bx-"] {
       font-size: 1.1rem;
     }
   }
+}
+}
 }

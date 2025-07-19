@@ -1,0 +1,110 @@
+@keyframes rotateMenu {
+    0% { transform: rotate(0deg);}
+    100% { transform: rotate(360deg);}
+}
+
+.side-navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 70vw;
+    max-width: 320px;
+    background: #fff;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.08);
+    z-index: 2000;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 1rem;
+    gap: 1rem;
+
+    &.open {
+        transform: translateX(0);
+    }
+
+    .close-btn {
+        align-self: flex-end;
+        background: none;
+        border: none;
+        font-size: 2rem;
+        cursor: pointer;
+        margin-bottom: 1rem;
+    }
+
+    .side-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.1rem;
+        color: #222;
+        text-decoration: none;
+        padding: 0.75rem 0;
+        border-radius: 8px;
+        transition: background 0.2s;
+        &:hover {
+            background: #f3f3f3;
+        }
+    }
+
+    .profile-link {
+        margin-top: auto;
+        .profile-image img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+    }
+}
+
+.side-nav-toggle {
+    position: relative;
+    z-index: 10;
+    background: linear-gradient(#ffffff 100%);
+    border-radius: 50%;
+    box-shadow: 0 4px 16px rgba(239, 239, 239, 0.18);
+    width: 41px;
+    height: 41px;
+    margin-left: 1.5rem;
+    margin-top: 2rem;
+
+    transition: 
+        box-shadow 0.2s cubic-bezier(.4,0,.2,1),
+        transform 0.18s cubic-bezier(.4,0,.2,1),
+        background 0.2s cubic-bezier(.4,0,.2,1);
+
+    &:hover {
+        background: linear-gradient(135deg, #ffe1b8 0%, #fff 100%);
+        box-shadow: 0 8px 32px rgba(207, 153, 108, 0.28);
+        transform: scale(1.08) translateY(-2px);
+    }
+
+    &:active {
+        background: linear-gradient(135deg, #ffe1b8 0%, #fff 100%);
+        box-shadow: 0 2px 8px rgba(207, 153, 108, 0.12);
+        transform: scale(0.96);
+    }
+
+    .icon {
+        font-size: 2rem;
+        color: #CF996C;
+        transition: color 0.2s, transform 0.2s;
+        animation: none;
+        margin-top: 2px;
+    }
+
+    &:hover .icon {
+        color: #bb8860;
+        transform: scale(1.12) rotate(-8deg);
+    }
+}
+
+// Only show on mobile
+@media (min-width: 768px) {
+    .side-navbar, .bottom-navbar.mobile-only {
+        display: none !important;
+    }
+
+    
+}
