@@ -225,7 +225,7 @@
 // Responsive grid for mobile
 @media (max-width: 600px) {
   .shared-recipes-page {
-    margin-top: -4.6rem; // Adjust for mobile navbar
+    margin-top: 0rem; // Adjust for mobile navbar
     padding: 1.2rem 0 2rem 0;
     padding-bottom: 110px; // <-- Add this line for extra space above the navbar
     h2 { font-size: 1.3rem; }

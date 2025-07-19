@@ -37,6 +37,7 @@
 }
 
 .user-profile-page {
+    margin-top: -2rem;
     min-height: 100vh;
     background: #CF996C;
     font-family: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
@@ -80,6 +81,7 @@
 // Ultra Compact Profile Hero Section
 .profile-hero {
     margin-bottom: 1rem;
+    margin-top: 7rem;
 
     .hero-background {
         background: linear-gradient(135deg, var(--bg-primary), rgba(255,255,255,0.9));

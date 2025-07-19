@@ -26,53 +26,141 @@
 
     .close-btn {
         align-self: flex-end;
-        background: none;
+        background: linear-gradient(135deg, #CF996C 0%, #BB8860 100%);
         border: none;
-        font-size: 2rem;
+        font-size: 2.1rem;
         cursor: pointer;
         margin-bottom: 1rem;
+        padding: 0.5rem 0.8rem;
+        border-radius: 50%;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(207, 153, 108, 0.12);
+        transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+
+        &:hover {
+            background: linear-gradient(135deg, #BB8860 0%, #CF996C 100%);
+            box-shadow: 0 4px 16px rgba(207, 153, 108, 0.18);
+            transform: scale(1.08);
+        }
+
+        i {
+            color: #fff;
+        }
     }
 
     .side-nav-item {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        font-size: 1.1rem;
-        color: #222;
+        gap: 0.85rem;
+        font-size: 1.13rem;
+        color: #3a2c1a;
         text-decoration: none;
-        padding: 0.75rem 0;
-        border-radius: 8px;
-        transition: background 0.2s;
+        padding: 0.85rem 0.75rem;
+        border-radius: 12px;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+
+        .icon {
+            font-size: 1.35rem;
+            color: #CF996C;
+            transition: color 0.2s;
+        }
+
+        &:hover, &:focus {
+            background: #f7e3c4;
+            color: #bb8860;
+            box-shadow: 0 2px 8px rgba(207,153,108,0.08);
+
+            .icon {
+                color: #bb8860;
+            }
+        }
+    }
+
+    .create-link {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: linear-gradient(135deg, #CF996C 0%, #BB8860 100%);
+        color: #fff;
+        padding: 0.7rem 1.2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(207, 153, 108, 0.15);
+        transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+
+        .icon {
+            font-size: 1.2rem;
+            margin-right: 8px;
+            color: #fff;
+            transition: transform 0.3s;
+        }
+
         &:hover {
-            background: #f3f3f3;
+            background: linear-gradient(135deg, #BB8860 0%, #CF996C 100%);
+            box-shadow: 0 8px 20px rgba(207, 153, 108, 0.25);
+            transform: translateY(-2px);
+        }
+
+        &:hover .icon {
+            transform: rotate(8deg) scale(1.1);
         }
     }
 
     .profile-link {
         margin-top: auto;
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        padding: 0.7rem 0.75rem;
+        border-radius: 12px;
+        cursor: pointer;
+        background: #f7e3c4;
+        transition: background 0.18s, box-shadow 0.18s;
+
         .profile-image img {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
+            border: 2px solid #CF996C;
+            box-shadow: 0 2px 8px rgba(207,153,108,0.10);
+        }
+
+        .text {
+            font-weight: 500;
+            color: #bb8860;
+        }
+
+        &:hover {
+            background: #ffe1b8;
+            box-shadow: 0 2px 8px rgba(207,153,108,0.12);
         }
     }
 }
 
 .side-nav-toggle {
-    position: relative;
-    z-index: 10;
+    position: fixed;
+    top: 2rem;         // Add more space from the top
+    left: 1.5rem;
+    z-index: 2100;
     background: linear-gradient(#ffffff 100%);
     border-radius: 50%;
     box-shadow: 0 4px 16px rgba(239, 239, 239, 0.18);
     width: 41px;
     height: 41px;
-    margin-left: 1.5rem;
-    margin-top: 2rem;
-
     transition: 
         box-shadow 0.2s cubic-bezier(.4,0,.2,1),
         transform 0.18s cubic-bezier(.4,0,.2,1),
         background 0.2s cubic-bezier(.4,0,.2,1);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     &:hover {
         background: linear-gradient(135deg, #ffe1b8 0%, #fff 100%);
@@ -97,6 +185,16 @@
     &:hover .icon {
         color: #bb8860;
         transform: scale(1.12) rotate(-8deg);
+    }
+}
+
+// Responsive adjustment for mobile
+@media (max-width: 768px) {
+    .side-nav-toggle {
+        top: 2rem;    // Slightly lower on mobile
+        left: 1.7rem;
+        width: 38px;
+        height: 38px;
     }
 }
 
