@@ -12,9 +12,9 @@ const SharedRecipePage = () => {
         const baseURL = import.meta.env.MODE === "development"
             ? "http://localhost:5000"
             : "";
-        fetch(`${baseURL}/api/recipes/shared`, {
-            credentials: "include",
-        })
+        
+        // Remove credentials requirement to allow unauthenticated access
+        fetch(`${baseURL}/api/recipes/shared`)
             .then(res => res.json())
             .then(data => {
                 // Make sure to populate createdBy in your backend for this to work!
@@ -27,7 +27,11 @@ const SharedRecipePage = () => {
                 }
                 setLoading(false);
             })
-            .catch(() => setLoading(false));
+            .catch((error) => {
+                console.error('Error fetching shared recipes:', error);
+                setRecipes([]);
+                setLoading(false);
+            });
     }, []);
 
     const getImageUrl = (recipe) => {

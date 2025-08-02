@@ -13,11 +13,14 @@ router.get("/admin/all", verifyToken, getAllRecipesForAdmin); // All recipes for
 router.get("/user", verifyToken, getRecipesByUser);
 router.get("/shared", async (req, res) => {
     try {
+        // Remove authentication requirement - allow public access to shared recipes
         // Populate createdBy so frontend can display user info
         const recipes = await Recipe.find({ isShared: true })
-            .populate('createdBy', 'name email');
-        res.json({ recipes });
+            .populate('createdBy', 'name email')
+            .sort({ createdAt: -1 }); // Sort by newest first
+        res.json({ success: true, recipes });
     } catch (error) {
+        console.error('Error fetching shared recipes:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });

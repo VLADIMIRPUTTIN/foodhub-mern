@@ -70,15 +70,13 @@ const Navbar = () => {
                         <i className="bx bx-book icon"></i>
                         <span className="text">Recipes</span>
                     </Link>
-                    {/* Only show Shared Recipes if user is logged in */}
-                    {user && (
-                        <Link to="/shared-recipes" className="nav-link">
-                            <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}>
-                                <Share2 size={20} style={{ verticalAlign: "middle" }} />
-                            </span>
-                            <span className="text">Shared Recipes</span>
-                        </Link>
-                    )}
+                    {/* Show Shared Recipes to all users, not just authenticated ones */}
+                    <Link to="/shared-recipes" className="nav-link">
+                        <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}>
+                            <Share2 size={20} style={{ verticalAlign: "middle" }} />
+                        </span>
+                        <span className="text">Shared Recipes</span>
+                    </Link>
                 </div>
 
                 <div className="profile-section">
