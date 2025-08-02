@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import './AdminDashboard.scss';
 import CreateRecipe from './CreateRecipe';
 import CreateIngredient from './CreateIngredient';
+import PendingRecipePage from './PendingRecipePage'; // Add this import
 import axios from "axios";
 import Swal from 'sweetalert2';
 import ManageUsersPage from './ManageUsersPage';
@@ -19,6 +20,7 @@ const AdminDashboard = () => {
     const [users, setUsers] = useState([]);
     const [recipes, setRecipes] = useState([]);
     const [ingredients, setIngredients] = useState([]);
+    const [pendingCount, setPendingCount] = useState(0); // Add this state
     const [stats, setStats] = useState({
         totalUsers: 0,
         totalRecipes: 0,
@@ -45,6 +47,21 @@ const AdminDashboard = () => {
             updateStats(users, []);
         }
     };
+
+    // Add function to fetch pending recipes count
+    const fetchPendingCount = async () => {
+        try {
+            const res = await axios.get(`${baseURL}/api/recipes/admin/pending`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            setPendingCount(res.data.recipes.length);
+        } catch {
+            setPendingCount(0);
+        }
+    };
+
     const fetchIngredients = async () => {
         try {
             const res = await axios.get(`${baseURL}/api/ingredients`);
@@ -73,6 +90,7 @@ const AdminDashboard = () => {
             await fetchUsers();
             await fetchRecipes();
             await fetchIngredients();
+            await fetchPendingCount(); // Add this
             updateStats();
         };
         
@@ -281,7 +299,7 @@ const AdminDashboard = () => {
         setStats({
             totalUsers: usersList.length,
             totalRecipes: recipesList.length,
-            pendingReviews: 5, // Replace with real logic if you have review status
+            pendingReviews: pendingCount, // Use the actual pending count
             todayLogins: usersList.filter(u => {
                 if (!u.lastLogin) return false;
                 const today = new Date();
@@ -294,6 +312,11 @@ const AdminDashboard = () => {
             }).length
         });
     };
+
+    // Update stats whenever pendingCount changes
+    useEffect(() => {
+        updateStats();
+    }, [pendingCount]);
 
     if (!isAdmin()) {
         return (
@@ -408,6 +431,17 @@ const AdminDashboard = () => {
                         <i className="fas fa-book-open"></i>
                         Manage Recipes & Ingredients
                     </button>
+                    {/* Add the new Pending Recipes tab */}
+                    <button 
+                        className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('pending')}
+                    >
+                        <i className="fas fa-clock"></i>
+                        Pending Recipes
+                        {pendingCount > 0 && (
+                            <span className="notification-badge">{pendingCount}</span>
+                        )}
+                    </button>
                     <button 
                         className={`tab-btn ${activeTab === 'create' ? 'active' : ''}`}
                         onClick={() => setActiveTab('create')}
@@ -482,6 +516,12 @@ const AdminDashboard = () => {
                             handleDeleteRecipe={handleDeleteRecipe}
                             handleEditIngredient={handleEditIngredient}
                             handleDeleteIngredient={handleDeleteIngredient}
+                        />
+                    )}
+
+                    {activeTab === 'pending' && (
+                        <PendingRecipePage 
+                            onRecipeModerated={fetchPendingCount} // Refresh count after moderation
                         />
                     )}
 

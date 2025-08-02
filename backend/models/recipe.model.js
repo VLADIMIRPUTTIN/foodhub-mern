@@ -12,7 +12,14 @@ const recipeSchema = new mongoose.Schema({
     imageUrl: { type: String },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     isPublic: { type: Boolean, default: false },
-    isShared: { type: Boolean, default: false }
+    isShared: { type: Boolean, default: false },
+    // Add new field for moderation
+    shareStatus: { 
+        type: String, 
+        enum: ['not_shared', 'pending', 'approved', 'rejected'], 
+        default: 'not_shared' 
+    },
+    rejectionReason: { type: String }
 }, { timestamps: true });
 
 export const Recipe = mongoose.model("Recipe", recipeSchema);

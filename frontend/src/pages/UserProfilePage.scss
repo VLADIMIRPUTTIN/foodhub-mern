@@ -666,8 +666,6 @@
     }
 
     .recipe-image {
-        height: 120px; // Different height from RecipePage
-        overflow: hidden;
         position: relative;
 
         img {
@@ -695,10 +693,38 @@
                 font-size: 1.125rem;
             }
         }
-    }
 
-    &:hover .recipe-image img {
-        transform: scale(1.05);
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 0.5rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            z-index: 2;
+            
+            &.pending {
+                background: #ffc107;
+                color: #000;
+            }
+            
+            &.approved {
+                background: #28a745;
+            }
+            
+            &.rejected {
+                background: #dc3545;
+            }
+            
+            i {
+                font-size: 0.9rem;
+            }
+        }
     }
 
     .recipe-info {
@@ -775,6 +801,24 @@
 
             i {
                 font-size: 0.75rem;
+            }
+        }
+
+        .rejection-reason {
+            background: #fee;
+            border: 1px solid #fcc;
+            border-radius: 6px;
+            padding: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #d33;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            
+            i {
+                flex-shrink: 0;
+                margin-top: 0.1rem;
             }
         }
     }
@@ -1391,6 +1435,15 @@ html {
     justify-content: center;
     &:hover {
         background: #a67a5a;
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        
+        &:hover {
+            transform: none;
+        }
     }
 }
 

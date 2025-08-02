@@ -149,6 +149,24 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    position: relative; // Add this for notification badge positioning
+
+    // Add notification badge styles
+    .notification-badge {
+        background: #ff4444;
+        color: white;
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 0.2rem 0.5rem;
+        border-radius: 10px;
+        min-width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 0.25rem;
+        animation: pulse 2s infinite;
+    }
 
     &:hover {
         color: white;
@@ -159,6 +177,19 @@
         color: white;
         background: rgba(255, 255, 255, 0.2);
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+}
+
+// Add pulse animation for notification badge
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
     }
 }
 

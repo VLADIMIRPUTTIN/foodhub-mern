@@ -52,7 +52,7 @@ const SharedRecipePage = () => {
         <>
             <Navbar />
             <div className="shared-recipes-page">
-                <h2>Shared Recipes</h2>
+                <h2>Community Recipes</h2>
                 {loading ? (
                     <p>Loading...</p>
                 ) : recipes.length === 0 ? (

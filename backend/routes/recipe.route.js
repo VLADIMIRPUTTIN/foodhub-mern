@@ -1,5 +1,5 @@
 import express from "express";
-import { createRecipe, getAllRecipes, updateRecipe, getRecipesByUser, uploadMiddleware, getAllRecipesForAdmin } from "../controllers/recipe.controller.js";
+import { createRecipe, getAllRecipes, updateRecipe, getRecipesByUser, uploadMiddleware, getAllRecipesForAdmin, getPendingRecipes, moderateRecipe } from "../controllers/recipe.controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { Recipe } from "../models/recipe.model.js";
 import { User } from "../models/user.model.js";
@@ -11,19 +11,45 @@ router.post("/", verifyToken, uploadMiddleware, createRecipe);
 router.get("/", getAllRecipes); // Only public recipes (admin-created)
 router.get("/admin/all", verifyToken, getAllRecipesForAdmin); // All recipes for admin dashboard
 router.get("/user", verifyToken, getRecipesByUser);
+router.get("/admin/pending", verifyToken, getPendingRecipes);
+router.patch("/:id/moderate", verifyToken, moderateRecipe);
+
+// Update the shared recipes route to only show approved recipes
 router.get("/shared", async (req, res) => {
     try {
-        // Remove authentication requirement - allow public access to shared recipes
-        // Populate createdBy so frontend can display user info
-        const recipes = await Recipe.find({ isShared: true })
+        const recipes = await Recipe.find({ 
+            shareStatus: 'approved',
+            isShared: true 
+        })
             .populate('createdBy', 'name email')
-            .sort({ createdAt: -1 }); // Sort by newest first
+            .sort({ createdAt: -1 });
         res.json({ success: true, recipes });
     } catch (error) {
         console.error('Error fetching shared recipes:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
+
+// Update the share recipe route to set status as pending
+router.post("/:id/share", verifyToken, async (req, res) => {
+    try {
+        const recipe = await Recipe.findByIdAndUpdate(
+            req.params.id,
+            { 
+                shareStatus: 'pending',
+                isShared: false // Will be set to true after approval
+            },
+            { new: true }
+        );
+        if (!recipe) {
+            return res.status(404).json({ success: false, message: "Recipe not found" });
+        }
+        res.json({ success: true, recipe, message: "Recipe submitted for review" });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 router.get("/:id", async (req, res) => {
     try {
         const recipe = await Recipe.findById(req.params.id).populate('createdBy', 'name email');
@@ -83,21 +109,6 @@ router.delete("/:id", verifyToken, async (req, res) => {
             message: "Server error while deleting recipe",
             error: error.message 
         });
-    }
-});
-router.post("/:id/share", verifyToken, async (req, res) => {
-    try {
-        const recipe = await Recipe.findByIdAndUpdate(
-            req.params.id,
-            { isShared: true },
-            { new: true }
-        );
-        if (!recipe) {
-            return res.status(404).json({ success: false, message: "Recipe not found" });
-        }
-        res.json({ success: true, recipe });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
     }
 });
 

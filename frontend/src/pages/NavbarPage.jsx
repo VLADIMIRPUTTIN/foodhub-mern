@@ -75,7 +75,7 @@ const Navbar = () => {
                         <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}>
                             <Share2 size={20} style={{ verticalAlign: "middle" }} />
                         </span>
-                        <span className="text">Shared Recipes</span>
+                        <span className="text">Community Recipes</span>
                     </Link>
                 </div>
 

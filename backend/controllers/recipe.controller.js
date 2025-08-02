@@ -169,3 +169,43 @@ export const updateRecipe = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+// Add new function to get pending recipes
+export const getPendingRecipes = async (req, res) => {
+    try {
+        const pendingRecipes = await Recipe.find({ shareStatus: 'pending' })
+            .populate('createdBy', 'name email')
+            .sort({ createdAt: -1 });
+        res.status(200).json({ success: true, recipes: pendingRecipes });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Add function to approve/reject recipes
+export const moderateRecipe = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { action, rejectionReason } = req.body; // action: 'approve' or 'reject'
+        
+        const recipe = await Recipe.findById(id);
+        if (!recipe) {
+            return res.status(404).json({ success: false, message: "Recipe not found" });
+        }
+
+        if (action === 'approve') {
+            recipe.shareStatus = 'approved';
+            recipe.isShared = true;
+            recipe.rejectionReason = undefined;
+        } else if (action === 'reject') {
+            recipe.shareStatus = 'rejected';
+            recipe.isShared = false;
+            recipe.rejectionReason = rejectionReason || 'No reason provided';
+        }
+
+        await recipe.save();
+        res.json({ success: true, recipe });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

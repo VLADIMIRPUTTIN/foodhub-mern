@@ -9,6 +9,7 @@ import EditRecipePage from '../recipessection/EditRecipePage';
 import { Share2, Trash2 } from "lucide-react"; // Add Trash2 icon
 import { toast } from "react-hot-toast";
 import ConfirmDialog from "../components/ConfirmDialog";
+import Swal from 'sweetalert2';
 
 const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/WvG991xq/profile-default.png";
 
@@ -216,44 +217,72 @@ const UserProfilePage = () => {
 
     const handleShareRecipe = async (recipe, e) => {
         e.stopPropagation();
-        try {
-            const baseURL = import.meta.env.MODE === "development"
-                ? "http://localhost:5000"
-                : "";
-            await fetch(`${baseURL}/api/recipes/${recipe._id}/share`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                credentials: "include",
-            });
-            toast.success("Recipe shared successfully!", {
-                style: {
-                    borderRadius: "8px",
-                    background: "#fff",
-                    color: "#222",
-                    boxShadow: "0 4px 16px rgba(207,153,108,0.15)",
-                    fontWeight: 600,
-                },
-                iconTheme: {
-                    primary: "#10b981",
-                    secondary: "#fff",
-                },
-            });
-            setTimeout(() => navigate("/shared-recipes"), 1200);
-        } catch (error) {
-            toast.error("Failed to share recipe.", {
-                style: {
-                    borderRadius: "8px",
-                    background: "#fff",
-                    color: "#b91c1c",
-                    fontWeight: 600,
-                },
-                iconTheme: {
-                    primary: "#ef4444",
-                    secondary: "#fff",
-                },
-            });
+        
+        const result = await Swal.fire({
+            title: 'Share Recipe?',
+            text: 'Your recipe will be submitted for review before being shared publicly.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#10b981',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, submit for review!'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const baseURL = import.meta.env.MODE === "development"
+                    ? "http://localhost:5000"
+                    : "";
+                
+                const response = await fetch(`${baseURL}/api/recipes/${recipe._id}/share`, {
+                    method: "POST",
+                    credentials: "include",
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    toast.success("Recipe submitted for review!", {
+                        style: {
+                            borderRadius: "8px",
+                            background: "#fff",
+                            color: "#222",
+                            boxShadow: "0 4px 16px rgba(16,185,129,0.15)",
+                            fontWeight: 600,
+                        },
+                        iconTheme: {
+                            primary: "#10b981",
+                            secondary: "#fff",
+                        },
+                    });
+                    
+                    // Update the recipe status locally
+                    setUserRecipes(prev => 
+                        prev.map(r => 
+                            r._id === recipe._id 
+                                ? { ...r, shareStatus: 'pending' } 
+                                : r
+                        )
+                    );
+                } else {
+                    throw new Error(data.message || 'Failed to submit recipe');
+                }
+            } catch (error) {
+                console.error('Error sharing recipe:', error);
+                toast.error("Failed to submit recipe for review. Please try again.", {
+                    style: {
+                        borderRadius: "8px",
+                        background: "#fff",
+                        color: "#222",
+                        boxShadow: "0 4px 16px rgba(239,68,68,0.15)",
+                        fontWeight: 600,
+                    },
+                    iconTheme: {
+                        primary: "#ef4444",
+                        secondary: "#fff",
+                    },
+                });
+            }
         }
     };
 
