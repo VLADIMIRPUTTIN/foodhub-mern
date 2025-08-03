@@ -1,5 +1,15 @@
 import express from "express";
-import { createRecipe, getAllRecipes, updateRecipe, getRecipesByUser, uploadMiddleware, getAllRecipesForAdmin, getPendingRecipes, moderateRecipe } from "../controllers/recipe.controller.js";
+import { 
+    createRecipe, 
+    getAllRecipes, 
+    updateRecipe, 
+    getRecipesByUser, 
+    uploadMiddleware, 
+    getAllRecipesForAdmin, 
+    getPendingRecipes, 
+    moderateRecipe,
+    unshareRecipe // Add this import
+} from "../controllers/recipe.controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { Recipe } from "../models/recipe.model.js";
 import { User } from "../models/user.model.js";
@@ -111,5 +121,8 @@ router.delete("/:id", verifyToken, async (req, res) => {
         });
     }
 });
+
+// Add this route after the existing routes
+router.post("/:id/unshare", verifyToken, unshareRecipe);
 
 export default router;

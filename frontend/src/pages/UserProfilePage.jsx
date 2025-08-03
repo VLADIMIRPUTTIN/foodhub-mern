@@ -286,6 +286,78 @@ const UserProfilePage = () => {
         }
     };
 
+    // New unshare function
+    const handleUnshareRecipe = async (recipe, e) => {
+        e.stopPropagation();
+        
+        const result = await Swal.fire({
+            title: 'Remove from Community?',
+            text: 'This will remove your recipe from the community page. You can share it again later.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, remove it!'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const baseURL = import.meta.env.MODE === "development"
+                    ? "http://localhost:5000"
+                    : "";
+                
+                const response = await fetch(`${baseURL}/api/recipes/${recipe._id}/unshare`, {
+                    method: "POST",
+                    credentials: "include",
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    toast.success("Recipe removed from community!", {
+                        style: {
+                            borderRadius: "8px",
+                            background: "#fff",
+                            color: "#222",
+                            boxShadow: "0 4px 16px rgba(239,68,68,0.15)",
+                            fontWeight: 600,
+                        },
+                        iconTheme: {
+                            primary: "#ef4444",
+                            secondary: "#fff",
+                        },
+                    });
+                    
+                    // Update the recipe status locally
+                    setUserRecipes(prev => 
+                        prev.map(r => 
+                            r._id === recipe._id 
+                                ? { ...r, shareStatus: 'not_shared', isShared: false } 
+                                : r
+                        )
+                    );
+                } else {
+                    throw new Error(data.message || 'Failed to remove recipe from community');
+                }
+            } catch (error) {
+                console.error('Error unsharing recipe:', error);
+                toast.error("Failed to remove recipe from community. Please try again.", {
+                    style: {
+                        borderRadius: "8px",
+                        background: "#fff",
+                        color: "#222",
+                        boxShadow: "0 4px 16px rgba(239,68,68,0.15)",
+                        fontWeight: 600,
+                    },
+                    iconTheme: {
+                        primary: "#ef4444",
+                        secondary: "#fff",
+                    },
+                });
+            }
+        }
+    };
+
     // Delete recipe handler
     const handleDeleteRecipe = (recipe, e) => {
         e.stopPropagation();
@@ -630,14 +702,46 @@ const UserProfilePage = () => {
                                                             >
                                                                 <i className="bx bx-edit"></i>
                                                             </button>
-                                                            <button
-                                                                className="edit-recipe-btn-mini"
-                                                                title="Share Recipe"
-                                                                onClick={e => handleShareRecipe(recipe, e)}
-                                                                style={{ background: "#10b981" }}
-                                                            >
-                                                                <Share2 size={18} />
-                                                            </button>
+                                                            
+                                                            {/* Conditional Share/Unshare button */}
+                                                            {recipe.shareStatus === 'approved' && recipe.isShared ? (
+                                                                <button
+                                                                    className="edit-recipe-btn-mini"
+                                                                    title="Remove from Community"
+                                                                    onClick={e => handleUnshareRecipe(recipe, e)}
+                                                                    style={{ background: "#f59e0b" }}
+                                                                >
+                                                                    <i className="bx bx-share-alt"></i>
+                                                                </button>
+                                                            ) : recipe.shareStatus === 'pending' ? (
+                                                                <button
+                                                                    className="edit-recipe-btn-mini"
+                                                                    title="Pending Review"
+                                                                    disabled
+                                                                    style={{ background: "#6b7280", cursor: "not-allowed" }}
+                                                                >
+                                                                    <i className="bx bx-time"></i>
+                                                                </button>
+                                                            ) : recipe.shareStatus === 'rejected' ? (
+                                                                <button
+                                                                    className="edit-recipe-btn-mini"
+                                                                    title={`Rejected: ${recipe.rejectionReason || 'No reason provided'}`}
+                                                                    onClick={e => handleShareRecipe(recipe, e)}
+                                                                    style={{ background: "#ef4444" }}
+                                                                >
+                                                                    <i className="bx bx-x"></i>
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    className="edit-recipe-btn-mini"
+                                                                    title="Share Recipe"
+                                                                    onClick={e => handleShareRecipe(recipe, e)}
+                                                                    style={{ background: "#10b981" }}
+                                                                >
+                                                                    <Share2 size={18} />
+                                                                </button>
+                                                            )}
+                                                            
                                                             <button
                                                                 className="edit-recipe-btn-mini"
                                                                 title="Delete Recipe"

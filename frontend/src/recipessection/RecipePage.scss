@@ -668,9 +668,7 @@ i[class*=" bx-"] {
     display: block;
   }
 
-  .main-content {
-    padding-bottom: 6rem;
-  }
+  
 
   // Sheet content styles
   .ingredients-sheet-content {
@@ -732,8 +730,8 @@ i[class*=" bx-"] {
 @media (max-width: 768px) {
   .ingredients-fab-btn {
     z-index: 10;
-    top: 0.8rem;
-    right: 1.5rem;
+    top: 0rem;
+    right: 1rem;
     width: 38px;
     height: 38px;
     font-size: 1.1rem;
@@ -1253,7 +1251,7 @@ i[class*=" bx-"] {
 // Mobile adjustments for no recipes state
 @media (max-width: 768px) {
   .no-recipes-enhanced {
-    transform: translateY(-145rem) !important; // Iangat pa sa mobile
+    transform: translateY(-165rem) !important; // Iangat pa sa mobile
 
     .no-recipes-content {
       padding: 0.5rem 0.2rem !important;
@@ -1453,6 +1451,152 @@ i[class*=" bx-"] {
   50% { transform: scale(1.1); }
   70% { transform: scale(1.22); }
   100% { transform: scale(1); }
+}
+
+// =============================================================================
+// MOBILE RESPONSIVE GRID FIXES - COMPLETE OVERHAUL
+// =============================================================================
+@media (max-width: 768px) {
+  // Main page container - prevent over-scrolling
+  .recipe-page {
+    height: 100vh !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+  }
+
+  // Main content - remove all padding/margins that create extra space
+  .main-content {
+    height: calc(100vh - 120px) !important; // Account for navbar height
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 0.5rem !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  // Recipe container - fit content exactly
+  .recipe-container {
+    height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  // Header adjustments - minimal space
+  .recipe-header-bg {
+    height: 100px !important;
+    margin-bottom: 0.5rem !important;
+    margin-top: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .recipe-header {
+    margin-bottom: 0.5rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  // Controls section - minimal space
+  .recipe-controls {
+    margin-bottom: 1rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  // Grid container - CRITICAL: Remove all fixed heights and let it size naturally
+  .recipes-grid-container {
+    flex: 1 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: relative !important;
+  }
+
+  // Grid itself - natural sizing
+  .recipes-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.8rem !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 1rem !important; // Small padding at bottom only
+  }
+
+  // Recipe cards - fixed height but allow grid to size naturally
+  .recipe-card {
+    height: 280px !important;
+    margin-bottom: 0 !important;
+  }
+
+  // No recipes state - prevent it from creating extra space
+  .no-recipes-enhanced {
+    position: relative !important;
+    transform: none !important;
+    margin: 1rem 0 0 0 !important;
+    padding: 1rem !important;
+    height: auto !important;
+    min-height: 200px !important;
+    max-height: none !important;
+    grid-column: 1 / -1 !important;
+  }
+
+  // Remove pagination spacing that might cause issues
+  .pagination-controls {
+    display: none !important;
+  }
+
+  .mobile-pagination-container {
+    display: none !important;
+  }
+
+  // Selected ingredients component - make sure it doesn't add extra space
+  .selected-ingredients {
+    margin-bottom: 0.5rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  // Ingredients sheet adjustments
+  .ingredients-sheet-content {
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+  }
+}
+
+// Additional specific fixes
+.recipes-grid-container {
+  @media (max-width: 768px) {
+    // Force the container to only be as tall as its content
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 0 !important;
+    
+    .recipes-grid {
+      flex: 0 0 auto !important; // Don't grow, don't shrink, size to content
+      width: 100% !important;
+    }
+  }
+}
+
+// Ensure body/html don't interfere (add this if needed)
+@media (max-width: 768px) {
+  body, html {
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+  
+  #root {
+    height: 100% !important;
+  }
 }
   }
 }

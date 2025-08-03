@@ -209,3 +209,31 @@ export const moderateRecipe = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+// Add this new function after the existing functions
+export const unshareRecipe = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const recipe = await Recipe.findById(id);
+
+        if (!recipe) {
+            return res.status(404).json({ success: false, message: "Recipe not found" });
+        }
+
+        // Check if user owns this recipe
+        if (recipe.createdBy.toString() !== req.userId) {
+            return res.status(403).json({ success: false, message: "You can only unshare your own recipes" });
+        }
+
+        // Reset sharing status
+        recipe.shareStatus = 'not_shared';
+        recipe.isShared = false;
+        recipe.rejectionReason = undefined;
+
+        await recipe.save();
+        res.json({ success: true, recipe, message: "Recipe removed from community" });
+    } catch (error) {
+        console.error('Error unsharing recipe:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

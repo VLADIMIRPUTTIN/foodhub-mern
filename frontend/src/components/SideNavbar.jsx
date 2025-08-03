@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Share2 } from "lucide-react";
+import { Share2, Home, BookOpen, Plus, User, X } from "lucide-react";
 import ProtectedCreateButton from './ProtectedCreateButton';
 import './SideNavbar.scss';
 
@@ -12,53 +12,92 @@ const SideNavbar = ({
     handleProfileImageClick
 }) => {
     return (
-        <nav className={`side-navbar${open ? ' open' : ''}`}>
-            <button className="close-btn" onClick={onClose} aria-label="Close menu">
-                <i className="bx bx-x"></i>
-            </button>
-            <Link to="/dashboard" className="side-nav-item" onClick={onClose}>
-                <i className="bx bx-home icon"></i>
-                <span className="text">Home</span>
-            </Link>
-            <Link to="/recipes" className="side-nav-item" onClick={onClose}>
-                <i className="bx bx-book icon"></i>
-                <span className="text">Recipes</span>
-            </Link>
-            {user && (
-                <Link to="/shared-recipes" className="side-nav-item" onClick={onClose}>
-                    <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}>
-                        <Share2 size={20} style={{ verticalAlign: "middle" }} />
-                    </span>
-                    <span className="text">Shared</span>
-                </Link>
-            )}
-            {/* Create Recipe Button */}
-            <div className="side-nav-item">
-                {user ? (
-                    <Link to="/create-recipe" className="create-link" onClick={onClose}>
-                        <i className="bx bx-plus icon"></i>
-                        <span className="text">Create Recipe</span>
-                    </Link>
-                ) : (
-                    <ProtectedCreateButton className="create-link" onClick={onClose}>
-                        <i className="bx bx-plus icon"></i>
-                        <span className="text">Create Recipe</span>
-                    </ProtectedCreateButton>
-                )}
-            </div>
-            {user && (
-                <div 
-                    className="side-nav-item profile-link" 
-                    onClick={(e) => { handleProfileImageClick(e); onClose(); }}
-                    style={{ cursor: 'pointer' }}
-                >
-                    <div className="profile-image">
-                        <img src={getProfileImageUrl()} alt="Profile" />
+        <>
+            {/* Backdrop overlay */}
+            {open && <div className="sidebar-backdrop" onClick={onClose} />}
+            
+            <nav className={`side-navbar${open ? ' open' : ''}`}>
+                {/* Header Section */}
+                <div className="sidebar-header">
+                    <div className="brand-section">
+                        <div className="brand-icon">
+                            <i className="bx bx-restaurant"></i>
+                        </div>
+                        <h2 className="brand-title">FoodHub</h2>
                     </div>
-                    <span className="text">Profile</span>
+                    <button className="close-btn" onClick={onClose} aria-label="Close menu">
+                        <X size={20} />
+                    </button>
                 </div>
-            )}
-        </nav>
+
+                {/* Navigation Section */}
+                <div className="nav-section">
+                    <div className="nav-group">
+                        <span className="nav-group-label">Navigate</span>
+                        
+                        <Link to="/dashboard" className="nav-item" onClick={onClose}>
+                            <div className="nav-item-content">
+                                <Home size={20} className="nav-icon" />
+                                <span className="nav-text">Dashboard</span>
+                            </div>
+                        </Link>
+
+                        <Link to="/recipes" className="nav-item" onClick={onClose}>
+                            <div className="nav-item-content">
+                                <BookOpen size={20} className="nav-icon" />
+                                <span className="nav-text">Recipes</span>
+                            </div>
+                        </Link>
+
+                        <Link to="/shared-recipes" className="nav-item" onClick={onClose}>
+                            <div className="nav-item-content">
+                                <Share2 size={20} className="nav-icon" />
+                                <span className="nav-text">Community</span>
+                            </div>
+                        </Link>
+                    </div>
+
+                    {/* Create Section */}
+                    <div className="nav-group">
+                        <span className="nav-group-label">Create</span>
+                        
+                        <div className="create-recipe-wrapper">
+                            {user ? (
+                                <Link to="/create-recipe" className="create-recipe-btn" onClick={onClose}>
+                                    <Plus size={18} className="create-icon" />
+                                    <span>New Recipe</span>
+                                </Link>
+                            ) : (
+                                <ProtectedCreateButton className="create-recipe-btn" onClick={onClose}>
+                                    <Plus size={18} className="create-icon" />
+                                    <span>New Recipe</span>
+                                </ProtectedCreateButton>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Profile Section - Bottom */}
+                {user && (
+                    <div className="profile-section">
+                        <div 
+                            className="profile-card" 
+                            onClick={(e) => { handleProfileImageClick(e); onClose(); }}
+                        >
+                            <div className="profile-avatar">
+                                <img src={getProfileImageUrl()} alt="Profile" />
+                                <div className="profile-status"></div>
+                            </div>
+                            <div className="profile-info">
+                                <span className="profile-name">Profile</span>
+                                <span className="profile-email">View & Edit</span>
+                            </div>
+                            <User size={16} className="profile-arrow" />
+                        </div>
+                    </div>
+                )}
+            </nav>
+        </>
     );
 };
 

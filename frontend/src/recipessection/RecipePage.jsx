@@ -38,6 +38,24 @@ const RecipePage = () => {
     
     const sidebarRef = useRef(null);
 
+    // Add ref for the recipe container to scroll to top
+    const recipeContainerRef = useRef(null);
+
+    // Function to scroll to top of recipe container
+    const scrollToTop = () => {
+        if (recipeContainerRef.current) {
+            recipeContainerRef.current.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+        // Fallback: scroll the main window if container scroll doesn't work
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
+
     // UPDATED PAGINATION LOGIC - 8 recipes per page (2 rows × 4 columns)
     const RECIPES_PER_PAGE = 8; // Changed from 16 to 8
 
@@ -79,11 +97,13 @@ const RecipePage = () => {
         if (isLeftSwipe && currentPage < totalPages) {
             // Swipe left - next page
             setCurrentPage(prev => prev + 1);
+            scrollToTop(); // Auto-scroll to top
         }
         
         if (isRightSwipe && currentPage > 1) {
             // Swipe right - previous page
             setCurrentPage(prev => prev - 1);
+            scrollToTop(); // Auto-scroll to top
         }
         
         setIsSwiping(false);
@@ -406,7 +426,7 @@ const RecipePage = () => {
                 </div>
                 
                 {/* Main Recipe Content */}
-                <div className="recipe-container">
+                <div className="recipe-container" ref={recipeContainerRef}>
                     {/* Header with background image */}
                     <div className="recipe-header-bg">
                         <img
@@ -453,9 +473,15 @@ const RecipePage = () => {
                             onChange={e => setCategoryFilter(e.target.value)}
                         >
                             <option value="">Filter by Category</option>
+                            <option value="Appetizer">Appetizer</option>
                             <option value="Breakfast">Breakfast</option>
                             <option value="Lunch">Lunch</option>
                             <option value="Dinner">Dinner</option>
+                            <option value="Main Course">Main Course</option>
+                            <option value="Snack">Snack</option>
+                            <option value="Beverage">Beverage</option>
+                            <option value="Soup">Soup</option>
+                            <option value="Salad">Salad</option>
                         </select>
                         <div className="price-filters">
                             <input
@@ -554,11 +580,14 @@ const RecipePage = () => {
                         </div>
                     </div>
 
-                    {/* Desktop Pagination Controls */}
-                    {totalPages > 1 && (
+                    {/* Desktop Pagination Controls - Only show on desktop */}
+                    {totalPages > 1 && !isMobile && (
                         <div className="pagination-controls">
                             <button
-                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                onClick={() => {
+                                    setCurrentPage(p => Math.max(1, p - 1));
+                                    scrollToTop(); // Auto-scroll to top
+                                }}
                                 disabled={currentPage === 1}
                                 className="pagination-btn"
                             >
@@ -571,7 +600,10 @@ const RecipePage = () => {
                                 <span className="total-pages">{totalPages}</span>
                             </div>
                             <button
-                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                onClick={() => {
+                                    setCurrentPage(p => Math.min(totalPages, p + 1));
+                                    scrollToTop(); // Auto-scroll to top
+                                }}
                                 disabled={currentPage === totalPages}
                                 className="pagination-btn"
                             >
@@ -581,8 +613,8 @@ const RecipePage = () => {
                         </div>
                     )}
 
-                    {/* Mobile Swipe Pagination Indicator */}
-                    {totalPages > 1 && (
+                    {/* Mobile Swipe Pagination Indicator - Only show on mobile */}
+                    {totalPages > 1 && isMobile && (
                         <div className="mobile-pagination-container">
                             <div className="mobile-pagination-swipe">
                                 <div className="swipe-indicator">

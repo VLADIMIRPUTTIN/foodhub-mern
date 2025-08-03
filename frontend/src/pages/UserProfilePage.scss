@@ -1447,6 +1447,32 @@ html {
     }
 }
 
+// Add status indicator for recipe cards
+.recipe-status {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    
+    &.pending {
+        background: rgba(107, 114, 128, 0.9);
+        color: white;
+    }
+    
+    &.approved {
+        background: rgba(16, 185, 129, 0.9);
+        color: white;
+    }
+    
+    &.rejected {
+        background: rgba(239, 68, 68, 0.9);
+        color: white;
+    }
+}
 .edit-recipe-modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;

@@ -52,82 +52,104 @@ const SharedRecipePage = () => {
         <>
             <Navbar />
             <div className="shared-recipes-page">
-                <h2>Community Recipes</h2>
-                {loading ? (
-                    <p>Loading...</p>
-                ) : recipes.length === 0 ? (
-                    <div className="no-recipes-enhanced">
-                        <div className="no-recipes-animation">
-                            <div className="chef-hat">
-                                <i className="bx bx-restaurant"></i>
-                            </div>
-                            <div className="floating-ingredients">
-                                <div className="ingredient-float ing-1">🥕</div>
-                                <div className="ingredient-float ing-2">🍅</div>
-                                <div className="ingredient-float ing-3">🧄</div>
-                                <div className="ingredient-float ing-4">🌿</div>
-                            </div>
+                <div className="page-container">
+                    {/* Simplified Header */}
+                    <div className="community-header">
+                        <div className="header-badge">
+                            <i className="bx bx-group"></i>
+                            Community Showcase
                         </div>
-                        <div className="no-recipes-content">
-                            <h3 className="no-recipes-title">No Shared Recipes Yet</h3>
-                            <p className="no-recipes-subtitle">
-                                Be the first to share your delicious creation!
-                            </p>
-                        </div>
+                        <h1>
+                            Discover <span className="highlight">Amazing</span> Recipes
+                        </h1>
                     </div>
-                ) : (
-                    <div className="recipes-grid">
-                        {recipes.map(recipe => (
-                            <div
-                                key={recipe._id}
-                                className="recipe-card"
-                                onClick={() => navigate(`/recipe/${recipe._id}`)}
-                                title="View full recipe"
-                            >
-                                <div className="recipe-image">
-                                    <img
-                                        src={getImageUrl(recipe)}
-                                        alt={recipe.title || "Recipe"}
-                                        onError={e => {
-                                            e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
-                                        }}
-                                    />
+
+                    {loading ? (
+                        <div className="loading-container">
+                            <i className="bx bx-loader-alt loading-spinner"></i>
+                            Loading delicious recipes...
+                        </div>
+                    ) : recipes.length === 0 ? (
+                        <div className="no-recipes-enhanced">
+                            <div className="no-recipes-animation">
+                                <div className="chef-hat">
+                                    <i className="bx bx-restaurant"></i>
                                 </div>
-                                <div className="recipe-content">
-                                    <h3 className="recipe-title">{recipe.title}</h3>
-                                    <p className="recipe-desc">{recipe.description}</p>
-                                    <div className="recipe-category">{recipe.category}</div>
-                                    {/* Show who shared the recipe */}
-                                    <div className="recipe-meta" style={{ marginTop: "0.5rem", fontSize: "0.92em", color: "#7c7c7c" }}>
-                                        <span>
+                                <div className="floating-ingredients">
+                                    <div className="ingredient-float ing-1">🥕</div>
+                                    <div className="ingredient-float ing-2">🍅</div>
+                                    <div className="ingredient-float ing-3">🧄</div>
+                                    <div className="ingredient-float ing-4">🌿</div>
+                                </div>
+                            </div>
+                            <div className="no-recipes-content">
+                                <h3 className="no-recipes-title">No Community Recipes Yet</h3>
+                                <p className="no-recipes-subtitle">
+                                    Be the first to share your culinary masterpiece with our community! 
+                                    Create and share recipes to inspire fellow food enthusiasts.
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="recipes-grid">
+                            {recipes.map(recipe => (
+                                <div
+                                    key={recipe._id}
+                                    className="recipe-card"
+                                    onClick={() => navigate(`/recipe/${recipe._id}`)}
+                                    title="View full recipe"
+                                >
+                                    <div className="recipe-image">
+                                        <div className="community-badge">
                                             <i className="bx bx-user"></i>
-                                            Shared by:{" "}
-                                            {recipe.createdBy?.name
-                                                ? recipe.createdBy.name
-                                                : recipe.createdBy?.email
-                                                    ? recipe.createdBy.email
-                                                    : "Unknown"}
-                                        </span>
+                                            Community
+                                        </div>
+                                        <img
+                                            src={getImageUrl(recipe)}
+                                            alt={recipe.title || "Recipe"}
+                                            onError={e => {
+                                                e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
+                                            }}
+                                        />
                                     </div>
-                                    {recipe.cookingTime && (
-                                        <div className="recipe-meta">
+                                    <div className="recipe-content">
+                                        <h3 className="recipe-title">{recipe.title}</h3>
+                                        <p className="recipe-desc">{recipe.description}</p>
+                                        <div className="recipe-category">{recipe.category}</div>
+                                        
+                                        {/* Enhanced Author Info */}
+                                        <div className="recipe-meta author-meta">
+                                            <i className="bx bx-user-circle"></i>
                                             <span>
-                                                <i className="bx bx-timer"></i> {recipe.cookingTime} mins
+                                                {recipe.createdBy?.name
+                                                    ? recipe.createdBy.name
+                                                    : recipe.createdBy?.email
+                                                        ? recipe.createdBy.email.split('@')[0]
+                                                        : "Anonymous Chef"}
                                             </span>
                                         </div>
-                                    )}
-                                    {recipe.createdAt && (
-                                        <div className="recipe-meta">
-                                            <span>
-                                                <i className="bx bx-calendar"></i> {new Date(recipe.createdAt).toLocaleDateString()}
-                                            </span>
+                                        
+                                        {/* Additional Meta Information */}
+                                        <div className="recipe-meta-row">
+                                            {recipe.cookingTime && (
+                                                <div className="recipe-meta">
+                                                    <i className="bx bx-time"></i>
+                                                    <span>{recipe.cookingTime} mins</span>
+                                                </div>
+                                            )}
+                                            {recipe.createdAt && (
+                                                <div className="recipe-meta">
+                                                    <i className="bx bx-calendar"></i>
+                                                    <span>{new Date(recipe.createdAt).toLocaleDateString()}</span>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </>
     );
