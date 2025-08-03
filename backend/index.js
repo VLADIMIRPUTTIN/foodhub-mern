@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from "path";
+import { Server } from 'socket.io';
+import http from 'http';
 
 import { connectDB } from "./db/connectDB.js";
 
@@ -15,7 +17,42 @@ import favoriteRoutes from './routes/favoriteRoutes.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: process.env.NODE_ENV === "production" ? false : ["http://localhost:3000", "http://localhost:5173"],
+        credentials: true
+    }
+});
+
+// Store connected users
+const connectedUsers = new Map();
+
+io.on('connection', (socket) => {
+    console.log('User connected:', socket.id);
+    
+    // When user joins, store their socket id with their user id
+    socket.on('join', (userId) => {
+        connectedUsers.set(userId, socket.id);
+        console.log(`User ${userId} joined with socket ${socket.id}`);
+    });
+    
+    socket.on('disconnect', () => {
+        // Remove user from connected users when they disconnect
+        for (let [userId, socketId] of connectedUsers.entries()) {
+            if (socketId === socket.id) {
+                connectedUsers.delete(userId);
+                break;
+            }
+        }
+        console.log('User disconnected:', socket.id);
+    });
+});
+
+// Make io available to other modules
+app.set('io', io);
+app.set('connectedUsers', connectedUsers);
+
 const __dirname = path.resolve();
 
 const allowedOrigins = [
@@ -56,7 +93,8 @@ if (process.env.NODE_ENV === "production") {
     });
 }
 
-app.listen(PORT, () => {
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
     connectDB();
-    console.log("Server is running on port: ", PORT);
+    console.log(`Server running on port ${PORT}`);
 });

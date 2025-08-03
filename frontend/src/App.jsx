@@ -15,6 +15,8 @@ import SharedRecipePage from "./recipessection/SharedRecipePage";
 
 import LoadingSpinner from "./components/LoadingSpinner";
 import { ToastProvider } from "./components/ui/toast"; // Add this import
+import { SocketProvider } from './context/SocketContext';
+import NotificationToast from './components/NotificationToast';
 
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
@@ -80,86 +82,89 @@ function App() {
 
     return (
         <ToastProvider> {/* Wrap everything with ToastProvider */}
-            <div>
-                <Routes>
-                    <Route
-                        path='/'
-                        element={<DashboardPage />}
-                    />
-                    <Route
-                        path='/recipes'
-                        element={<RecipePage />}
-                    />
-                    <Route
-                        path='/admin-dashboard'
-                        element={
-                            <AdminRoute>
-                                <AdminDashboard />
-                            </AdminRoute>
-                        }
-                    />
-                    <Route
-                        path='/signup'
-                        element={
-                            <RedirectAuthenticatedUser>
-                                <SignUpPage />
-                            </RedirectAuthenticatedUser>
-                        }
-                    />
-                    <Route
-                        path='/login'
-                        element={
-                            <RedirectAuthenticatedUser>
-                                <LoginPage />
-                            </RedirectAuthenticatedUser>
-                        }
-                    />
-                    <Route path='/verify-email' element={<EmailVerificationPage />} />
-                    <Route
-                        path='/forgot-password'
-                        element={
-                            <RedirectAuthenticatedUser>
-                                <ForgotPasswordPage />
-                            </RedirectAuthenticatedUser>
-                        }
-                    />
-                    <Route
-                        path='/reset-password/:token'
-                        element={
-                            <RedirectAuthenticatedUser>
-                                <ResetPasswordPage />
-                            </RedirectAuthenticatedUser>
-                        }
-                    />
-                    <Route
-                        path='/create-recipe'
-                        element={
-                            <ProtectedRoute>
-                                <CreateRecipePage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path='/profile'
-                        element={
-                            <ProtectedRoute>
-                                <UserProfilePage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path='/recipe/:id'
-                        element={<RecipeFull />}
-                    />
-                    <Route
-                        path='/shared-recipes'
-                        element={<SharedRecipePage />}
-                    />
-                    {/* catch all routes */}
-                    <Route path='*' element={<Navigate to='/' replace />} />
-                </Routes>
-                <Toaster />
-            </div>
+            <SocketProvider>
+                <div>
+                    <Routes>
+                        <Route
+                            path='/'
+                            element={<DashboardPage />}
+                        />
+                        <Route
+                            path='/recipes'
+                            element={<RecipePage />}
+                        />
+                        <Route
+                            path='/admin-dashboard'
+                            element={
+                                <AdminRoute>
+                                    <AdminDashboard />
+                                </AdminRoute>
+                            }
+                        />
+                        <Route
+                            path='/signup'
+                            element={
+                                <RedirectAuthenticatedUser>
+                                    <SignUpPage />
+                                </RedirectAuthenticatedUser>
+                            }
+                        />
+                        <Route
+                            path='/login'
+                            element={
+                                <RedirectAuthenticatedUser>
+                                    <LoginPage />
+                                </RedirectAuthenticatedUser>
+                            }
+                        />
+                        <Route path='/verify-email' element={<EmailVerificationPage />} />
+                        <Route
+                            path='/forgot-password'
+                            element={
+                                <RedirectAuthenticatedUser>
+                                    <ForgotPasswordPage />
+                                </RedirectAuthenticatedUser>
+                            }
+                        />
+                        <Route
+                            path='/reset-password/:token'
+                            element={
+                                <RedirectAuthenticatedUser>
+                                    <ResetPasswordPage />
+                                </RedirectAuthenticatedUser>
+                            }
+                        />
+                        <Route
+                            path='/create-recipe'
+                            element={
+                                <ProtectedRoute>
+                                    <CreateRecipePage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path='/profile'
+                            element={
+                                <ProtectedRoute>
+                                    <UserProfilePage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path='/recipe/:id'
+                            element={<RecipeFull />}
+                        />
+                        <Route
+                            path='/shared-recipes'
+                            element={<SharedRecipePage />}
+                        />
+                        {/* catch all routes */}
+                        <Route path='*' element={<Navigate to='/' replace />} />
+                    </Routes>
+                    <Toaster />
+                    <NotificationToast />
+                </div>
+            </SocketProvider>
         </ToastProvider>
     );
 }

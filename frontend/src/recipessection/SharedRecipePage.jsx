@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../pages/NavbarPage";
+import { useSocket } from '../context/SocketContext';
 import "./SharedRecipePage.scss";
 
 const SharedRecipePage = () => {
     const [recipes, setRecipes] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const { socket } = useSocket();
 
-    useEffect(() => {
+    // Fetch shared recipes from the server
+    const fetchSharedRecipes = () => {
         const baseURL = import.meta.env.MODE === "development"
             ? "http://localhost:5000"
             : "";
         
-        // Remove credentials requirement to allow unauthenticated access
         fetch(`${baseURL}/api/recipes/shared`)
             .then(res => res.json())
             .then(data => {
@@ -32,7 +34,28 @@ const SharedRecipePage = () => {
                 setRecipes([]);
                 setLoading(false);
             });
+    };
+
+    useEffect(() => {
+        // Fetch shared recipes on component mount
+        fetchSharedRecipes();
     }, []);
+
+    // Add useEffect to listen for new approved recipes
+    useEffect(() => {
+        if (socket) {
+            const handleRecipeApproved = () => {
+                // Refresh the shared recipes list when a new recipe is approved
+                fetchSharedRecipes();
+            };
+
+            socket.on('recipeApproved', handleRecipeApproved);
+
+            return () => {
+                socket.off('recipeApproved', handleRecipeApproved);
+            };
+        }
+    }, [socket]);
 
     const getImageUrl = (recipe) => {
         if (!recipe.imageUrl) {

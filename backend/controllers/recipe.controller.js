@@ -186,9 +186,9 @@ export const getPendingRecipes = async (req, res) => {
 export const moderateRecipe = async (req, res) => {
     try {
         const { id } = req.params;
-        const { action, rejectionReason } = req.body; // action: 'approve' or 'reject'
+        const { action, rejectionReason } = req.body;
         
-        const recipe = await Recipe.findById(id);
+        const recipe = await Recipe.findById(id).populate('createdBy', 'name email');
         if (!recipe) {
             return res.status(404).json({ success: false, message: "Recipe not found" });
         }
@@ -197,10 +197,44 @@ export const moderateRecipe = async (req, res) => {
             recipe.shareStatus = 'approved';
             recipe.isShared = true;
             recipe.rejectionReason = undefined;
+            
+            // Emit real-time notification to the recipe owner
+            const io = req.app.get('io');
+            const connectedUsers = req.app.get('connectedUsers');
+            const userSocketId = connectedUsers.get(recipe.createdBy._id.toString());
+            
+            if (userSocketId) {
+                io.to(userSocketId).emit('recipeApproved', {
+                    recipeId: recipe._id,
+                    recipeName: recipe.title,
+                    message: `Your recipe "${recipe.title}" has been approved and is now live in the community!`,
+                    timestamp: new Date(),
+                    shareStatus: 'approved',
+                    isShared: true
+                });
+            }
+            
         } else if (action === 'reject') {
             recipe.shareStatus = 'rejected';
             recipe.isShared = false;
             recipe.rejectionReason = rejectionReason || 'No reason provided';
+            
+            // Emit real-time notification for rejection
+            const io = req.app.get('io');
+            const connectedUsers = req.app.get('connectedUsers');
+            const userSocketId = connectedUsers.get(recipe.createdBy._id.toString());
+            
+            if (userSocketId) {
+                io.to(userSocketId).emit('recipeRejected', {
+                    recipeId: recipe._id,
+                    recipeName: recipe.title,
+                    message: `Your recipe "${recipe.title}" was not approved.`,
+                    reason: rejectionReason || 'No reason provided',
+                    timestamp: new Date(),
+                    shareStatus: 'rejected',
+                    isShared: false
+                });
+            }
         }
 
         await recipe.save();

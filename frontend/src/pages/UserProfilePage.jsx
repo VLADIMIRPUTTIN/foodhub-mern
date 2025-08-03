@@ -10,6 +10,7 @@ import { Share2, Trash2 } from "lucide-react"; // Add Trash2 icon
 import { toast } from "react-hot-toast";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Swal from 'sweetalert2';
+import { useSocket } from '../context/SocketContext';
 
 const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/WvG991xq/profile-default.png";
 
@@ -33,10 +34,45 @@ const UserProfilePage = () => {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [recipeToDelete, setRecipeToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const { socket } = useSocket();
 
     useEffect(() => {
         fetchUserData();
     }, []);
+
+    useEffect(() => {
+        if (socket) {
+            const handleRecipeApproved = (data) => {
+                // Update the local state to reflect the approved status
+                setUserRecipes(prev => 
+                    prev.map(recipe => 
+                        recipe._id === data.recipeId
+                            ? { ...recipe, shareStatus: 'approved', isShared: true }
+                            : recipe
+                    )
+                );
+            };
+
+            const handleRecipeRejected = (data) => {
+                // Update the local state to reflect the rejected status
+                setUserRecipes(prev => 
+                    prev.map(recipe => 
+                        recipe._id === data.recipeId
+                            ? { ...recipe, shareStatus: 'rejected', isShared: false, rejectionReason: data.reason }
+                            : recipe
+                    )
+                );
+            };
+
+            socket.on('recipeApproved', handleRecipeApproved);
+            socket.on('recipeRejected', handleRecipeRejected);
+
+            return () => {
+                socket.off('recipeApproved', handleRecipeApproved);
+                socket.off('recipeRejected', handleRecipeRejected);
+            };
+        }
+    }, [socket]);
 
     const fetchUserData = async () => {
         setIsLoading(true);
