@@ -1427,22 +1427,26 @@ html {
     cursor: pointer;
     margin: 8px auto 0;
     display: block;
-    transition: background 0.2s;
+    transition: all 0.2s;
     width: 32px;
     height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
+    
     &:hover {
         background: #a67a5a;
+        transform: translateY(-1px);
     }
 
-    &:disabled {
-        opacity: 0.6;
+    &:disabled,
+    &.disabled-edit {
+        opacity: 0.5;
         cursor: not-allowed;
         
         &:hover {
             transform: none;
+            background: #CF996C;
         }
     }
 }

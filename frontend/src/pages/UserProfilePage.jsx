@@ -202,8 +202,120 @@ const UserProfilePage = () => {
         }
     };
 
-    // Open modal and pass recipe data
+    // Update the handleEditRecipe function
     const handleEditRecipe = (recipe) => {
+        // Check if recipe is shared/approved - prevent editing
+        if (recipe.shareStatus === 'approved' && recipe.isShared) {
+            Swal.fire({
+                title: 'Cannot Edit Shared Recipe',
+                html: `
+                    <div style="text-align: left; margin: 1rem 0;">
+                        <p style="margin-bottom: 1rem; color: #666;">This recipe is currently shared in the community and cannot be edited.</p>
+                        <p style="margin-bottom: 0.5rem; font-weight: 600; color: #333;">To edit this recipe:</p>
+                        <ol style="margin: 0.5rem 0; padding-left: 1.5rem; color: #666;">
+                            <li>Remove it from community first</li>
+                            <li>Edit the recipe</li>
+                            <li>Share it again for review</li>
+                        </ol>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Remove from Community',
+                cancelButtonText: 'Cancel',
+                customClass: {
+                    popup: 'swal-wide'
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    // Automatically unshare the recipe
+                    try {
+                        const baseURL = import.meta.env.MODE === "development"
+                            ? "http://localhost:5000"
+                            : "";
+                        
+                        const response = await fetch(`${baseURL}/api/recipes/${recipe._id}/unshare`, {
+                            method: "POST",
+                            credentials: "include",
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            toast.success("Recipe removed from community! You can now edit it.", {
+                                style: {
+                                    borderRadius: "8px",
+                                    background: "#fff",
+                                    color: "#222",
+                                    boxShadow: "0 4px 16px rgba(16,185,129,0.15)",
+                                    fontWeight: 600,
+                                },
+                                iconTheme: {
+                                    primary: "#10b981",
+                                    secondary: "#fff",
+                                },
+                            });
+                            
+                            // Update the recipe status locally
+                            setUserRecipes(prev => 
+                                prev.map(r => 
+                                    r._id === recipe._id 
+                                        ? { ...r, shareStatus: 'not_shared', isShared: false } 
+                                        : r
+                                )
+                            );
+                            
+                            // Now open the edit modal with updated recipe
+                            const updatedRecipe = { ...recipe, shareStatus: 'not_shared', isShared: false };
+                            setEditRecipeData(updatedRecipe);
+                            setShowEditModal(true);
+                        } else {
+                            throw new Error(data.message || 'Failed to remove recipe from community');
+                        }
+                    } catch (error) {
+                        console.error('Error unsharing recipe:', error);
+                        toast.error("Failed to remove recipe from community. Please try again.", {
+                            style: {
+                                borderRadius: "8px",
+                                background: "#fff",
+                                color: "#222",
+                                boxShadow: "0 4px 16px rgba(239,68,68,0.15)",
+                                fontWeight: 600,
+                            },
+                            iconTheme: {
+                                primary: "#ef4444",
+                                secondary: "#fff",
+                            },
+                        });
+                    }
+                }
+            });
+            return;
+        }
+        
+        // If recipe is pending, show info but allow editing
+        if (recipe.shareStatus === 'pending') {
+            Swal.fire({
+                title: 'Recipe Under Review',
+                text: 'This recipe is currently under admin review. You can still edit it, but it will reset the review status.',
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Edit Anyway',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    setEditRecipeData(recipe);
+                    setShowEditModal(true);
+                }
+            });
+            return;
+        }
+        
+        // For not_shared or rejected recipes, allow normal editing
         setEditRecipeData(recipe);
         setShowEditModal(true);
     };
