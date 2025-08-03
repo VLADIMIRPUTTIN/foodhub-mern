@@ -423,14 +423,14 @@ const AdminDashboard = () => {
             </div>
 
             <div className="admin-container">
-                {/* Real-time Stats Cards - REMOVED LOADING OVERLAYS */}
+                {/* Real-time Stats Cards - FIXED KEYS */}
                 <div className="stats-grid">
                     <motion.div 
                         className="stat-card"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        key={stats.totalUsers}
+                        key="total-users"
                     >
                         <div className="stat-icon users">
                             <i className="fas fa-users"></i>
@@ -446,7 +446,6 @@ const AdminDashboard = () => {
                             </motion.h3>
                             <p>Total Users</p>
                         </div>
-                        {/* REMOVED: {loading && <div className="stat-loading">Loading...</div>} */}
                     </motion.div>
 
                     <motion.div 
@@ -454,7 +453,7 @@ const AdminDashboard = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        key={stats.totalRecipes}
+                        key="total-recipes"
                     >
                         <div className="stat-icon recipes">
                             <i className="fas fa-utensils"></i>
@@ -470,7 +469,6 @@ const AdminDashboard = () => {
                             </motion.h3>
                             <p>Total Recipes</p>
                         </div>
-                        {/* REMOVED: {loading && <div className="stat-loading">Loading...</div>} */}
                     </motion.div>
 
                     <motion.div 
@@ -478,7 +476,7 @@ const AdminDashboard = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        key={stats.pendingRecipes}
+                        key="pending-recipes"
                     >
                         <div className="stat-icon pending">
                             <i className="fas fa-clock"></i>
@@ -494,7 +492,6 @@ const AdminDashboard = () => {
                             </motion.h3>
                             <p>Pending Recipes</p>
                         </div>
-                        {/* REMOVED: {loading && <div className="stat-loading">Loading...</div>} */}
                     </motion.div>
 
                     <motion.div 
@@ -502,7 +499,7 @@ const AdminDashboard = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
-                        key={stats.todayLogins}
+                        key="today-logins"
                     >
                         <div className="stat-icon logins">
                             <i className="fas fa-chart-line"></i>
@@ -518,7 +515,6 @@ const AdminDashboard = () => {
                             </motion.h3>
                             <p>Today's Logins</p>
                         </div>
-                        {/* REMOVED: {loading && <div className="stat-loading">Loading...</div>} */}
                     </motion.div>
                 </div>
 

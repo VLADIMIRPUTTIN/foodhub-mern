@@ -350,7 +350,7 @@ const PendingRecipePage = () => {
                                         <h4 className="detail-section__title">Ingredients</h4>
                                         <div className="ingredients-grid">
                                             {selectedRecipe.ingredients.map((ingredient, index) => (
-                                                <div key={index} className="ingredient-item">
+                                                <div key={`ingredient-${index}-${ingredient.name || 'unknown'}`} className="ingredient-item">
                                                     <span className="ingredient-amount">
                                                         {ingredient.amount} {ingredient.unit}
                                                     </span>
@@ -364,7 +364,7 @@ const PendingRecipePage = () => {
                                         <h4 className="detail-section__title">Instructions</h4>
                                         <div className="instructions-list">
                                             {(selectedRecipe.instructions || selectedRecipe.steps || []).map((instruction, index) => (
-                                                <div key={index} className="instruction-item">
+                                                <div key={`instruction-${index}-${selectedRecipe._id}`} className="instruction-item">
                                                     <span className="instruction-number">{index + 1}</span>
                                                     <span className="instruction-text">
                                                         {typeof instruction === 'string' ? instruction : instruction.instruction || instruction.details}
