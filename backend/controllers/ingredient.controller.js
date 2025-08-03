@@ -70,8 +70,8 @@ export const getAllIngredients = async (req, res) => {
 
 export const searchIngredients = async (req, res) => {
     try {
-        const { q } = req.query;
-        if (!q) {
+        const { query } = req.query; // Changed from 'q' to 'query'
+        if (!query) {
             return res.status(400).json({ 
                 success: false, 
                 message: "Search query is required" 
@@ -79,7 +79,7 @@ export const searchIngredients = async (req, res) => {
         }
 
         const ingredients = await Ingredient.find({
-            name: { $regex: q, $options: 'i' }
+            name: { $regex: query, $options: 'i' } // Changed from 'q' to 'query'
         }).limit(10);
 
         res.status(200).json({ 
