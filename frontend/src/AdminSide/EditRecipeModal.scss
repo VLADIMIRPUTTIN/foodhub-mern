@@ -1,3 +1,6 @@
+// Import base styles
+@import './CreateIngredient.scss';
+
 .modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -17,4 +20,170 @@
     max-width: 700px;
     max-height: 90vh;
     overflow-y: auto;
+}
+
+// Modal specific overrides and extensions
+.modal {
+  max-width: 900px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  &__tabs {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid hsl(var(--border));
+    background-color: hsl(var(--muted) / 0.3);
+    margin: 0 -1.5rem 0 -1.5rem;
+  }
+
+  &__form {
+    overflow-y: auto;
+    flex: 1;
+    padding: 1.5rem;
+    margin: -1.5rem;
+    margin-top: 0;
+  }
+}
+
+// Tab button styles for modal
+.modal .tab-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  padding: 1rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  white-space: nowrap;
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  &:hover:not(.active) {
+    background-color: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+  }
+
+  &.active {
+    background-color: hsl(var(--background));
+    color: hsl(var(--primary));
+    border-bottom-color: hsl(var(--primary));
+  }
+
+  &:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+}
+
+// Enhanced ingredients and steps layout for modal
+.modal .ingredients-list,
+.modal .steps-list {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+
+    &:hover {
+      background: hsl(var(--muted-foreground) / 0.5);
+    }
+  }
+}
+
+// Form card adjustments for modal
+.modal .form-card {
+  margin-bottom: 0;
+  box-shadow: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+
+  &:not(:last-child) {
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid hsl(var(--border));
+    margin-bottom: 1.5rem;
+  }
+}
+
+// Responsive adjustments for modal
+@media (max-width: 768px) {
+  .modal {
+    max-width: calc(100vw - 2rem);
+    max-height: calc(100vh - 2rem);
+
+    &__tabs {
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .tab-button {
+      border-bottom: 1px solid hsl(var(--border));
+      border-radius: 0;
+      padding: 0.75rem 1rem;
+
+      &.active {
+        border-bottom-color: hsl(var(--primary));
+        background-color: hsl(var(--primary) / 0.1);
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+
+  .ingredient-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .step-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal {
+    &__header {
+      padding: 1rem;
+    }
+
+    &__form {
+      padding: 1rem;
+      margin: -1rem;
+      margin-top: 0;
+    }
+
+    &__tabs {
+      padding: 0 1rem;
+      margin: 0 -1rem 0 -1rem;
+    }
+  }
 }

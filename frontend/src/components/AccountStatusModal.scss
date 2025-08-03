@@ -1,0 +1,169 @@
+.status-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1rem;
+}
+
+.status-modal {
+    background: white;
+    border-radius: 1rem;
+    max-width: 500px;
+    width: 100%;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border: 3px solid #dc2626;
+
+    .status-modal-header {
+        padding: 1.5rem;
+        text-align: center;
+        color: white;
+        position: relative;
+
+        .status-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+    }
+
+    .status-modal-content {
+        padding: 2rem;
+
+        .status-message {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            border-left: 4px solid #dc2626;
+
+            p {
+                margin: 0;
+                color: #374151;
+                font-size: 1rem;
+                line-height: 1.5;
+            }
+        }
+
+        .suspension-details, .ban-details {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: #fff7ed;
+            border-radius: 0.5rem;
+            border: 1px solid #fed7aa;
+
+            .time-remaining {
+                font-size: 1.125rem;
+                color: #d97706;
+                margin-bottom: 0.5rem;
+            }
+
+            .suspension-until, .ban-date {
+                font-size: 0.875rem;
+                color: #6b7280;
+            }
+        }
+
+        .reason-section {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: #fef2f2;
+            border-radius: 0.5rem;
+            border: 1px solid #fecaca;
+
+            strong {
+                color: #dc2626;
+                font-size: 1rem;
+            }
+
+            p {
+                margin: 0.5rem 0 0 0;
+                color: #374151;
+                font-style: italic;
+            }
+        }
+
+        .contact-support {
+            padding: 1rem;
+            background: #f0f9ff;
+            border-radius: 0.5rem;
+            border: 1px solid #bae6fd;
+            text-align: center;
+
+            p {
+                margin: 0;
+                color: #0369a1;
+                font-size: 0.875rem;
+            }
+        }
+    }
+
+    .status-modal-actions {
+        padding: 1.5rem;
+        background: #f8f9fa;
+        text-align: center;
+
+        .close-button {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+
+            &:hover {
+                background: #b91c1c;
+                transform: translateY(-1px);
+            }
+
+            &:active {
+                transform: translateY(0);
+            }
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .status-modal {
+        margin: 1rem;
+        max-width: calc(100vw - 2rem);
+
+        .status-modal-header {
+            padding: 1rem;
+
+            .status-icon {
+                font-size: 2.5rem;
+            }
+
+            h2 {
+                font-size: 1.25rem;
+            }
+        }
+
+        .status-modal-content {
+            padding: 1.5rem;
+        }
+
+        .status-modal-actions {
+            padding: 1rem;
+        }
+    }
+}

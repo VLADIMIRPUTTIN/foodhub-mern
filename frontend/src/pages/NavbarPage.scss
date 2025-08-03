@@ -131,7 +131,7 @@
             position: relative;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 4px 12px rgba(207, 153, 108, 0.25);
-            margin-top: 0;
+            height: auto;
 
             &:hover {
                 transform: translateY(-2px);

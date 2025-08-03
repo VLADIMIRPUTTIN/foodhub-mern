@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import EditRecipe from './EditRecipe';
+import EditIngredientModal from './EditIngredientModal';
 
 const ManageRecipeAndIngredientsPage = ({
     recipeSearch,
@@ -11,9 +12,28 @@ const ManageRecipeAndIngredientsPage = ({
     handleDeleteRecipe,
     handleEditIngredient,
     handleDeleteIngredient,
-    fetchRecipes
+    fetchRecipes,
+    fetchIngredients
 }) => {
     const [editingRecipe, setEditingRecipe] = useState(null);
+    const [editingIngredient, setEditingIngredient] = useState(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+    const handleIngredientUpdated = (updatedIngredient) => {
+        setEditingIngredient(null);
+        setIsEditModalOpen(false);
+        fetchIngredients();
+    };
+
+    const openEditModal = (ingredient) => {
+        setEditingIngredient(ingredient);
+        setIsEditModalOpen(true);
+    };
+
+    const closeEditModal = () => {
+        setEditingIngredient(null);
+        setIsEditModalOpen(false);
+    };
 
     return (
         <div className="manage-recipes-ingredients">
@@ -72,13 +92,20 @@ const ManageRecipeAndIngredientsPage = ({
                                 <strong>{ingredient.name}</strong>
                             </div>
                             <div className="admin-list-actions">
-                                <button className="edit-btn" onClick={() => handleEditIngredient(ingredient)}>Edit</button>
+                                <button className="edit-btn" onClick={() => openEditModal(ingredient)}>Edit</button>
                                 <button className="delete-btn" onClick={() => handleDeleteIngredient(ingredient._id)}>Delete</button>
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
+            
+            <EditIngredientModal
+                ingredient={editingIngredient}
+                onUpdated={handleIngredientUpdated}
+                onCancel={closeEditModal}
+                isOpen={isEditModalOpen}
+            />
         </div>
     );
 };

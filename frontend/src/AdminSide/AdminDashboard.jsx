@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import './AdminDashboard.scss';
 import CreateRecipe from './CreateRecipe';
 import CreateIngredient from './CreateIngredient';
-import PendingRecipePage from './PendingRecipePage'; // Add this import
+import PendingRecipePage from './PendingRecipePage';
 import axios from "axios";
 import Swal from 'sweetalert2';
 import ManageUsersPage from './ManageUsersPage';
@@ -12,7 +12,7 @@ import ManageRecipeAndIngredientsPage from './ManageRecipeAndIngredientsPage';
 
 const baseURL = import.meta.env.MODE === "development"
   ? "http://localhost:5000"
-  : ""; // Use relative URL for production
+  : "";
 
 const AdminDashboard = () => {
     const { user, isAdmin, logout } = useAuthStore();
@@ -20,17 +20,73 @@ const AdminDashboard = () => {
     const [users, setUsers] = useState([]);
     const [recipes, setRecipes] = useState([]);
     const [ingredients, setIngredients] = useState([]);
-    const [pendingCount, setPendingCount] = useState(0); // Add this state
+    const [pendingCount, setPendingCount] = useState(0);
     const [stats, setStats] = useState({
-        totalUsers: 0,
-        totalRecipes: 0,
-        pendingReviews: 0,
-        todayLogins: 0
+       
     });
+    const [loading, setLoading] = useState(true);
 
     // Search states for manage recipes/ingredients
     const [recipeSearch, setRecipeSearch] = useState('');
     const [ingredientSearch, setIngredientSearch] = useState('');
+
+    // Real-time stats fetcher
+    const fetchRealTimeStats = async () => {
+        try {
+            const [usersRes, recipesRes, pendingRes] = await Promise.all([
+                // Fetch all users
+                axios.get(`${baseURL}/api/users`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                }),
+                // Fetch all recipes for admin
+                axios.get(`${baseURL}/api/recipes/admin/all`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                }),
+                // Fetch pending recipes
+                axios.get(`${baseURL}/api/recipes/admin/pending`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                })
+            ]);
+
+            const usersData = usersRes.data.users || [];
+            const recipesData = recipesRes.data.recipes || [];
+            const pendingData = pendingRes.data.recipes || [];
+
+            // Calculate today's logins
+            const today = new Date();
+            const todayLogins = usersData.filter(user => {
+                if (!user.lastLogin) return false;
+                const loginDate = new Date(user.lastLogin);
+                return (
+                    loginDate.getDate() === today.getDate() &&
+                    loginDate.getMonth() === today.getMonth() &&
+                    loginDate.getFullYear() === today.getFullYear()
+                );
+            }).length;
+
+            // Update all stats with real data
+            setStats({
+                totalUsers: usersData.length,
+                totalRecipes: recipesData.length,
+                pendingRecipes: pendingData.length, // Changed from pendingReviews to pendingRecipes
+                todayLogins: todayLogins
+            });
+
+            // Update state arrays
+            setUsers(usersData);
+            setRecipes(recipesData);
+            setPendingCount(pendingData.length);
+
+        } catch (error) {
+            console.error('Error fetching real-time stats:', error);
+        }
+    };
 
     // Fetch functions
     const fetchRecipes = async () => {
@@ -40,15 +96,15 @@ const AdminDashboard = () => {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
             });
-            setRecipes(res.data.recipes);
-            updateStats(users, res.data.recipes);
-        } catch {
+            setRecipes(res.data.recipes || []);
+            return res.data.recipes || [];
+        } catch (error) {
+            console.error('Error fetching recipes:', error);
             setRecipes([]);
-            updateStats(users, []);
+            return [];
         }
     };
 
-    // Add function to fetch pending recipes count
     const fetchPendingCount = async () => {
         try {
             const res = await axios.get(`${baseURL}/api/recipes/admin/pending`, {
@@ -56,20 +112,26 @@ const AdminDashboard = () => {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
             });
-            setPendingCount(res.data.recipes.length);
-        } catch {
+            const pendingRecipes = res.data.recipes || [];
+            setPendingCount(pendingRecipes.length);
+            return pendingRecipes.length;
+        } catch (error) {
+            console.error('Error fetching pending count:', error);
             setPendingCount(0);
+            return 0;
         }
     };
 
     const fetchIngredients = async () => {
         try {
             const res = await axios.get(`${baseURL}/api/ingredients`);
-            setIngredients(res.data.ingredients);
-        } catch {
+            setIngredients(res.data.ingredients || []);
+        } catch (error) {
+            console.error('Error fetching ingredients:', error);
             setIngredients([]);
         }
     };
+
     const fetchUsers = async () => {
         try {
             const res = await axios.get(`${baseURL}/api/users`, {
@@ -77,25 +139,47 @@ const AdminDashboard = () => {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
             });
-            setUsers(res.data.users);
-            updateStats(res.data.users, recipes);
-        } catch {
+            setUsers(res.data.users || []);
+            return res.data.users || [];
+        } catch (error) {
+            console.error('Error fetching users:', error);
             setUsers([]);
-            updateStats([], recipes);
+            return [];
         }
     };
 
+    // Initial data load
     useEffect(() => {
-        const fetchData = async () => {
-            await fetchUsers();
-            await fetchRecipes();
-            await fetchIngredients();
-            await fetchPendingCount(); // Add this
-            updateStats();
+        const fetchInitialData = async () => {
+            setLoading(true);
+            await Promise.all([
+                fetchUsers(),
+                fetchRecipes(),
+                fetchIngredients(),
+                fetchPendingCount()
+            ]);
+            await fetchRealTimeStats(); // Get real-time stats
+            setLoading(false);
         };
         
-        fetchData();
+        fetchInitialData();
     }, []);
+
+    // Set up real-time updates every 30 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchRealTimeStats();
+        }, 30000); // Update every 30 seconds
+
+        return () => clearInterval(interval);
+    }, []);
+
+    // Update stats when data changes
+    useEffect(() => {
+        if (!loading) {
+            fetchRealTimeStats();
+        }
+    }, [users.length, recipes.length, pendingCount]);
 
     const handleLogout = () => {
         logout();
@@ -117,6 +201,7 @@ const AdminDashboard = () => {
                 });
             }
             await fetchUsers();
+            await fetchRealTimeStats(); // Update stats immediately
         } catch (err) {
             Swal.fire('Error', 'Failed to update user status.', 'error');
         }
@@ -130,7 +215,7 @@ const AdminDashboard = () => {
                 }
             });
             await fetchUsers();
-            updateStats();
+            await fetchRealTimeStats(); // Update stats immediately
         } catch {
             Swal.fire('Error', 'Failed to delete user.', 'error');
         }
@@ -149,7 +234,6 @@ const AdminDashboard = () => {
         
         if (result.isConfirmed) {
             try {
-                // Add loading state
                 Swal.fire({
                     title: 'Deleting...',
                     text: 'Please wait while we delete the recipe.',
@@ -167,9 +251,8 @@ const AdminDashboard = () => {
                 });
 
                 if (response.status === 200) {
-                    const updatedRecipes = recipes.filter(r => r._id !== id);
-                    setRecipes(updatedRecipes);
-                    updateStats(users, updatedRecipes);
+                    await fetchRecipes();
+                    await fetchRealTimeStats(); // Update stats immediately
                     Swal.fire('Deleted!', 'Recipe has been deleted successfully.', 'success');
                 }
             } catch (error) {
@@ -178,7 +261,6 @@ const AdminDashboard = () => {
                 let errorMessage = 'Failed to delete recipe.';
                 
                 if (error.response) {
-                    // Server responded with error status
                     switch (error.response.status) {
                         case 400:
                             errorMessage = 'Invalid recipe ID.';
@@ -199,7 +281,6 @@ const AdminDashboard = () => {
                             errorMessage = error.response.data?.message || 'An unexpected error occurred.';
                     }
                 } else if (error.request) {
-                    // Network error
                     errorMessage = 'Network error. Please check your connection.';
                 }
                 
@@ -225,7 +306,7 @@ const AdminDashboard = () => {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
                 });
-                setIngredients(ingredients.filter(i => i._id !== id));
+                await fetchIngredients();
                 Swal.fire('Deleted!', 'Ingredient has been deleted.', 'success');
             } catch {
                 Swal.fire('Error', 'Failed to delete ingredient.', 'error');
@@ -252,7 +333,8 @@ const AdminDashboard = () => {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
                 });
-                setRecipes(recipes.map(r => r._id === recipe._id ? { ...r, title: newTitle } : r));
+                await fetchRecipes();
+                await fetchRealTimeStats(); // Update stats immediately
                 Swal.fire('Saved!', 'Recipe title updated.', 'success');
             } catch {
                 Swal.fire('Error', 'Failed to update recipe.', 'error');
@@ -279,12 +361,31 @@ const AdminDashboard = () => {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
                 });
-                setIngredients(ingredients.map(i => i._id === ingredient._id ? { ...i, name: newName } : i));
+                await fetchIngredients();
                 Swal.fire('Saved!', 'Ingredient name updated.', 'success');
             } catch {
                 Swal.fire('Error', 'Failed to update ingredient.', 'error');
             }
         }
+    };
+
+    // Callback for when pending recipes are moderated
+    const handleRecipeModerated = async () => {
+        await fetchPendingCount();
+        await fetchRealTimeStats();
+    };
+
+    // Callback for when new recipe is created
+    const handleRecipeSaved = async () => {
+        setActiveTab('recipes');
+        await fetchRecipes();
+        await fetchRealTimeStats();
+    };
+
+    // Callback for when new ingredient is created
+    const handleIngredientCreated = async () => {
+        setActiveTab('recipes');
+        await fetchIngredients();
     };
 
     // Filtered lists
@@ -294,29 +395,6 @@ const AdminDashboard = () => {
     const filteredIngredients = ingredients.filter(i =>
         i.name?.toLowerCase().includes(ingredientSearch.toLowerCase())
     );
-
-    const updateStats = (usersList = users, recipesList = recipes) => {
-        setStats({
-            totalUsers: usersList.length,
-            totalRecipes: recipesList.length,
-            pendingReviews: pendingCount, // Use the actual pending count
-            todayLogins: usersList.filter(u => {
-                if (!u.lastLogin) return false;
-                const today = new Date();
-                const loginDate = new Date(u.lastLogin);
-                return (
-                    loginDate.getDate() === today.getDate() &&
-                    loginDate.getMonth() === today.getMonth() &&
-                    loginDate.getFullYear() === today.getFullYear()
-                );
-            }).length
-        });
-    };
-
-    // Update stats whenever pendingCount changes
-    useEffect(() => {
-        updateStats();
-    }, [pendingCount]);
 
     if (!isAdmin()) {
         return (
@@ -345,21 +423,30 @@ const AdminDashboard = () => {
             </div>
 
             <div className="admin-container">
-                {/* Stats Cards */}
+                {/* Real-time Stats Cards - REMOVED LOADING OVERLAYS */}
                 <div className="stats-grid">
                     <motion.div 
                         className="stat-card"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
+                        key={stats.totalUsers}
                     >
                         <div className="stat-icon users">
                             <i className="fas fa-users"></i>
                         </div>
                         <div className="stat-info">
-                            <h3>{stats.totalUsers}</h3>
+                            <motion.h3
+                                initial={{ scale: 1 }}
+                                animate={{ scale: [1, 1.1, 1] }}
+                                transition={{ duration: 0.3 }}
+                                key={`users-${stats.totalUsers}`}
+                            >
+                                {stats.totalUsers}
+                            </motion.h3>
                             <p>Total Users</p>
                         </div>
+                        {/* REMOVED: {loading && <div className="stat-loading">Loading...</div>} */}
                     </motion.div>
 
                     <motion.div 
@@ -367,14 +454,23 @@ const AdminDashboard = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
+                        key={stats.totalRecipes}
                     >
                         <div className="stat-icon recipes">
                             <i className="fas fa-utensils"></i>
                         </div>
                         <div className="stat-info">
-                            <h3>{stats.totalRecipes}</h3>
+                            <motion.h3
+                                initial={{ scale: 1 }}
+                                animate={{ scale: [1, 1.1, 1] }}
+                                transition={{ duration: 0.3 }}
+                                key={`recipes-${stats.totalRecipes}`}
+                            >
+                                {stats.totalRecipes}
+                            </motion.h3>
                             <p>Total Recipes</p>
                         </div>
+                        {/* REMOVED: {loading && <div className="stat-loading">Loading...</div>} */}
                     </motion.div>
 
                     <motion.div 
@@ -382,14 +478,23 @@ const AdminDashboard = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
+                        key={stats.pendingRecipes}
                     >
                         <div className="stat-icon pending">
                             <i className="fas fa-clock"></i>
                         </div>
                         <div className="stat-info">
-                            <h3>{stats.pendingReviews}</h3>
-                            <p>Pending Reviews</p>
+                            <motion.h3
+                                initial={{ scale: 1 }}
+                                animate={{ scale: [1, 1.1, 1] }}
+                                transition={{ duration: 0.3 }}
+                                key={`pending-${stats.pendingRecipes}`}
+                            >
+                                {stats.pendingRecipes}
+                            </motion.h3>
+                            <p>Pending Recipes</p>
                         </div>
+                        {/* REMOVED: {loading && <div className="stat-loading">Loading...</div>} */}
                     </motion.div>
 
                     <motion.div 
@@ -397,14 +502,23 @@ const AdminDashboard = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
+                        key={stats.todayLogins}
                     >
                         <div className="stat-icon logins">
                             <i className="fas fa-chart-line"></i>
                         </div>
                         <div className="stat-info">
-                            <h3>{stats.todayLogins}</h3>
+                            <motion.h3
+                                initial={{ scale: 1 }}
+                                animate={{ scale: [1, 1.1, 1] }}
+                                transition={{ duration: 0.3 }}
+                                key={`logins-${stats.todayLogins}`}
+                            >
+                                {stats.todayLogins}
+                            </motion.h3>
                             <p>Today's Logins</p>
                         </div>
+                        {/* REMOVED: {loading && <div className="stat-loading">Loading...</div>} */}
                     </motion.div>
                 </div>
 
@@ -431,15 +545,14 @@ const AdminDashboard = () => {
                         <i className="fas fa-book-open"></i>
                         Manage Recipes & Ingredients
                     </button>
-                    {/* Add the new Pending Recipes tab */}
                     <button 
                         className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
                         onClick={() => setActiveTab('pending')}
                     >
                         <i className="fas fa-clock"></i>
                         Pending Recipes
-                        {pendingCount > 0 && (
-                            <span className="notification-badge">{pendingCount}</span>
+                        {stats.pendingRecipes > 0 && (
+                            <span className="notification-badge">{stats.pendingRecipes}</span>
                         )}
                     </button>
                     <button 
@@ -467,25 +580,46 @@ const AdminDashboard = () => {
                 >
                     {activeTab === 'overview' && (
                         <div className="overview-content">
-                            <h2>System Overview</h2>
+                            <div className="overview-header">
+                                <h2>System Overview</h2>
+                                <div className="last-updated">
+                                    <i className="fas fa-sync-alt"></i>
+                                    Auto-updates every 30 seconds
+                                </div>
+                            </div>
                             <div className="overview-grid">
                                 <div className="overview-card">
-                                    <h3>Recent Activity</h3>
+                                    <h3>Today's Activity</h3>
                                     <ul>
-                                        <li>5 new users registered today</li>
-                                        <li>3 recipes submitted for review</li>
-                                        <li>12 users logged in today</li>
-                                        <li>2 recipes approved</li>
+                                        <li>👥 {stats.todayLogins} users logged in today</li>
+                                        <li>📋 {stats.pendingRecipes} recipes awaiting review</li>
+                                        <li>🍳 {stats.totalRecipes} total recipes in system</li>
+                                        <li>👨‍👩‍👧‍👦 {stats.totalUsers} registered users</li>
                                     </ul>
                                 </div>
                                 <div className="overview-card">
                                     <h3>Quick Actions</h3>
                                     <div className="quick-actions">
-                                        <button className="action-btn" onClick={() => setActiveTab('recipes')}>
-                                            Review Pending Recipes
+                                        <button 
+                                            className="action-btn" 
+                                            onClick={() => setActiveTab('pending')}
+                                        >
+                                            <i className="fas fa-clock"></i>
+                                            Review Pending Recipes ({stats.pendingRecipes})
                                         </button>
-                                        <button className="action-btn" onClick={() => setActiveTab('users')}>
-                                            Manage Users
+                                        <button 
+                                            className="action-btn" 
+                                            onClick={() => setActiveTab('users')}
+                                        >
+                                            <i className="fas fa-users"></i>
+                                            Manage Users ({stats.totalUsers})
+                                        </button>
+                                        <button 
+                                            className="action-btn" 
+                                            onClick={() => fetchRealTimeStats()}
+                                        >
+                                            <i className="fas fa-sync-alt"></i>
+                                            Refresh Statistics
                                         </button>
                                     </div>
                                 </div>
@@ -521,25 +655,19 @@ const AdminDashboard = () => {
 
                     {activeTab === 'pending' && (
                         <PendingRecipePage 
-                            onRecipeModerated={fetchPendingCount} // Refresh count after moderation
+                            onRecipeModerated={handleRecipeModerated}
                         />
                     )}
 
                     {activeTab === 'create' && (
                         <CreateRecipe
-                            onRecipeSaved={() => {
-                                setActiveTab('recipes');
-                                fetchRecipes();
-                            }}
+                            onRecipeSaved={handleRecipeSaved}
                         />
                     )}
 
                     {activeTab === 'create-ingredient' && (
                         <CreateIngredient
-                            onCreated={() => {
-                                setActiveTab('recipes');
-                                fetchIngredients();
-                            }}
+                            onCreated={handleIngredientCreated}
                         />
                     )}
                 </motion.div>

@@ -1,3 +1,494 @@
+// Enhanced Color System - Matching Your App's Theme
+:root {
+  // Base colors - Warm and inviting food theme
+  --background: 45 20% 97%;           // Warm white background
+  --foreground: 25 25% 15%;           // Dark brown text
+  --card: 45 15% 95%;                 // Light cream card background
+  --card-foreground: 25 25% 15%;      // Dark brown text on cards
+  --popover: 45 15% 95%;              // Light cream popover
+  --popover-foreground: 25 25% 15%;   // Dark brown popover text
+  
+  // Primary colors - Food-inspired orange/amber
+  --primary: 35 85% 55%;              // Rich orange
+  --primary-foreground: 45 20% 97%;   // Light text on primary
+  
+  // Secondary colors - Warm neutral
+  --secondary: 40 15% 90%;            // Light beige
+  --secondary-foreground: 25 25% 25%; // Dark brown secondary text
+  
+  // Muted colors - Subtle backgrounds
+  --muted: 40 10% 92%;                // Very light beige
+  --muted-foreground: 25 15% 45%;     // Medium brown muted text
+  
+  // Accent colors - Highlight elements
+  --accent: 42 20% 88%;               // Light warm accent
+  --accent-foreground: 25 25% 20%;    // Dark accent text
+  
+  // Utility colors
+  --destructive: 0 75% 55%;           // Red for delete/error
+  --destructive-foreground: 0 0% 98%; // White text on destructive
+  --success: 120 50% 45%;             // Green for success
+  --success-foreground: 120 100% 95%; // Light green text
+  --warning: 45 90% 55%;              // Amber for warnings
+  --warning-foreground: 45 30% 15%;   // Dark text on warning
+  
+  // Border and input colors
+  --border: 40 15% 85%;               // Light brown border
+  --input: 40 15% 88%;                // Input border
+  --ring: 35 85% 55%;                 // Focus ring (same as primary)
+  
+  // Border radius
+  --radius: 0.75rem;                  // Slightly rounded for warmth
+  
+  // Food-specific gradients
+  --gradient-warm: linear-gradient(135deg, hsl(35 85% 55%) 0%, hsl(25 75% 50%) 100%);
+  --gradient-subtle: linear-gradient(135deg, hsl(45 20% 97%) 0%, hsl(40 15% 95%) 100%);
+  --gradient-card: linear-gradient(135deg, hsl(45 15% 95%) 0%, hsl(42 20% 93%) 100%);
+}
+
+[data-theme="dark"] {
+  --background: 25 25% 8%;            // Dark brown background
+  --foreground: 45 15% 92%;           // Light cream text
+  --card: 25 20% 12%;                 // Dark brown card
+  --card-foreground: 45 15% 90%;      // Light card text
+  --popover: 25 20% 12%;              // Dark popover
+  --popover-foreground: 45 15% 90%;   // Light popover text
+  
+  --primary: 35 80% 60%;              // Brighter orange for dark mode
+  --primary-foreground: 25 25% 8%;    // Dark text on primary
+  
+  --secondary: 25 15% 18%;            // Dark secondary
+  --secondary-foreground: 45 15% 85%; // Light secondary text
+  
+  --muted: 25 15% 15%;                // Dark muted
+  --muted-foreground: 45 10% 65%;     // Medium light muted text
+  
+  --accent: 25 15% 18%;               // Dark accent
+  --accent-foreground: 45 15% 85%;    // Light accent text
+  
+  --border: 25 15% 20%;               // Dark border
+  --input: 25 15% 18%;                // Dark input border
+  --ring: 35 80% 60%;                 // Bright focus ring
+}
+
+// Create Ingredient Component
+.create-ingredient {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem;
+  min-height: 100vh;
+  background: var(--gradient-subtle);
+
+  &__card {
+    background: var(--gradient-card);
+    border: 2px solid hsl(var(--border));
+    border-radius: calc(var(--radius) * 2);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 
+      0 8px 32px rgba(35, 25, 15, 0.08),
+      0 4px 16px rgba(35, 25, 15, 0.04),
+      0 0 0 1px rgba(35, 25, 15, 0.02);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 12px 48px rgba(35, 25, 15, 0.12),
+        0 8px 24px rgba(35, 25, 15, 0.08),
+        0 0 0 1px rgba(35, 25, 15, 0.03);
+    }
+  }
+
+  &__header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  &__title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: hsl(var(--foreground));
+    margin: 0 0 0.75rem 0;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+  }
+
+  &__subtitle {
+    font-size: 0.9375rem;
+    color: hsl(var(--muted-foreground));
+    margin: 0;
+    font-weight: 500;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+}
+
+// Enhanced Form Components
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.form-label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.form-input {
+  display: flex;
+  height: 3rem;
+  width: 100%;
+  border-radius: var(--radius);
+  border: 2px solid hsl(var(--input));
+  background-color: hsl(var(--background));
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
+  color: hsl(var(--foreground));
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  &::placeholder {
+    color: hsl(var(--muted-foreground));
+    font-weight: 400;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: hsl(var(--primary));
+    box-shadow: 
+      0 0 0 3px hsl(var(--primary) / 0.1),
+      0 2px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    background-color: hsl(var(--muted));
+  }
+}
+
+// Enhanced Button Components
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  height: 3rem;
+  min-width: 140px;
+  gap: 0.75rem;
+  text-decoration: none;
+  letter-spacing: -0.01em;
+  position: relative;
+  overflow: hidden;
+
+  &:disabled {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  &:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  &--primary {
+    background: var(--gradient-warm);
+    color: hsl(var(--primary-foreground));
+    box-shadow: 
+      0 4px 16px hsl(var(--primary) / 0.2),
+      0 2px 8px hsl(var(--primary) / 0.15);
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 8px 24px hsl(var(--primary) / 0.25),
+        0 4px 12px hsl(var(--primary) / 0.2);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+      );
+      transition: left 0.5s;
+    }
+
+    &:hover::before {
+      left: 100%;
+    }
+  }
+
+  &--secondary {
+    background-color: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+    border: 2px solid hsl(var(--border));
+
+    &:hover:not(:disabled) {
+      background-color: hsl(var(--accent));
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  &__loading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+}
+
+// Enhanced Spinner
+.spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2.5px solid transparent;
+  border-top: 2.5px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Enhanced Alert Components
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  border: 2px solid;
+  animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+  &__icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  &--error {
+    background: linear-gradient(135deg, 
+      hsl(var(--destructive) / 0.05) 0%, 
+      hsl(var(--destructive) / 0.1) 100%);
+    color: hsl(var(--destructive));
+    border-color: hsl(var(--destructive) / 0.3);
+  }
+
+  &--success {
+    background: linear-gradient(135deg, 
+      hsl(var(--success) / 0.05) 0%, 
+      hsl(var(--success) / 0.1) 100%);
+    color: hsl(var(--success));
+    border-color: hsl(var(--success) / 0.3);
+  }
+}
+
+// Enhanced Modal Components
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(25, 20, 15, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal {
+  background: var(--gradient-card);
+  border: 2px solid hsl(var(--border));
+  border-radius: calc(var(--radius) * 2);
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 
+    0 32px 64px rgba(25, 20, 15, 0.2),
+    0 16px 32px rgba(25, 20, 15, 0.15),
+    0 0 0 1px rgba(25, 20, 15, 0.05);
+  animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2rem 2rem 0 2rem;
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: hsl(var(--foreground));
+    margin: 0;
+    letter-spacing: -0.025em;
+  }
+
+  &__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius);
+    width: 2.5rem;
+    height: 2.5rem;
+    background: transparent;
+    border: 2px solid transparent;
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    &:hover {
+      color: hsl(var(--foreground));
+      background-color: hsl(var(--accent));
+      border-color: hsl(var(--border));
+      transform: scale(1.05);
+    }
+
+    &:focus-visible {
+      outline: 2px solid hsl(var(--ring));
+      outline-offset: 2px;
+    }
+  }
+
+  &__form {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    border-top: 1px solid hsl(var(--border));
+    margin-top: 1rem;
+  }
+}
+
+// Enhanced Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(2rem) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// Enhanced Responsive Design
+@media (max-width: 768px) {
+  .create-ingredient {
+    padding: 1.5rem;
+    
+    &__card {
+      padding: 2rem;
+    }
+  }
+
+  .modal {
+    margin: 1rem;
+    max-width: calc(100vw - 2rem);
+    
+    &__form {
+      padding: 1.5rem;
+    }
+    
+    &__header {
+      padding: 1.5rem 1.5rem 0 1.5rem;
+    }
+  }
+}
+
+// Legacy support for old EditIngredient component
+.edit-ingredient-modal {
+  @extend .modal-overlay;
+  
+  .modal-content {
+    @extend .modal;
+    
+    h2 {
+      @extend .modal__title;
+      margin-bottom: 1.5rem;
+      padding: 2rem 2rem 0 2rem;
+    }
+    
+    form {
+      @extend .modal__form;
+    }
+    
+    .modal-actions {
+      @extend .modal__actions;
+    }
+  }
+}
+
 .create-ingredient-admin {
     background: #fff;
     border-radius: 12px;

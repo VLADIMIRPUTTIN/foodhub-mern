@@ -347,16 +347,23 @@ export const googleLogin = async (req, res) => {
         const payload = ticket.getPayload();
         const { email, name, sub, picture } = payload;
 
-        // Upload Google image to Cloudinary (optional)
-        let profileImageUrl = picture;
+        let profileImageUrl = null;
+        
+        // Only upload to Cloudinary if picture exists
         if (picture) {
-            // Upload to Cloudinary and get secure_url
-            const cloudinaryRes = await cloudinary.uploader.upload(picture, {
-                folder: "foodhub-profile-images",
-                public_id: sub,
-                overwrite: true,
-            });
-            profileImageUrl = cloudinaryRes.secure_url;
+            try {
+                const cloudinaryRes = await cloudinary.uploader.upload(picture, {
+                    folder: "foodhub-profile-images",
+                    public_id: `google_${sub}`,
+                    overwrite: true,
+                    resource_type: "image"
+                });
+                profileImageUrl = cloudinaryRes.secure_url;
+            } catch (cloudinaryError) {
+                console.error("Cloudinary upload failed:", cloudinaryError);
+                // Fall back to original Google image URL
+                profileImageUrl = picture;
+            }
         }
 
         let user = await User.findOne({ email });
@@ -367,12 +374,11 @@ export const googleLogin = async (req, res) => {
                 password: "google-oauth",
                 isVerified: false,
                 profileImage: profileImageUrl,
-                // ...other fields...
             });
             await user.save();
         } else {
-            // Update profile image if not set
-            if (!user.profileImage) {
+            // Update profile image if not set or if it's a broken Cloudinary URL
+            if (!user.profileImage || user.profileImage.includes('cloudinary') && profileImageUrl) {
                 user.profileImage = profileImageUrl;
                 await user.save();
             }

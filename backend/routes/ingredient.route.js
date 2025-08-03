@@ -1,5 +1,5 @@
 import express from "express";
-import { createIngredient, getAllIngredients, searchIngredients } from "../controllers/ingredient.controller.js";
+import { createIngredient, getAllIngredients, searchIngredients, updateIngredient } from "../controllers/ingredient.controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { Ingredient } from "../models/ingredient.model.js";
 
@@ -7,7 +7,8 @@ const router = express.Router();
 
 router.post("/", verifyToken, createIngredient);
 router.get("/", getAllIngredients);
-router.get("/search", searchIngredients); // Add search endpoint
+router.get("/search", searchIngredients);
+router.put("/:id", verifyToken, updateIngredient); // Add this line
 router.delete("/:id", verifyToken, async (req, res) => {
     try {
         await Ingredient.findByIdAndDelete(req.params.id);

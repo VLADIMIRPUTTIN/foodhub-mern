@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import Swal from 'sweetalert2';
 import './CreateRecipe.scss';
-import RecipeConfirmationModal from './RecipeConfirmationModal';
 
 const categories = [
     'Appetizer', 'Main Course', 'Dessert', 'Breakfast', 
@@ -20,13 +18,12 @@ const CreateRecipe = ({ onRecipeSaved }) => {
     const [ingredients, setIngredients] = useState([{ amount: '', unit: '', name: '' }]);
     const [steps, setSteps] = useState([{ instruction: '', details: '' }]);
     const [isLoading, setIsLoading] = useState(false);
-    const [showModal, setShowModal] = useState(false);
-    const [pendingRecipe, setPendingRecipe] = useState(null);
     const [allIngredients, setAllIngredients] = useState([]);
     const [activeTab, setActiveTab] = useState('basic');
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
 
     useEffect(() => {
-        // Fetch all ingredients from backend
         const fetchIngredients = async () => {
             try {
                 const res = await axios.get(
@@ -70,33 +67,32 @@ const CreateRecipe = ({ onRecipeSaved }) => {
     const addStep = () => setSteps([...steps, { instruction: '', details: '' }]);
     const removeStep = (idx) => setSteps(steps.filter((_, i) => i !== idx));
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setPendingRecipe({
-            name,
-            category,
-            description,
-            ingredients,
-            steps,
-            image
-        });
-        setShowModal(true);
+    const resetForm = () => {
+        setName('');
+        setCategory('');
+        setDescription('');
+        setIngredients([{ amount: '', unit: '', name: '' }]);
+        setSteps([{ instruction: '', details: '' }]);
+        setImage(null);
+        setImagePreview(null);
+        setActiveTab('basic');
     };
 
-    const handleAccept = async () => {
-        setShowModal(false);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
         setIsLoading(true);
+        setError('');
+        setSuccess('');
 
         try {
-            // Create FormData for multipart/form-data request
             const formData = new FormData();
-            formData.append('title', pendingRecipe.name);
-            formData.append('category', pendingRecipe.category);
-            formData.append('description', pendingRecipe.description);
-            formData.append('ingredients', JSON.stringify(pendingRecipe.ingredients));
-            formData.append('instructions', JSON.stringify(pendingRecipe.steps));
-            if (pendingRecipe.image) {
-                formData.append('image', pendingRecipe.image);
+            formData.append('title', name);
+            formData.append('category', category);
+            formData.append('description', description);
+            formData.append('ingredients', JSON.stringify(ingredients));
+            formData.append('instructions', JSON.stringify(steps));
+            if (image) {
+                formData.append('image', image);
             }
 
             const response = await axios.post(
@@ -110,144 +106,205 @@ const CreateRecipe = ({ onRecipeSaved }) => {
             );
 
             if (response.data.success) {
-                Swal.fire('Success', 'Recipe saved successfully!', 'success');
-                setName('');
-                setCategory('');
-                setDescription('');
-                setIngredients([{ amount: '', unit: '', name: '' }]);
-                setSteps([{ instruction: '', details: '' }]);
-                setImage(null);
-                setImagePreview(null);
+                setSuccess('Recipe created successfully!');
+                resetForm();
                 if (onRecipeSaved) onRecipeSaved();
+                
+                // Clear success message after 3 seconds
+                setTimeout(() => setSuccess(''), 3000);
             }
         } catch (err) {
-            let errorMessage = 'Failed to save recipe';
-            if (err.response?.data?.message) {
-                errorMessage = err.response.data.message;
+            console.error('Create recipe error:', err);
+            if (err.response?.status === 401) {
+                setError('You need to be logged in to create recipes');
             } else if (err.response?.status === 400) {
-                errorMessage = 'Invalid recipe data. Please check all required fields.';
-            } else if (err.response?.status === 401) {
-                errorMessage = 'You need to be logged in to create recipes.';
+                setError('Invalid recipe data. Please check all required fields');
+            } else {
+                setError(err.response?.data?.message || 'Failed to create recipe');
             }
-            Swal.fire('Error', errorMessage, 'error');
         } finally {
             setIsLoading(false);
-            setPendingRecipe(null);
         }
     };
 
-    const handleReject = () => {
-        setShowModal(false);
-        setPendingRecipe(null);
-    };
-
-    // Enhanced UI with tab navigation and compact sections
     const renderTabContent = () => {
         switch (activeTab) {
             case 'basic':
                 return (
-                    <div className="tab-pane active">
+                    <div className="tab-content">
                         <div className="form-card">
-                            <label className="form-label">Recipe Name *</label>
-                            <input type="text" value={name} onChange={e => setName(e.target.value)} required />
-                        </div>
-                        <div className="form-card">
-                            <label className="form-label">Category</label>
-                            <select value={category} onChange={e => setCategory(e.target.value)} required>
-                                <option value="">Select Category</option>
-                                {categories.map(cat => (
-                                    <option key={cat} value={cat}>{cat}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="form-card">
-                            <label className="form-label">Description *</label>
-                            <textarea value={description} onChange={e => setDescription(e.target.value)} required />
-                        </div>
-                        <div className="form-card image-section">
-                            <label className="form-label">Recipe Image</label>
-                            <input type="file" accept="image/*" onChange={handleImageChange} />
-                            {imagePreview && <img src={imagePreview} alt="Preview" className="preview-img" />}
-                            <div className="form-note">Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP</div>
+                            <div className="form-group">
+                                <label className="form-label">Recipe Name</label>
+                                <input 
+                                    type="text" 
+                                    className="form-input"
+                                    placeholder="Enter recipe name..."
+                                    value={name} 
+                                    onChange={e => setName(e.target.value)} 
+                                    required 
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Category</label>
+                                <select 
+                                    className="form-select"
+                                    value={category} 
+                                    onChange={e => setCategory(e.target.value)} 
+                                    required
+                                >
+                                    <option value="">Select Category</option>
+                                    {categories.map(cat => (
+                                        <option key={cat} value={cat}>{cat}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Description</label>
+                                <textarea 
+                                    className="form-textarea"
+                                    placeholder="Describe your recipe..."
+                                    value={description} 
+                                    onChange={e => setDescription(e.target.value)} 
+                                    required 
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Recipe Image</label>
+                                <input 
+                                    type="file" 
+                                    className="form-input"
+                                    accept="image/*" 
+                                    onChange={handleImageChange} 
+                                />
+                                {imagePreview && (
+                                    <img 
+                                        src={imagePreview} 
+                                        alt="Preview" 
+                                        className="image-preview" 
+                                    />
+                                )}
+                                <p className="form-description">Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP</p>
+                            </div>
                         </div>
                     </div>
                 );
             case 'ingredients':
                 return (
-                    <div className="tab-pane active">
+                    <div className="tab-content">
                         <div className="form-card">
                             <h3 className="card-title">Ingredients</h3>
-                            {ingredients.map((ing, idx) => (
-                                <div key={idx} className="ingredient-row">
-                                    <input
-                                        type="text"
-                                        placeholder="Amount"
-                                        value={ing.amount}
-                                        onChange={e => handleIngredientChange(idx, 'amount', e.target.value)}
-                                        className="ingredient-amount"
-                                        required
-                                    />
-                                    <select
-                                        value={ing.unit}
-                                        onChange={e => handleIngredientChange(idx, 'unit', e.target.value)}
-                                        className="ingredient-unit"
-                                        required
-                                    >
-                                        <option value="">Select Unit</option>
-                                        {units.map(unit => (
-                                            <option key={unit} value={unit}>{unit}</option>
-                                        ))}
-                                    </select>
-                                    <select
-                                        value={ing.name}
-                                        onChange={e => handleIngredientChange(idx, 'name', e.target.value)}
-                                        className="ingredient-name"
-                                        required
-                                    >
-                                        <option value="">Select Ingredient</option>
-                                        {allIngredients.map(ingredient => (
-                                            <option key={ingredient._id} value={ingredient.name}>
-                                                {ingredient.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {ingredients.length > 1 && (
-                                        <button type="button" className="remove-btn" onClick={() => removeIngredient(idx)}>Remove</button>
-                                    )}
-                                </div>
-                            ))}
-                            <button type="button" className="add-btn" onClick={addIngredient}>Add Ingredient</button>
+                            <div className="ingredients-list">
+                                {ingredients.map((ing, idx) => (
+                                    <div key={idx} className="ingredient-row">
+                                        <input
+                                            type="text"
+                                            className="form-input ingredient-amount"
+                                            placeholder="Amount"
+                                            value={ing.amount}
+                                            onChange={e => handleIngredientChange(idx, 'amount', e.target.value)}
+                                            required
+                                        />
+                                        <select
+                                            className="form-select ingredient-unit"
+                                            value={ing.unit}
+                                            onChange={e => handleIngredientChange(idx, 'unit', e.target.value)}
+                                            required
+                                        >
+                                            <option value="">Unit</option>
+                                            {units.map(unit => (
+                                                <option key={unit} value={unit}>{unit}</option>
+                                            ))}
+                                        </select>
+                                        <select
+                                            className="form-select ingredient-name"
+                                            value={ing.name}
+                                            onChange={e => handleIngredientChange(idx, 'name', e.target.value)}
+                                            required
+                                        >
+                                            <option value="">Select Ingredient</option>
+                                            {allIngredients.map(ingredient => (
+                                                <option key={ingredient._id} value={ingredient.name}>
+                                                    {ingredient.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {ingredients.length > 1 && (
+                                            <button 
+                                                type="button" 
+                                                className="btn btn--destructive btn--sm"
+                                                onClick={() => removeIngredient(idx)}
+                                            >
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                                <button 
+                                    type="button" 
+                                    className="btn btn--secondary btn--sm"
+                                    onClick={addIngredient}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    Add Ingredient
+                                </button>
+                            </div>
                         </div>
                     </div>
                 );
             case 'steps':
                 return (
-                    <div className="tab-pane active">
+                    <div className="tab-content">
                         <div className="form-card">
                             <h3 className="card-title">Preparation Steps</h3>
-                            {steps.map((step, idx) => (
-                                <div key={idx} className="step-row">
-                                    <input
-                                        type="text"
-                                        placeholder="Instruction"
-                                        value={step.instruction}
-                                        onChange={e => handleStepChange(idx, 'instruction', e.target.value)}
-                                        className="step-instruction"
-                                        required
-                                    />
-                                    <textarea
-                                        placeholder="Preparation Details"
-                                        value={step.details}
-                                        onChange={e => handleStepChange(idx, 'details', e.target.value)}
-                                        className="step-details"
-                                        required
-                                    />
-                                    {steps.length > 1 && (
-                                        <button type="button" className="remove-btn" onClick={() => removeStep(idx)}>Remove</button>
-                                    )}
-                                </div>
-                            ))}
-                            <button type="button" className="add-btn" onClick={addStep}>Add Step</button>
+                            <div className="steps-list">
+                                {steps.map((step, idx) => (
+                                    <div key={idx} className="step-row">
+                                        <div className="step-number">{idx + 1}</div>
+                                        <div className="step-content">
+                                            <input
+                                                type="text"
+                                                className="form-input"
+                                                placeholder="Step instruction"
+                                                value={step.instruction}
+                                                onChange={e => handleStepChange(idx, 'instruction', e.target.value)}
+                                                required
+                                            />
+                                            <textarea
+                                                className="form-textarea"
+                                                placeholder="Detailed preparation instructions"
+                                                value={step.details}
+                                                onChange={e => handleStepChange(idx, 'details', e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                        {steps.length > 1 && (
+                                            <button 
+                                                type="button" 
+                                                className="btn btn--destructive btn--sm"
+                                                onClick={() => removeStep(idx)}
+                                            >
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                                <button 
+                                    type="button" 
+                                    className="btn btn--secondary btn--sm"
+                                    onClick={addStep}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    Add Step
+                                </button>
+                            </div>
                         </div>
                     </div>
                 );
@@ -257,45 +314,84 @@ const CreateRecipe = ({ onRecipeSaved }) => {
     };
 
     return (
-        <div className="create-recipe-admin">
-            <h2 className="section-title">Create Recipe</h2>
-            <div className="tab-navigation">
-                <button
-                    className={`tab-button ${activeTab === 'basic' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('basic')}
-                >
-                    <i className="bx bx-info-circle"></i>
-                    <span>Basic Info</span>
-                </button>
-                <button
-                    className={`tab-button ${activeTab === 'ingredients' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('ingredients')}
-                >
-                    <i className="bx bx-list-ul"></i>
-                    <span>Ingredients</span>
-                </button>
-                <button
-                    className={`tab-button ${activeTab === 'steps' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('steps')}
-                >
-                    <i className="bx bx-detail"></i>
-                    <span>Steps</span>
-                </button>
-            </div>
-            <form className="create-recipe-form" onSubmit={handleSubmit}>
-                <div className="tab-content">
-                    {renderTabContent()}
+        <div className="create-recipe">
+            <div className="create-recipe__container">
+                <div className="create-recipe__header">
+                    <h2 className="create-recipe__title">Create New Recipe</h2>
+                    <p className="create-recipe__subtitle">Share your culinary creation with the world</p>
                 </div>
-                <button type="submit" className="btn-primary" disabled={isLoading}>
-                    {isLoading ? 'Saving...' : 'Save Recipe'}
-                </button>
-            </form>
-            <RecipeConfirmationModal
-                open={showModal}
-                onAccept={handleAccept}
-                onReject={handleReject}
-                {...pendingRecipe}
-            />
+
+                <div className="create-recipe__tabs">
+                    <button
+                        type="button"
+                        className={`tab-button ${activeTab === 'basic' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('basic')}
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
+                        </svg>
+                        Basic Info
+                    </button>
+                    <button
+                        type="button"
+                        className={`tab-button ${activeTab === 'ingredients' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('ingredients')}
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path>
+                        </svg>
+                        Ingredients
+                    </button>
+                    <button
+                        type="button"
+                        className={`tab-button ${activeTab === 'steps' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('steps')}
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Steps
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="create-recipe__form">
+                    {renderTabContent()}
+                    
+                    {error && (
+                        <div className="alert alert--error">
+                            <svg className="alert__icon" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                            {error}
+                        </div>
+                    )}
+                    
+                    {success && (
+                        <div className="alert alert--success">
+                            <svg className="alert__icon" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            {success}
+                        </div>
+                    )}
+                    
+                    <button 
+                        type="submit" 
+                        className="btn btn--primary btn--lg"
+                        disabled={isLoading || !name.trim() || !category || !description.trim()}
+                    >
+                        {isLoading ? (
+                            <span className="btn__loading">
+                                <span className="spinner"></span>
+                                Creating Recipe...
+                            </span>
+                        ) : (
+                            "Create Recipe"
+                        )}
+                    </button>
+                </form>
+            </div>
         </div>
     );
 };
