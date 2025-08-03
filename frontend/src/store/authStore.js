@@ -1,7 +1,9 @@
 import { create } from "zustand";
 import axios from "axios";
 
-const API_URL = import.meta.env.MODE === "development" ? "http://localhost:5000/api/auth" : "/api/auth";
+const API_URL = import.meta.env.MODE === "development" 
+    ? "http://localhost:5000/api/auth" 
+    : "https://foodhub-mern-production.up.railway.app/api/auth";
 
 axios.defaults.withCredentials = true;
 
@@ -92,6 +94,10 @@ export const useAuthStore = create((set, get) => ({
             const response = await axios.get(`${API_URL}/check-auth`);
             set({ user: response.data.user, isAuthenticated: true, isCheckingAuth: false });
         } catch (error) {
+            // Only log errors that aren't authentication-related
+            if (error.response?.status !== 401) {
+                console.error('Unexpected auth check error:', error);
+            }
             set({ error: null, isCheckingAuth: false, isAuthenticated: false });
         }
     },

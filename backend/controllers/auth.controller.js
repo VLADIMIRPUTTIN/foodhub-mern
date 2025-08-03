@@ -7,7 +7,7 @@ import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js
 import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendResetSuccessEmail } from "../mailtrap/emails.js";
 import { User } from "../models/user.model.js";
 
-const client = new OAuth2Client("209979773198-25s0s393sceitste72jnh3583dldq8fr.apps.googleusercontent.com");
+const client = new OAuth2Client("209979773198-fl8bvitq2b48gfj6mhnomgiqr1tkbb0f.apps.googleusercontent.com");
 
 export const signup = async (req, res) => {
     const { email, password, name } = req.body;
@@ -342,7 +342,7 @@ export const googleLogin = async (req, res) => {
     try {
         const ticket = await client.verifyIdToken({
             idToken: credential,
-            audience: "209979773198-fl8bvitq2b48gfj6mhnomgiqr1tkbb0f.apps.googleusercontent.com",
+            audience: "209979773198-fl8bvitq2b48gfj6mhnomgiqr1tkbb0f.apps.googleusercontent.com", // Same as frontend
         });
         const payload = ticket.getPayload();
         const { email, name, sub, picture } = payload;
