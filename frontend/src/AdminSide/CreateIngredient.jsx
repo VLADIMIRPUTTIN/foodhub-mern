@@ -27,9 +27,13 @@ const CreateIngredient = ({ onCreated }) => {
             );
             setSuccess("Ingredient created successfully!");
             setName("");
-            if (onCreated) onCreated();
             
-            // Clear success message after 3 seconds
+            // Call the callback function (which will handle modal closing)
+            if (onCreated) {
+                onCreated();
+            }
+            
+            // Clear success message after 3 seconds (in case modal doesn't close)
             setTimeout(() => setSuccess(""), 3000);
         } catch (err) {
             console.error("Create ingredient error:", err);

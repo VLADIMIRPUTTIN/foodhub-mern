@@ -16,6 +16,27 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // Enhanced Filter users based on search term - searches all relevant fields
+    const filteredUsers = users.filter(user => {
+        if (!searchTerm) return true; // Show all users if no search term
+        
+        const searchLower = searchTerm.toLowerCase();
+        return (
+            user.name?.toLowerCase().includes(searchLower) ||
+            user.email?.toLowerCase().includes(searchLower) ||
+            user.role?.toLowerCase().includes(searchLower) ||
+            user.status?.toLowerCase().includes(searchLower) ||
+            user._id?.toLowerCase().includes(searchLower) ||
+            // Search by user ID (last 6 characters)
+            user._id?.slice(-6).toLowerCase().includes(searchLower) ||
+            // Search by creation date
+            (user.createdAt && new Date(user.createdAt).toLocaleDateString().includes(searchTerm)) ||
+            // Search by last login date
+            (user.lastLogin && new Date(user.lastLogin).toLocaleDateString().includes(searchTerm))
+        );
+    });
 
     // Clear messages after 3 seconds
     const clearMessage = (type) => {
@@ -132,18 +153,67 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
         setSuspendMinutes('');
     };
 
+    // Clear search function
+    const clearSearch = () => {
+        setSearchTerm('');
+    };
+
     return (
         <div className="manage-users-page">
             <div className="page-header">
-                <h2 className="page-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="m22 21-3-3m-3 0a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"></path>
-                    </svg>
-                    User Management
-                </h2>
-                <p className="page-subtitle">Manage user accounts, permissions, and status</p>
+                <div className="header-content">
+                    <h2 className="page-title">
+                        <i className="bx bx-group"></i>
+                        User Management
+                    </h2>
+                    <p className="page-subtitle">Manage user accounts, permissions, and status</p>
+                </div>
+                
+                {/* Enhanced Search Bar */}
+                <div className="search-container">
+                    <div className="search-wrapper">
+                        <i className="bx bx-search search-icon"></i>
+                        <input
+                            type="text"
+                            placeholder="Search by name, email, role, status, ID, or date..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="search-input"
+                        />
+                        {searchTerm && (
+                            <button 
+                                className="clear-search"
+                                onClick={clearSearch}
+                                title="Clear search"
+                            >
+                                <i className="bx bx-x"></i>
+                            </button>
+                        )}
+                    </div>
+                    
+                    {/* Search Results Info */}
+                    {searchTerm && (
+                        <div className="search-results">
+                            <i className="bx bx-filter"></i>
+                            Found {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} 
+                            {searchTerm && ` matching "${searchTerm}"`}
+                        </div>
+                    )}
+                    
+                    {/* Search Tips */}
+                    {searchTerm && filteredUsers.length === 0 && (
+                        <div className="search-tips">
+                            <p>Try searching for:</p>
+                            <ul>
+                                <li>User name (e.g., "John")</li>
+                                <li>Email address (e.g., "john@example.com")</li>
+                                <li>Role (e.g., "admin", "user")</li>
+                                <li>Status (e.g., "active", "banned", "suspended")</li>
+                                <li>User ID (e.g., last 6 characters)</li>
+                            </ul>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Alert Messages */}
@@ -155,14 +225,10 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
                         exit={{ opacity: 0, y: -20 }}
                         className="alert alert--error"
                     >
-                        <svg className="alert__icon" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                        </svg>
+                        <i className="bx bx-error-circle alert__icon"></i>
                         {error}
                         <button onClick={() => setError('')} className="alert__close">
-                            <svg viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
+                            <i className="bx bx-x"></i>
                         </button>
                     </motion.div>
                 )}
@@ -174,14 +240,10 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
                         exit={{ opacity: 0, y: -20 }}
                         className="alert alert--success"
                     >
-                        <svg className="alert__icon" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
+                        <i className="bx bx-check-circle alert__icon"></i>
                         {success}
                         <button onClick={() => setSuccess('')} className="alert__close">
-                            <svg viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
+                            <i className="bx bx-x"></i>
                         </button>
                     </motion.div>
                 )}
@@ -189,129 +251,179 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
 
             {/* Users Table */}
             <div className="users-table-container">
+                <div className="table-header">
+                    <h3 className="table-title">
+                        <i className="bx bx-user-detail"></i>
+                        {searchTerm ? `Search Results (${filteredUsers.length})` : `All Users (${filteredUsers.length})`}
+                    </h3>
+                    {searchTerm && (
+                        <button 
+                            className="clear-all-filters"
+                            onClick={clearSearch}
+                            title="Clear all filters"
+                        >
+                            <i className="bx bx-x"></i>
+                            Clear Filters
+                        </button>
+                    )}
+                </div>
+                
                 <div className="table-wrapper">
-                    <table className="users-table">
-                        <thead>
-                            <tr>
-                                <th>User</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Joined</th>
-                                <th>Last Login</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {users.map((user, index) => (
-                                <motion.tr
-                                    key={user._id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                    className="user-row"
+                    {filteredUsers.length === 0 ? (
+                        <div className="empty-state">
+                            <i className="bx bx-user-x empty-icon"></i>
+                            <h3>
+                                {searchTerm ? 'No users found' : 'No users registered'}
+                            </h3>
+                            <p>
+                                {searchTerm 
+                                    ? `No users match your search for "${searchTerm}"`
+                                    : "No users registered in the system yet"
+                                }
+                            </p>
+                            {searchTerm && (
+                                <button 
+                                    className="btn btn--primary"
+                                    onClick={clearSearch}
                                 >
-                                    <td className="user-info">
-                                        <div className="user-avatar">
-                                            {user.profileImage ? (
-                                                <img src={user.profileImage} alt={user.name} />
-                                            ) : (
-                                                <div className="avatar-placeholder">
-                                                    {user.name?.charAt(0)?.toUpperCase() || 'U'}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="user-details">
-                                            <span className="user-name">{user.name}</span>
-                                            <span className="user-id">ID: {user._id.slice(-6)}</span>
-                                        </div>
-                                    </td>
-                                    <td className="user-email">{user.email}</td>
-                                    <td>
-                                        <span className={`role-badge role-${user.role}`}>
-                                            {user.role}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span className={`status-badge status-${user.status}`}>
-                                            <div className={`status-dot status-dot-${user.status}`}></div>
-                                            {user.status}
-                                        </span>
-                                    </td>
-                                    <td className="date-cell">
-                                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
-                                    </td>
-                                    <td className="date-cell">
-                                        {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
-                                    </td>
-                                    <td>
-                                        <div className="action-buttons">
-                                            <button
-                                                className="btn btn--success btn--sm"
-                                                onClick={() => handleActivate(user._id)}
-                                                disabled={user.status === 'active' || actionLoading}
-                                                title="Activate User"
-                                            >
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <polyline points="20,6 9,17 4,12"></polyline>
-                                                </svg>
-                                                Activate
-                                            </button>
-                                            
-                                            <button
-                                                className="btn btn--warning btn--sm"
-                                                onClick={() => {
-                                                    setSelectedUser(user);
-                                                    setShowSuspendModal(true);
-                                                }}
-                                                disabled={user.status === 'suspended' || actionLoading}
-                                                title="Suspend User"
-                                            >
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <circle cx="12" cy="12" r="10"></circle>
-                                                    <line x1="15" y1="9" x2="9" y2="15"></line>
-                                                    <line x1="9" y1="9" x2="15" y2="15"></line>
-                                                </svg>
-                                                Suspend
-                                            </button>
-                                            
-                                            <button
-                                                className="btn btn--destructive btn--sm"
-                                                onClick={() => {
-                                                    setSelectedUser(user);
-                                                    setShowBanModal(true);
-                                                }}
-                                                disabled={user.status === 'banned' || actionLoading}
-                                                title="Ban User"
-                                            >
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <circle cx="12" cy="12" r="10"></circle>
-                                                    <path d="m4.93 4.93 14.14 14.14"></path>
-                                                </svg>
-                                                Ban
-                                            </button>
-                                            
-                                            <button
-                                                className="btn btn--ghost btn--sm"
-                                                onClick={() => {
-                                                    setSelectedUser(user);
-                                                    setShowDeleteModal(true);
-                                                }}
-                                                disabled={actionLoading}
-                                                title="Delete User"
-                                            >
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <polyline points="3,6 5,6 21,6"></polyline>
-                                                    <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2v2"></path>
-                                                </svg>
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </td>
-                                </motion.tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                    <i className="bx bx-refresh"></i>
+                                    Clear Search
+                                </button>
+                            )}
+                        </div>
+                    ) : (
+                        <table className="users-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Joined</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredUsers.map((user, index) => (
+                                    <motion.tr
+                                        key={user._id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.05 }}
+                                        className="user-row"
+                                    >
+                                        <td className="user-info">
+                                            <div className="user-avatar">
+                                                {user.profileImage ? (
+                                                    <img src={user.profileImage} alt={user.name} />
+                                                ) : (
+                                                    <div className="avatar-placeholder">
+                                                        {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="user-details">
+                                                <span className="user-name">
+                                                    {/* Highlight search term in name */}
+                                                    {searchTerm && user.name?.toLowerCase().includes(searchTerm.toLowerCase()) 
+                                                        ? user.name.replace(
+                                                            new RegExp(`(${searchTerm})`, 'gi'),
+                                                            '<mark>$1</mark>'
+                                                        )
+                                                        : user.name
+                                                    }
+                                                </span>
+                                                <span className="user-id">ID: {user._id.slice(-6)}</span>
+                                            </div>
+                                        </td>
+                                        <td className="user-email">
+                                            {/* Highlight search term in email */}
+                                            {searchTerm && user.email?.toLowerCase().includes(searchTerm.toLowerCase()) 
+                                                ? <span dangerouslySetInnerHTML={{
+                                                    __html: user.email.replace(
+                                                        new RegExp(`(${searchTerm})`, 'gi'),
+                                                        '<mark>$1</mark>'
+                                                    )
+                                                }} />
+                                                : user.email
+                                            }
+                                        </td>
+                                        <td>
+                                            <span className={`role-badge role-${user.role}`}>
+                                                <i className={`bx ${user.role === 'admin' ? 'bx-crown' : 'bx-user'}`}></i>
+                                                {user.role}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span className={`status-badge status-${user.status}`}>
+                                                <div className={`status-dot status-dot-${user.status}`}></div>
+                                                {user.status}
+                                            </span>
+                                        </td>
+                                        <td className="date-cell">
+                                            {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
+                                        </td>
+                                        <td className="date-cell">
+                                            {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
+                                        </td>
+                                        <td>
+                                            <div className="action-buttons">
+                                                <button
+                                                    className="btn btn--success btn--sm"
+                                                    onClick={() => handleActivate(user._id)}
+                                                    disabled={user.status === 'active' || actionLoading}
+                                                    title="Activate User"
+                                                >
+                                                    <i className="bx bx-check"></i>
+                                                    <span>Activate</span>
+                                                </button>
+                                                
+                                                <button
+                                                    className="btn btn--warning btn--sm"
+                                                    onClick={() => {
+                                                        setSelectedUser(user);
+                                                        setShowSuspendModal(true);
+                                                    }}
+                                                    disabled={user.status === 'suspended' || actionLoading}
+                                                    title="Suspend User"
+                                                >
+                                                    <i className="bx bx-pause-circle"></i>
+                                                    <span>Suspend</span>
+                                                </button>
+                                                
+                                                <button
+                                                    className="btn btn--destructive btn--sm"
+                                                    onClick={() => {
+                                                        setSelectedUser(user);
+                                                        setShowBanModal(true);
+                                                    }}
+                                                    disabled={user.status === 'banned' || actionLoading}
+                                                    title="Ban User"
+                                                >
+                                                    <i className="bx bx-block"></i>
+                                                    <span>Ban</span>
+                                                </button>
+                                                
+                                                <button
+                                                    className="btn btn--ghost btn--sm"
+                                                    onClick={() => {
+                                                        setSelectedUser(user);
+                                                        setShowDeleteModal(true);
+                                                    }}
+                                                    disabled={actionLoading}
+                                                    title="Delete User"
+                                                >
+                                                    <i className="bx bx-trash"></i>
+                                                    <span>Delete</span>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </motion.tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             </div>
 
@@ -333,12 +445,12 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="modal__header">
-                                <h3 className="modal__title">Suspend User</h3>
+                                <h3 className="modal__title">
+                                    <i className="bx bx-pause-circle"></i>
+                                    Suspend User
+                                </h3>
                                 <button className="modal__close" onClick={closeAllModals}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                                    </svg>
+                                    <i className="bx bx-x"></i>
                                 </button>
                             </div>
                             
@@ -373,7 +485,10 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
                                             Suspending...
                                         </span>
                                     ) : (
-                                        "Suspend User"
+                                        <>
+                                            <i className="bx bx-pause-circle"></i>
+                                            Suspend User
+                                        </>
                                     )}
                                 </button>
                             </div>
@@ -398,18 +513,21 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="modal__header">
-                                <h3 className="modal__title">Ban User</h3>
+                                <h3 className="modal__title">
+                                    <i className="bx bx-block"></i>
+                                    Ban User
+                                </h3>
                                 <button className="modal__close" onClick={closeAllModals}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                                    </svg>
+                                    <i className="bx bx-x"></i>
                                 </button>
                             </div>
                             
                             <div className="modal__body">
                                 <p>Are you sure you want to ban <strong>{selectedUser.name}</strong>?</p>
-                                <p className="warning-text">This action will permanently ban the user from accessing the platform.</p>
+                                <p className="warning-text">
+                                    <i className="bx bx-error-alt"></i>
+                                    This action will permanently ban the user from accessing the platform.
+                                </p>
                             </div>
 
                             <div className="modal__actions">
@@ -427,7 +545,10 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
                                             Banning...
                                         </span>
                                     ) : (
-                                        "Yes, Ban User"
+                                        <>
+                                            <i className="bx bx-block"></i>
+                                            Yes, Ban User
+                                        </>
                                     )}
                                 </button>
                             </div>
@@ -452,19 +573,20 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="modal__header">
-                                <h3 className="modal__title">Delete User Account</h3>
+                                <h3 className="modal__title">
+                                    <i className="bx bx-trash"></i>
+                                    Delete User Account
+                                </h3>
                                 <button className="modal__close" onClick={closeAllModals}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                                    </svg>
+                                    <i className="bx bx-x"></i>
                                 </button>
                             </div>
                             
                             <div className="modal__body">
                                 <p>Are you sure you want to delete <strong>{selectedUser.name}'s</strong> account?</p>
                                 <p className="warning-text">
-                                    ⚠️ This action cannot be undone. All user data, recipes, and associated content will be permanently removed.
+                                    <i className="bx bx-error-alt"></i>
+                                    This action cannot be undone. All user data, recipes, and associated content will be permanently removed.
                                 </p>
                             </div>
 
@@ -483,7 +605,10 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
                                             Deleting...
                                         </span>
                                     ) : (
-                                        "Yes, Delete Account"
+                                        <>
+                                            <i className="bx bx-trash"></i>
+                                            Yes, Delete Account
+                                        </>
                                     )}
                                 </button>
                             </div>

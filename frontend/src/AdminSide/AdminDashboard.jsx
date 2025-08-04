@@ -9,6 +9,7 @@ import axios from "axios";
 import Swal from 'sweetalert2';
 import ManageUsersPage from './ManageUsersPage';
 import ManageRecipeAndIngredientsPage from './ManageRecipeAndIngredientsPage';
+import QuickActionModal from '../components/QuickActionModal';
 
 const baseURL = import.meta.env.MODE === "development"
   ? "http://localhost:5000"
@@ -22,13 +23,27 @@ const AdminDashboard = () => {
     const [ingredients, setIngredients] = useState([]);
     const [pendingCount, setPendingCount] = useState(0);
     const [stats, setStats] = useState({
-       
+        totalUsers: 0,
+        totalRecipes: 0,
+        pendingRecipes: 0,
+        todayLogins: 0
     });
     const [loading, setLoading] = useState(true);
 
     // Search states for manage recipes/ingredients
     const [recipeSearch, setRecipeSearch] = useState('');
     const [ingredientSearch, setIngredientSearch] = useState('');
+
+    // Modal state
+    const [modalState, setModalState] = useState({
+        overview: false,
+        users: false,
+        recipes: false,
+        pending: false,
+        stats: false,
+        createRecipe: false,
+        createIngredient: false
+    });
 
     // Real-time stats fetcher
     const fetchRealTimeStats = async () => {
@@ -74,7 +89,7 @@ const AdminDashboard = () => {
             setStats({
                 totalUsers: usersData.length,
                 totalRecipes: recipesData.length,
-                pendingRecipes: pendingData.length, // Changed from pendingReviews to pendingRecipes
+                pendingRecipes: pendingData.length,
                 todayLogins: todayLogins
             });
 
@@ -396,6 +411,31 @@ const AdminDashboard = () => {
         i.name?.toLowerCase().includes(ingredientSearch.toLowerCase())
     );
 
+    const openModal = (modalType) => {
+        setModalState(prev => ({ ...prev, [modalType]: true }));
+    };
+
+    const closeModal = (modalType) => {
+        setModalState(prev => ({ ...prev, [modalType]: false }));
+    };
+
+    const closeAllModals = () => {
+        setModalState({
+            overview: false,
+            users: false,
+            recipes: false,
+            pending: false,
+            stats: false,
+            createRecipe: false,
+            createIngredient: false
+        });
+    };
+
+    const handleNavigateToTab = (tabName) => {
+        setActiveTab(tabName);
+        closeAllModals();
+    };
+
     if (!isAdmin()) {
         return (
             <div className="admin-dashboard">
@@ -412,18 +452,21 @@ const AdminDashboard = () => {
             <div className="admin-header">
                 <div className="header-content">
                     <div className="header-info">
-                        <h1>🍳 FoodHub Admin Panel</h1>
+                        <h1>
+                            <i className="bx bx-user-check"></i>
+                            FoodHub Admin Panel
+                        </h1>
                         <p>Welcome back, {user?.name}!</p>
                     </div>
                     <button className="logout-btn" onClick={handleLogout}>
-                        <i className="fas fa-sign-out-alt"></i>
+                        <i className="bx bx-log-out"></i>
                         Logout
                     </button>
                 </div>
             </div>
 
             <div className="admin-container">
-                {/* Real-time Stats Cards - FIXED KEYS */}
+                {/* Real-time Stats Cards */}
                 <div className="stats-grid">
                     <motion.div 
                         className="stat-card"
@@ -433,7 +476,7 @@ const AdminDashboard = () => {
                         key="total-users"
                     >
                         <div className="stat-icon users">
-                            <i className="fas fa-users"></i>
+                            <i className="bx bx-group"></i>
                         </div>
                         <div className="stat-info">
                             <motion.h3
@@ -456,7 +499,7 @@ const AdminDashboard = () => {
                         key="total-recipes"
                     >
                         <div className="stat-icon recipes">
-                            <i className="fas fa-utensils"></i>
+                            <i className="bx bx-book-open"></i>
                         </div>
                         <div className="stat-info">
                             <motion.h3
@@ -479,7 +522,7 @@ const AdminDashboard = () => {
                         key="pending-recipes"
                     >
                         <div className="stat-icon pending">
-                            <i className="fas fa-clock"></i>
+                            <i className="bx bx-time-five"></i>
                         </div>
                         <div className="stat-info">
                             <motion.h3
@@ -502,7 +545,7 @@ const AdminDashboard = () => {
                         key="today-logins"
                     >
                         <div className="stat-icon logins">
-                            <i className="fas fa-chart-line"></i>
+                            <i className="bx bx-trending-up"></i>
                         </div>
                         <div className="stat-info">
                             <motion.h3
@@ -521,108 +564,55 @@ const AdminDashboard = () => {
                 {/* Navigation Tabs */}
                 <div className="admin-tabs">
                     <button 
-                        className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('overview')}
+                        className={`tab-btn`}
+                        onClick={() => openModal('overview')}
                     >
-                        <i className="fas fa-chart-bar"></i>
-                        Overview
+                        <i className="bx bx-bar-chart-alt-2"></i>
+                        <span className="tab-text">Overview</span>
                     </button>
                     <button 
                         className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('users')}
+                        onClick={() => openModal('users')}
                     >
-                        <i className="fas fa-users"></i>
-                        Manage Users
+                        <i className="bx bx-group"></i>
+                        <span className="tab-text">Users</span>
                     </button>
                     <button 
                         className={`tab-btn ${activeTab === 'recipes' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('recipes')}
+                        onClick={() => openModal('recipes')}
                     >
-                        <i className="fas fa-book-open"></i>
-                        Manage Recipes & Ingredients
+                        <i className="bx bx-book-open"></i>
+                        <span className="tab-text">Recipes</span>
                     </button>
                     <button 
                         className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('pending')}
+                        onClick={() => openModal('pending')}
                     >
-                        <i className="fas fa-clock"></i>
-                        Pending Recipes
+                        <i className="bx bx-time-five"></i>
+                        <span className="tab-text">Pending</span>
                         {stats.pendingRecipes > 0 && (
                             <span className="notification-badge">{stats.pendingRecipes}</span>
                         )}
                     </button>
                     <button 
-                        className={`tab-btn ${activeTab === 'create' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('create')}
+                        className={`tab-btn ${modalState.createRecipe ? 'active' : ''}`}
+                        onClick={() => openModal('createRecipe')}
                     >
-                        <i className="fas fa-plus-circle"></i>
-                        Create Recipe
+                        <i className="bx bx-plus-circle"></i>
+                        <span className="tab-text">Create Recipe</span>
                     </button>
                     <button 
-                        className={`tab-btn ${activeTab === 'create-ingredient' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('create-ingredient')}
+                        className={`tab-btn ${modalState.createIngredient ? 'active' : ''}`}
+                        onClick={() => openModal('createIngredient')}
                     >
-                        <i className="fas fa-leaf"></i>
-                        Create Ingredient
+                        <i className="bx bx-leaf"></i>
+                        <span className="tab-text">Create Ingredient</span>
                     </button>
                 </div>
 
                 {/* Content Area */}
-                <motion.div 
-                    className="admin-content"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                >
-                    {activeTab === 'overview' && (
-                        <div className="overview-content">
-                            <div className="overview-header">
-                                <h2>System Overview</h2>
-                                <div className="last-updated">
-                                    <i className="fas fa-sync-alt"></i>
-                                    Auto-updates every 30 seconds
-                                </div>
-                            </div>
-                            <div className="overview-grid">
-                                <div className="overview-card">
-                                    <h3>Today's Activity</h3>
-                                    <ul>
-                                        <li>👥 {stats.todayLogins} users logged in today</li>
-                                        <li>📋 {stats.pendingRecipes} recipes awaiting review</li>
-                                        <li>🍳 {stats.totalRecipes} total recipes in system</li>
-                                        <li>👨‍👩‍👧‍👦 {stats.totalUsers} registered users</li>
-                                    </ul>
-                                </div>
-                                <div className="overview-card">
-                                    <h3>Quick Actions</h3>
-                                    <div className="quick-actions">
-                                        <button 
-                                            className="action-btn" 
-                                            onClick={() => setActiveTab('pending')}
-                                        >
-                                            <i className="fas fa-clock"></i>
-                                            Review Pending Recipes ({stats.pendingRecipes})
-                                        </button>
-                                        <button 
-                                            className="action-btn" 
-                                            onClick={() => setActiveTab('users')}
-                                        >
-                                            <i className="fas fa-users"></i>
-                                            Manage Users ({stats.totalUsers})
-                                        </button>
-                                        <button 
-                                            className="action-btn" 
-                                            onClick={() => fetchRealTimeStats()}
-                                        >
-                                            <i className="fas fa-sync-alt"></i>
-                                            Refresh Statistics
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
+                <motion.div>
+                    {/* Remove the overview content since we're using modals */}
                     {activeTab === 'users' && (
                         <ManageUsersPage
                             users={users}
@@ -668,6 +658,249 @@ const AdminDashboard = () => {
                     )}
                 </motion.div>
             </div>
+
+            {/* Users Modal - Full Content */}
+            <QuickActionModal
+                isOpen={modalState.users}
+                onClose={() => closeModal('users')}
+                title="User Management"
+                type="users"
+                isFullContent={true}
+            >
+                <ManageUsersPage
+                    users={users}
+                    fetchUsers={fetchUsers}
+                    handleDeleteUser={handleDeleteUser}
+                    handleUserAction={handleUserAction}
+                />
+            </QuickActionModal>
+
+            {/* Recipes Modal - Enhanced with create options */}
+            <QuickActionModal
+                isOpen={modalState.recipes}
+                onClose={() => closeModal('recipes')}
+                title="Recipe & Ingredient Management"
+                type="recipes"
+                isFullContent={true}
+            >
+                <div style={{ padding: '1rem', borderBottom: '1px solid #e9ecef', background: '#f8f9fa' }}>
+                    <div className="modal-quick-actions" style={{ flexDirection: 'row', gap: '0.5rem', marginBottom: '0' }}>
+                        <button 
+                            className="modal-action-btn recipes"
+                            style={{ flex: 1, minHeight: '48px', padding: '0.5rem 1rem' }}
+                            onClick={() => {
+                                closeModal('recipes');
+                                openModal('createRecipe');
+                            }}
+                        >
+                            <i className="bx bx-plus-circle"></i>
+                            <div className="btn-content">
+                                <div className="btn-title" style={{ fontSize: '0.85rem' }}>Create Recipe</div>
+                            </div>
+                        </button>
+                        
+                        <button 
+                            className="modal-action-btn pending"
+                            style={{ flex: 1, minHeight: '48px', padding: '0.5rem 1rem' }}
+                            onClick={() => {
+                                closeModal('recipes');
+                                openModal('createIngredient');
+                            }}
+                        >
+                            <i className="bx bx-leaf"></i>
+                            <div className="btn-content">
+                                <div className="btn-title" style={{ fontSize: '0.85rem' }}>Create Ingredient</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+                
+                <ManageRecipeAndIngredientsPage
+                    recipes={recipes}
+                    ingredients={ingredients}
+                    recipeSearch={recipeSearch}
+                    ingredientSearch={ingredientSearch}
+                    setRecipeSearch={setRecipeSearch}
+                    setIngredientSearch={setIngredientSearch}
+                    filteredRecipes={filteredRecipes}
+                    filteredIngredients={filteredIngredients}
+                    handleEditRecipe={handleEditRecipe}
+                    handleDeleteRecipe={handleDeleteRecipe}
+                    handleEditIngredient={handleEditIngredient}
+                    handleDeleteIngredient={handleDeleteIngredient}
+                    fetchRecipes={fetchRecipes}
+                    fetchIngredients={fetchIngredients}
+                />
+            </QuickActionModal>
+
+            {/* Pending Recipes Modal - Full Content */}
+            <QuickActionModal
+                isOpen={modalState.pending}
+                onClose={() => closeModal('pending')}
+                title="Pending Recipe Reviews"
+                type="pending"
+                isFullContent={true}
+            >
+                <PendingRecipePage 
+                    onRecipeModerated={handleRecipeModerated}
+                />
+            </QuickActionModal>
+
+            {/* Overview Modal - Enhanced with create actions */}
+            <QuickActionModal
+                isOpen={modalState.overview}
+                onClose={() => closeModal('overview')}
+                title="System Overview"
+                type="stats"
+            >
+                <div className="modal-stats-grid">
+                    <div className="modal-stat-item">
+                        <div className="stat-number">{stats.totalUsers}</div>
+                        <div className="stat-label">Total Users</div>
+                    </div>
+                    <div className="modal-stat-item">
+                        <div className="stat-number">{stats.totalRecipes}</div>
+                        <div className="stat-label">Total Recipes</div>
+                    </div>
+                    <div className="modal-stat-item">
+                        <div className="stat-number">{stats.pendingRecipes}</div>
+                        <div className="stat-label">Pending</div>
+                    </div>
+                    <div className="modal-stat-item">
+                        <div className="stat-number">{stats.todayLogins}</div>
+                        <div className="stat-label">Today's Logins</div>
+                    </div>
+                </div>
+
+                <div className="modal-quick-actions">
+                    <button 
+                        className="modal-action-btn pending"
+                        onClick={() => {
+                            closeModal('overview');
+                            openModal('pending');
+                        }}
+                    >
+                        <i className="bx bx-time-five"></i>
+                        <div className="btn-content">
+                            <div className="btn-title">Review Pending Recipes</div>
+                            <div className="btn-description">
+                                {stats.pendingRecipes} recipes awaiting your review
+                            </div>
+                        </div>
+                    </button>
+                    
+                    <button 
+                        className="modal-action-btn users"
+                        onClick={() => {
+                            closeModal('overview');
+                            openModal('users');
+                        }}
+                    >
+                        <i className="bx bx-group"></i>
+                        <div className="btn-content">
+                            <div className="btn-title">Manage Users</div>
+                            <div className="btn-description">
+                                Oversee {stats.totalUsers} registered users
+                            </div>
+                        </div>
+                    </button>
+                    
+                    <button 
+                        className="modal-action-btn recipes"
+                        onClick={() => {
+                            closeModal('overview');
+                            openModal('recipes');
+                        }}
+                    >
+                        <i className="bx bx-book-open"></i>
+                        <div className="btn-content">
+                            <div className="btn-title">Manage Recipes</div>
+                            <div className="btn-description">
+                                Edit and organize {stats.totalRecipes} recipes
+                            </div>
+                        </div>
+                    </button>
+                    
+                    {/* New Create Recipe Button */}
+                    <button 
+                        className="modal-action-btn recipes"
+                        onClick={() => {
+                            closeModal('overview');
+                            openModal('createRecipe');
+                        }}
+                    >
+                        <i className="bx bx-plus-circle"></i>
+                        <div className="btn-content">
+                            <div className="btn-title">Create New Recipe</div>
+                            <div className="btn-description">
+                                Add a delicious new recipe to the collection
+                            </div>
+                        </div>
+                    </button>
+
+                    {/* New Create Ingredient Button */}
+                    <button 
+                        className="modal-action-btn pending"
+                        onClick={() => {
+                            closeModal('overview');
+                            openModal('createIngredient');
+                        }}
+                    >
+                        <i className="bx bx-leaf"></i>
+                        <div className="btn-content">
+                            <div className="btn-title">Create New Ingredient</div>
+                            <div className="btn-description">
+                                Add new ingredients to expand recipe options
+                            </div>
+                        </div>
+                    </button>
+                    
+                    <button 
+                        className="modal-action-btn stats"
+                        onClick={() => fetchRealTimeStats()}
+                    >
+                        <i className="bx bx-refresh"></i>
+                        <div className="btn-content">
+                            <div className="btn-title">Refresh Statistics</div>
+                            <div className="btn-description">
+                                Update all system statistics
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </QuickActionModal>
+
+            {/* Create Recipe Modal - Full Content */}
+            <QuickActionModal
+                isOpen={modalState.createRecipe}
+                onClose={() => closeModal('createRecipe')}
+                title="Create New Recipe"
+                type="recipes"
+                isFullContent={true}
+            >
+                <CreateRecipe
+                    onRecipeSaved={() => {
+                        handleRecipeSaved();
+                        closeModal('createRecipe');
+                    }}
+                />
+            </QuickActionModal>
+
+            {/* Create Ingredient Modal - Full Content */}
+            <QuickActionModal
+                isOpen={modalState.createIngredient}
+                onClose={() => closeModal('createIngredient')}
+                title="Create New Ingredient"
+                type="recipes"
+                isFullContent={true}
+            >
+                <CreateIngredient
+                    onCreated={() => {
+                        handleIngredientCreated();
+                        closeModal('createIngredient');
+                    }}
+                />
+            </QuickActionModal>
         </div>
     );
 };

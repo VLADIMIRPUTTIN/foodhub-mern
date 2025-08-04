@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import './CreateRecipe.scss';
 
@@ -26,9 +27,10 @@ const CreateRecipe = ({ onRecipeSaved }) => {
     useEffect(() => {
         const fetchIngredients = async () => {
             try {
-                const res = await axios.get(
-                    `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/ingredients" : "/api/ingredients"}`
-                );
+                const baseURL = import.meta.env.MODE === "development" 
+                    ? "http://localhost:5000" 
+                    : "";
+                const res = await axios.get(`${baseURL}/api/ingredients`);
                 setAllIngredients(res.data.ingredients);
             } catch {
                 setAllIngredients([]);
@@ -95,22 +97,29 @@ const CreateRecipe = ({ onRecipeSaved }) => {
                 formData.append('image', image);
             }
 
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+            
             const response = await axios.post(
-                `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/recipes" : "/api/recipes"}`,
+                `${baseURL}/api/recipes`,
                 formData,
                 {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
+                        'Content-Type': 'multipart/form-data'
+                    },
+                    withCredentials: true
                 }
             );
 
             if (response.data.success) {
                 setSuccess('Recipe created successfully!');
                 resetForm();
-                if (onRecipeSaved) onRecipeSaved();
                 
-                // Clear success message after 3 seconds
+                if (onRecipeSaved) {
+                    onRecipeSaved();
+                }
+                
                 setTimeout(() => setSuccess(''), 3000);
             }
         } catch (err) {
@@ -122,6 +131,7 @@ const CreateRecipe = ({ onRecipeSaved }) => {
             } else {
                 setError(err.response?.data?.message || 'Failed to create recipe');
             }
+            setTimeout(() => setError(''), 5000);
         } finally {
             setIsLoading(false);
         }
@@ -131,182 +141,276 @@ const CreateRecipe = ({ onRecipeSaved }) => {
         switch (activeTab) {
             case 'basic':
                 return (
-                    <div className="tab-content">
+                    <motion.div 
+                        className="tab-content-wrapper"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                    >
                         <div className="form-card">
-                            <div className="form-group">
-                                <label className="form-label">Recipe Name</label>
-                                <input 
-                                    type="text" 
-                                    className="form-input"
-                                    placeholder="Enter recipe name..."
-                                    value={name} 
-                                    onChange={e => setName(e.target.value)} 
-                                    required 
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Category</label>
-                                <select 
-                                    className="form-select"
-                                    value={category} 
-                                    onChange={e => setCategory(e.target.value)} 
-                                    required
-                                >
-                                    <option value="">Select Category</option>
-                                    {categories.map(cat => (
-                                        <option key={cat} value={cat}>{cat}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Description</label>
-                                <textarea 
-                                    className="form-textarea"
-                                    placeholder="Describe your recipe..."
-                                    value={description} 
-                                    onChange={e => setDescription(e.target.value)} 
-                                    required 
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Recipe Image</label>
-                                <input 
-                                    type="file" 
-                                    className="form-input"
-                                    accept="image/*" 
-                                    onChange={handleImageChange} 
-                                />
-                                {imagePreview && (
-                                    <img 
-                                        src={imagePreview} 
-                                        alt="Preview" 
-                                        className="image-preview" 
+                            <h3 className="card-title">
+                                <i className="bx bx-info-circle"></i>
+                                Basic Information
+                            </h3>
+                            
+                            <div className="form-content">
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        <i className="bx bx-food-menu"></i>
+                                        Recipe Name
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        className="form-input"
+                                        placeholder="Enter a delicious recipe name..."
+                                        value={name} 
+                                        onChange={e => setName(e.target.value)} 
+                                        required 
                                     />
-                                )}
-                                <p className="form-description">Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP</p>
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        <i className="bx bx-category"></i>
+                                        Category
+                                    </label>
+                                    <select 
+                                        className="form-select"
+                                        value={category} 
+                                        onChange={e => setCategory(e.target.value)} 
+                                        required
+                                    >
+                                        <option value="">Select a category</option>
+                                        {categories.map(cat => (
+                                            <option key={cat} value={cat}>{cat}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        <i className="bx bx-text"></i>
+                                        Description
+                                    </label>
+                                    <textarea 
+                                        className="form-textarea"
+                                        placeholder="Describe your recipe, cooking tips, or what makes it special..."
+                                        value={description} 
+                                        onChange={e => setDescription(e.target.value)} 
+                                        required 
+                                    />
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        <i className="bx bx-image"></i>
+                                        Recipe Image
+                                    </label>
+                                    <div className="image-upload-container">
+                                        <input 
+                                            type="file" 
+                                            id="recipe-image"
+                                            className="form-input-file"
+                                            accept="image/*" 
+                                            onChange={handleImageChange} 
+                                        />
+                                        <label htmlFor="recipe-image" className="image-upload-label">
+                                            <i className="bx bx-cloud-upload"></i>
+                                            <span>Choose an image or drag & drop</span>
+                                        </label>
+                                        {imagePreview && (
+                                            <motion.div 
+                                                className="image-preview-container"
+                                                initial={{ opacity: 0, scale: 0.9 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ duration: 0.3 }}
+                                            >
+                                                <img 
+                                                    src={imagePreview} 
+                                                    alt="Recipe Preview" 
+                                                    className="image-preview" 
+                                                />
+                                                <button 
+                                                    type="button"
+                                                    className="remove-image"
+                                                    onClick={() => {
+                                                        setImage(null);
+                                                        setImagePreview(null);
+                                                    }}
+                                                >
+                                                    <i className="bx bx-x"></i>
+                                                </button>
+                                            </motion.div>
+                                        )}
+                                    </div>
+                                    <p className="form-description">
+                                        <i className="bx bx-info-circle"></i>
+                                        Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
                 );
+                
             case 'ingredients':
                 return (
-                    <div className="tab-content">
+                    <motion.div 
+                        className="tab-content-wrapper"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                    >
                         <div className="form-card">
-                            <h3 className="card-title">Ingredients</h3>
+                            <h3 className="card-title">
+                                <i className="bx bx-leaf"></i>
+                                Ingredients ({ingredients.length})
+                            </h3>
+                            
                             <div className="ingredients-list">
-                                {ingredients.map((ing, idx) => (
-                                    <div key={idx} className="ingredient-row">
-                                        <input
-                                            type="text"
-                                            className="form-input ingredient-amount"
-                                            placeholder="Amount"
-                                            value={ing.amount}
-                                            onChange={e => handleIngredientChange(idx, 'amount', e.target.value)}
-                                            required
-                                        />
-                                        <select
-                                            className="form-select ingredient-unit"
-                                            value={ing.unit}
-                                            onChange={e => handleIngredientChange(idx, 'unit', e.target.value)}
-                                            required
+                                <AnimatePresence>
+                                    {ingredients.map((ing, idx) => (
+                                        <motion.div
+                                            key={idx}
+                                            className="ingredient-row"
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: 20 }}
+                                            transition={{ duration: 0.2, delay: idx * 0.05 }}
                                         >
-                                            <option value="">Unit</option>
-                                            {units.map(unit => (
-                                                <option key={unit} value={unit}>{unit}</option>
-                                            ))}
-                                        </select>
-                                        <select
-                                            className="form-select ingredient-name"
-                                            value={ing.name}
-                                            onChange={e => handleIngredientChange(idx, 'name', e.target.value)}
-                                            required
-                                        >
-                                            <option value="">Select Ingredient</option>
-                                            {allIngredients.map(ingredient => (
-                                                <option key={ingredient._id} value={ingredient.name}>
-                                                    {ingredient.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {ingredients.length > 1 && (
-                                            <button 
-                                                type="button" 
-                                                className="btn btn--destructive btn--sm"
-                                                onClick={() => removeIngredient(idx)}
-                                            >
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
-                                <button 
+                                            <div className="ingredient-fields">
+                                                <input
+                                                    type="text"
+                                                    className="form-input ingredient-amount"
+                                                    placeholder="Amount"
+                                                    value={ing.amount}
+                                                    onChange={e => handleIngredientChange(idx, 'amount', e.target.value)}
+                                                    required
+                                                />
+                                                <select
+                                                    className="form-select ingredient-unit"
+                                                    value={ing.unit}
+                                                    onChange={e => handleIngredientChange(idx, 'unit', e.target.value)}
+                                                    required
+                                                >
+                                                    <option value="">Unit</option>
+                                                    {units.map(unit => (
+                                                        <option key={unit} value={unit}>{unit}</option>
+                                                    ))}
+                                                </select>
+                                                <select
+                                                    className="form-select ingredient-name"
+                                                    value={ing.name}
+                                                    onChange={e => handleIngredientChange(idx, 'name', e.target.value)}
+                                                    required
+                                                >
+                                                    <option value="">Select Ingredient</option>
+                                                    {allIngredients.map(ingredient => (
+                                                        <option key={ingredient._id} value={ingredient.name}>
+                                                            {ingredient.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            {ingredients.length > 1 && (
+                                                <button 
+                                                    type="button" 
+                                                    className="btn btn--destructive btn--sm btn--icon"
+                                                    onClick={() => removeIngredient(idx)}
+                                                    title="Remove ingredient"
+                                                >
+                                                    <i className="bx bx-trash"></i>
+                                                </button>
+                                            )}
+                                        </motion.div>
+                                    ))}
+                                </AnimatePresence>
+                                
+                                <motion.button 
                                     type="button" 
-                                    className="btn btn--secondary btn--sm"
+                                    className="btn btn--secondary btn--add"
                                     onClick={addIngredient}
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
                                 >
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                    </svg>
+                                    <i className="bx bx-plus"></i>
                                     Add Ingredient
-                                </button>
+                                </motion.button>
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
                 );
+                
             case 'steps':
                 return (
-                    <div className="tab-content">
+                    <motion.div 
+                        className="tab-content-wrapper"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                    >
                         <div className="form-card">
-                            <h3 className="card-title">Preparation Steps</h3>
+                            <h3 className="card-title">
+                                <i className="bx bx-list-ol"></i>
+                                Preparation Steps ({steps.length})
+                            </h3>
+                            
                             <div className="steps-list">
-                                {steps.map((step, idx) => (
-                                    <div key={idx} className="step-row">
-                                        <div className="step-number">{idx + 1}</div>
-                                        <div className="step-content">
-                                            <input
-                                                type="text"
-                                                className="form-input"
-                                                placeholder="Step instruction"
-                                                value={step.instruction}
-                                                onChange={e => handleStepChange(idx, 'instruction', e.target.value)}
-                                                required
-                                            />
-                                            <textarea
-                                                className="form-textarea"
-                                                placeholder="Detailed preparation instructions"
-                                                value={step.details}
-                                                onChange={e => handleStepChange(idx, 'details', e.target.value)}
-                                                required
-                                            />
-                                        </div>
-                                        {steps.length > 1 && (
-                                            <button 
-                                                type="button" 
-                                                className="btn btn--destructive btn--sm"
-                                                onClick={() => removeStep(idx)}
-                                            >
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
-                                <button 
+                                <AnimatePresence>
+                                    {steps.map((step, idx) => (
+                                        <motion.div
+                                            key={idx}
+                                            className="step-row"
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: 20 }}
+                                            transition={{ duration: 0.2, delay: idx * 0.05 }}
+                                        >
+                                            <div className="step-number">{idx + 1}</div>
+                                            <div className="step-content">
+                                                <input
+                                                    type="text"
+                                                    className="form-input"
+                                                    placeholder="Brief step description (e.g., 'Mix ingredients')"
+                                                    value={step.instruction}
+                                                    onChange={e => handleStepChange(idx, 'instruction', e.target.value)}
+                                                    required
+                                                />
+                                                <textarea
+                                                    className="form-textarea"
+                                                    placeholder="Detailed preparation instructions..."
+                                                    value={step.details}
+                                                    onChange={e => handleStepChange(idx, 'details', e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                            {steps.length > 1 && (
+                                                <button 
+                                                    type="button" 
+                                                    className="btn btn--destructive btn--sm btn--icon"
+                                                    onClick={() => removeStep(idx)}
+                                                    title="Remove step"
+                                                >
+                                                    <i className="bx bx-trash"></i>
+                                                </button>
+                                            )}
+                                        </motion.div>
+                                    ))}
+                                </AnimatePresence>
+                                
+                                <motion.button 
                                     type="button" 
-                                    className="btn btn--secondary btn--sm"
+                                    className="btn btn--secondary btn--add"
                                     onClick={addStep}
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
                                 >
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                    </svg>
+                                    <i className="bx bx-plus"></i>
                                     Add Step
-                                </button>
+                                </motion.button>
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
                 );
             default:
                 return null;
@@ -314,23 +418,20 @@ const CreateRecipe = ({ onRecipeSaved }) => {
     };
 
     return (
-        <div className="create-recipe">
+        <div className="create-recipe create-recipe--modal">
             <div className="create-recipe__container">
-                <div className="create-recipe__header">
-                    <h2 className="create-recipe__title">Create New Recipe</h2>
-                    <p className="create-recipe__subtitle">Share your culinary creation with the world</p>
-                </div>
-
-                <div className="create-recipe__tabs">
+                <motion.div 
+                    className="create-recipe__tabs"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.1 }}
+                >
                     <button
                         type="button"
                         className={`tab-button ${activeTab === 'basic' ? 'active' : ''}`}
                         onClick={() => setActiveTab('basic')}
                     >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
-                        </svg>
+                        <i className="bx bx-info-circle"></i>
                         Basic Info
                     </button>
                     <button
@@ -338,9 +439,7 @@ const CreateRecipe = ({ onRecipeSaved }) => {
                         className={`tab-button ${activeTab === 'ingredients' ? 'active' : ''}`}
                         onClick={() => setActiveTab('ingredients')}
                     >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path>
-                        </svg>
+                        <i className="bx bx-leaf"></i>
                         Ingredients
                     </button>
                     <button
@@ -348,48 +447,75 @@ const CreateRecipe = ({ onRecipeSaved }) => {
                         className={`tab-button ${activeTab === 'steps' ? 'active' : ''}`}
                         onClick={() => setActiveTab('steps')}
                     >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
+                        <i className="bx bx-list-ol"></i>
                         Steps
                     </button>
-                </div>
+                </motion.div>
 
                 <form onSubmit={handleSubmit} className="create-recipe__form">
-                    {renderTabContent()}
+                    <div className="create-recipe__content">
+                        {renderTabContent()}
+                    </div>
                     
-                    {error && (
-                        <div className="alert alert--error">
-                            <svg className="alert__icon" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                            </svg>
-                            {error}
-                        </div>
-                    )}
-                    
-                    {success && (
-                        <div className="alert alert--success">
-                            <svg className="alert__icon" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                            {success}
-                        </div>
-                    )}
-                    
-                    <button 
-                        type="submit" 
-                        className="btn btn--primary btn--lg"
-                        disabled={isLoading || !name.trim() || !category || !description.trim()}
-                    >
-                        {isLoading ? (
-                            <span className="btn__loading">
-                                <span className="spinner"></span>
-                                Creating Recipe...
-                            </span>
-                        ) : (
-                            "Create Recipe"
-                        )}
-                    </button>
+                    {/* Fixed bottom actions */}
+                    <div className="form-actions form-actions--fixed">
+                        <AnimatePresence>
+                            {error && (
+                                <motion.div
+                                    className="alert alert--error"
+                                    initial={{ opacity: 0, y: -20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    <i className="bx bx-error-circle alert__icon"></i>
+                                    {error}
+                                    <button type="button" onClick={() => setError('')} className="alert__close">
+                                        <i className="bx bx-x"></i>
+                                    </button>
+                                </motion.div>
+                            )}
+                            
+                            {success && (
+                                <motion.div
+                                    className="alert alert--success"
+                                    initial={{ opacity: 0, y: -20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    <i className="bx bx-check-circle alert__icon"></i>
+                                    {success}
+                                    <button type="button" onClick={() => setSuccess('')} className="alert__close">
+                                        <i className="bx bx-x"></i>
+                                    </button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                        
+                        <motion.button 
+                            type="submit" 
+                            className="btn btn--primary btn--lg create-recipe-btn"
+                            disabled={isLoading || !name.trim() || !category || !description.trim()}
+                            whileHover={!isLoading ? { scale: 1.02 } : {}}
+                            whileTap={!isLoading ? { scale: 0.98 } : {}}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                        >
+                            {isLoading ? (
+                                <span className="btn__loading">
+                                    <span className="spinner"></span>
+                                    Creating Recipe...
+                                </span>
+                            ) : (
+                                <>
+                                    <i className="bx bx-check"></i>
+                                    Create Recipe
+                                </>
+                            )}
+                        </motion.button>
+                    </div>
                 </form>
             </div>
         </div>
