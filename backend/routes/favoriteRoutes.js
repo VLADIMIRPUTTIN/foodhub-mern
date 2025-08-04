@@ -8,12 +8,19 @@ const router = express.Router();
 router.get('/', verifyToken, async (req, res) => {
     try {
         const favorites = await Favorite.find({ user: req.userId })
-            .populate('recipe')
+            .populate({
+                path: 'recipe',
+                match: { _id: { $ne: null } }, // Only populate if recipe exists
+                select: '_id title description category imageUrl cookingTime createdAt createdBy'
+            })
             .sort({ createdAt: -1 });
+
+        // Filter out favorites where recipe is null (deleted recipes)
+        const validFavorites = favorites.filter(favorite => favorite.recipe !== null);
 
         res.json({
             success: true,
-            favorites
+            favorites: validFavorites
         });
     } catch (error) {
         console.error('Error fetching favorites:', error);
@@ -27,11 +34,15 @@ router.get('/', verifyToken, async (req, res) => {
 // Get user's favorite count
 router.get('/count', verifyToken, async (req, res) => {
     try {
-        const count = await Favorite.countDocuments({ user: req.userId });
+        // Count favorites that have valid recipe references
+        const favorites = await Favorite.find({ user: req.userId })
+            .populate('recipe');
+        
+        const validCount = favorites.filter(favorite => favorite.recipe !== null).length;
         
         res.json({
             success: true,
-            count
+            count: validCount
         });
     } catch (error) {
         console.error('Error fetching favorite count:', error);

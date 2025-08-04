@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import axios from 'axios';
 import './UserProfilePage.scss';
 import EditRecipePage from '../recipessection/EditRecipePage';
-import { Share2, Trash2 } from "lucide-react"; // Add Trash2 icon
+import { Share2, Trash2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Swal from 'sweetalert2';
@@ -43,7 +43,6 @@ const UserProfilePage = () => {
     useEffect(() => {
         if (socket) {
             const handleRecipeApproved = (data) => {
-                // Update the local state to reflect the approved status
                 setUserRecipes(prev => 
                     prev.map(recipe => 
                         recipe._id === data.recipeId
@@ -54,7 +53,6 @@ const UserProfilePage = () => {
             };
 
             const handleRecipeRejected = (data) => {
-                // Update the local state to reflect the rejected status
                 setUserRecipes(prev => 
                     prev.map(recipe => 
                         recipe._id === data.recipeId
@@ -104,7 +102,11 @@ const UserProfilePage = () => {
                 { withCredentials: true }
             );
             if (response.data.success) {
-                setFavoriteRecipes(response.data.favorites || []);
+                // Filter out favorites with null recipes and ensure recipe data exists
+                const validFavorites = (response.data.favorites || []).filter(
+                    favorite => favorite && favorite.recipe && favorite.recipe._id
+                );
+                setFavoriteRecipes(validFavorites);
             }
         } catch (error) {
             console.error('Error fetching favorites:', error);
@@ -184,7 +186,7 @@ const UserProfilePage = () => {
                 }
             );
             if (response.data.success) {
-                setUser(response.data.user); // <-- UPDATE GLOBAL USER
+                setUser(response.data.user);
                 setIsEditing(false);
                 setImagePreview(null);
                 toast.success('Profile updated successfully!');
@@ -197,7 +199,6 @@ const UserProfilePage = () => {
 
     const getProfileImageUrl = () => {
         if (imagePreview) return imagePreview;
-        // Use default image if no profileImage
         return user?.profileImage || DEFAULT_PROFILE_IMAGE;
     };
 
@@ -225,7 +226,7 @@ const UserProfilePage = () => {
             await axios.delete(
                 `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/favorites/" : "/api/favorites/"}${recipeId}`,
                 {
-                    withCredentials: true // <-- This is the key part!
+                    withCredentials: true
                 }
             );
 
@@ -238,9 +239,7 @@ const UserProfilePage = () => {
         }
     };
 
-    // Update the handleEditRecipe function
     const handleEditRecipe = (recipe) => {
-        // Check if recipe is shared/approved - prevent editing
         if (recipe.shareStatus === 'approved' && recipe.isShared) {
             Swal.fire({
                 title: 'Cannot Edit Shared Recipe',
@@ -266,7 +265,6 @@ const UserProfilePage = () => {
                 }
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                    // Automatically unshare the recipe
                     try {
                         const baseURL = import.meta.env.MODE === "development"
                             ? "http://localhost:5000"
@@ -294,7 +292,6 @@ const UserProfilePage = () => {
                                 },
                             });
                             
-                            // Update the recipe status locally
                             setUserRecipes(prev => 
                                 prev.map(r => 
                                     r._id === recipe._id 
@@ -303,7 +300,6 @@ const UserProfilePage = () => {
                                 )
                             );
                             
-                            // Now open the edit modal with updated recipe
                             const updatedRecipe = { ...recipe, shareStatus: 'not_shared', isShared: false };
                             setEditRecipeData(updatedRecipe);
                             setShowEditModal(true);
@@ -331,7 +327,6 @@ const UserProfilePage = () => {
             return;
         }
         
-        // If recipe is pending, show info but allow editing
         if (recipe.shareStatus === 'pending') {
             Swal.fire({
                 title: 'Recipe Under Review',
@@ -351,12 +346,10 @@ const UserProfilePage = () => {
             return;
         }
         
-        // For not_shared or rejected recipes, allow normal editing
         setEditRecipeData(recipe);
         setShowEditModal(true);
     };
 
-    // After save/cancel in modal
     const handleEditModalClose = (updated) => {
         setShowEditModal(false);
         setEditRecipeData(null);
@@ -404,7 +397,6 @@ const UserProfilePage = () => {
                         },
                     });
                     
-                    // Update the recipe status locally
                     setUserRecipes(prev => 
                         prev.map(r => 
                             r._id === recipe._id 
@@ -434,7 +426,6 @@ const UserProfilePage = () => {
         }
     };
 
-    // New unshare function
     const handleUnshareRecipe = async (recipe, e) => {
         e.stopPropagation();
         
@@ -476,7 +467,6 @@ const UserProfilePage = () => {
                         },
                     });
                     
-                    // Update the recipe status locally
                     setUserRecipes(prev => 
                         prev.map(r => 
                             r._id === recipe._id 
@@ -506,14 +496,12 @@ const UserProfilePage = () => {
         }
     };
 
-    // Delete recipe handler
     const handleDeleteRecipe = (recipe, e) => {
         e.stopPropagation();
         setRecipeToDelete(recipe);
         setConfirmOpen(true);
     };
 
-    // Actual delete logic
     const confirmDelete = async () => {
         if (!recipeToDelete) return;
         setDeleting(true);
@@ -841,7 +829,6 @@ const UserProfilePage = () => {
                                                                 <span>{recipe.cookingTime} mins</span>
                                                             </div>
                                                         )}
-                                                        {/* EDIT & SHARE BUTTONS - ICON ONLY, SMALL */}
                                                         <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
                                                             <button
                                                                 className="edit-recipe-btn-mini"
@@ -851,7 +838,6 @@ const UserProfilePage = () => {
                                                                 <i className="bx bx-edit"></i>
                                                             </button>
                                                             
-                                                            {/* Conditional Share/Unshare button */}
                                                             {recipe.shareStatus === 'approved' && recipe.isShared ? (
                                                                 <button
                                                                     className="edit-recipe-btn-mini"
@@ -922,59 +908,65 @@ const UserProfilePage = () => {
                                 {activeTab === 'favorites' && (
                                     favoriteRecipes.length > 0 ? (
                                         <div className="recipes-grid">
-                                            {favoriteRecipes.map((favorite, index) => (
-                                                <motion.div 
-                                                    key={favorite._id} 
-                                                    className="recipe-card favorite-card" 
-                                                    onClick={() => navigate(`/recipe/${favorite.recipe._id}`)}
-                                                    initial={{ opacity: 0, y: 20 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                                                    whileHover={{ scale: 1.02 }}
-                                                    whileTap={{ scale: 0.98 }}
-                                                >
-                                                    <div className="recipe-image">
-                                                        <img 
-                                                            src={getRecipeImageUrl(favorite.recipe.imageUrl)} 
-                                                            alt={favorite.recipe.title || favorite.recipe.name} 
-                                                            onError={(e) => {
-                                                                e.target.src = '/api/placeholder/200/150';
-                                                            }}
-                                                        />
-                                                        <div className="recipe-overlay">
-                                                            <i className="bx bx-right-arrow-alt"></i>
+                                            {favoriteRecipes.map((favorite, index) => {
+                                                // Safety check for favorite and recipe data
+                                                if (!favorite || !favorite.recipe || !favorite.recipe._id) {
+                                                    return null; // Skip this iteration if data is invalid
+                                                }
+                                                
+                                                return (
+                                                    <motion.div 
+                                                        key={favorite._id} 
+                                                        className="recipe-card favorite-card" 
+                                                        onClick={() => navigate(`/recipe/${favorite.recipe._id}`)}
+                                                        initial={{ opacity: 0, y: 20 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ duration: 0.4, delay: index * 0.1 }}
+                                                        whileHover={{ scale: 1.02 }}
+                                                        whileTap={{ scale: 0.98 }}
+                                                    >
+                                                        <div className="recipe-image">
+                                                            <img 
+                                                                src={getRecipeImageUrl(favorite.recipe.imageUrl)} 
+                                                                alt={favorite.recipe.title || favorite.recipe.name || 'Recipe'} 
+                                                                onError={(e) => {
+                                                                    e.target.src = '/api/placeholder/200/150';
+                                                                }}
+                                                            />
+                                                            <div className="recipe-overlay">
+                                                                <i className="bx bx-right-arrow-alt"></i>
+                                                            </div>
+                                                            <button
+                                                                className="remove-favorite-btn"
+                                                                onClick={(e) => handleRemoveFromFavorites(favorite.recipe._id, e)}
+                                                                title="Remove from favorites"
+                                                            >
+                                                                <i className="bx bxs-heart"></i>
+                                                            </button>
                                                         </div>
-                                                        {/* Remove from favorites button */}
-                                                        <button
-                                                            className="remove-favorite-btn"
-                                                            onClick={(e) => handleRemoveFromFavorites(favorite.recipe._id, e)}
-                                                            title="Remove from favorites"
-                                                        >
-                                                            <i className="bx bxs-heart"></i>
-                                                        </button>
-                                                    </div>
-                                                    <div className="recipe-info">
-                                                        <h3>{favorite.recipe.title || favorite.recipe.name}</h3>
-                                                        <p>{favorite.recipe.description}</p>
-                                                        <div className="recipe-meta">
-                                                            <div className="meta-item">
-                                                                <i className="bx bx-category"></i>
-                                                                <span className="category">{favorite.recipe.category}</span>
+                                                        <div className="recipe-info">
+                                                            <h3>{favorite.recipe.title || favorite.recipe.name || 'Untitled Recipe'}</h3>
+                                                            <p>{favorite.recipe.description || 'No description available'}</p>
+                                                            <div className="recipe-meta">
+                                                                <div className="meta-item">
+                                                                    <i className="bx bx-category"></i>
+                                                                    <span className="category">{favorite.recipe.category || 'Uncategorized'}</span>
+                                                                </div>
+                                                                <div className="meta-item">
+                                                                    <i className="bx bx-heart"></i>
+                                                                    <span className="date">Favorited {formatDate(favorite.createdAt)}</span>
+                                                                </div>
                                                             </div>
-                                                            <div className="meta-item">
-                                                                <i className="bx bx-heart"></i>
-                                                                <span className="date">Favorited {formatDate(favorite.createdAt)}</span>
-                                                            </div>
+                                                            {favorite.recipe.cookingTime && (
+                                                                <div className="cooking-time">
+                                                                    <i className="bx bx-timer"></i>
+                                                                    <span>{favorite.recipe.cookingTime} mins</span>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        {favorite.recipe.cookingTime && (
-                                                            <div className="cooking-time">
-                                                                <i className="bx bx-timer"></i>
-                                                                <span>{favorite.recipe.cookingTime} mins</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </motion.div>
-                                            ))}
+                                                    </motion.div>
+                                                );
+                                            })}
                                         </div>
                                     ) : (
                                         <div className="no-recipes">
