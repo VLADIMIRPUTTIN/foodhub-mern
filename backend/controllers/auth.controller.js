@@ -65,7 +65,7 @@ export const signup = async (req, res) => {
             console.log(`⏰ Token expires at: ${new Date(user.verificationTokenExpiresAt)}`);
             
             try {
-                await sendVerificationEmail(user.email, verificationToken);
+                await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
                 console.log("✅ Verification email process completed");
             } catch (emailError) {
                 console.error("❌ Verification email process failed:", emailError.message);
@@ -410,7 +410,7 @@ export const googleLogin = async (req, res) => {
 
         // Send verification email if not verified
         if (!user.isVerified) {
-            await sendVerificationEmail(user.email, user.verificationToken);
+            await sendVerificationEmail(user.email, user.verificationToken, user.name, user.profileImage);
         }
 
         // Set JWT cookie, etc.
@@ -455,7 +455,7 @@ export const resendVerification = async (req, res) => {
         user.verificationToken = verificationToken;
         user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
         await user.save();
-        await sendVerificationEmail(user.email, verificationToken);
+        await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
         res.status(200).json({ success: true, message: "Verification code resent" });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

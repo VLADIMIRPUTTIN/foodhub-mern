@@ -36,14 +36,25 @@ const sendEmail = async ({ to, subject, html }) => {
   }
 };
 
-export const sendVerificationEmail = async (email, verificationCode) => {
+export const sendVerificationEmail = async (email, verificationCode, userName = null, profileImage = null) => {
   console.log("🔥 Sending verification email to:", email);
   console.log("🔑 Code:", verificationCode);
+  console.log("👤 User name:", userName);
+  console.log("🖼️ Profile image:", profileImage);
 
-  const html = VERIFICATION_EMAIL_TEMPLATE.replace(
-    "{verificationCode}",
-    verificationCode
-  );
+  // Create profile image section
+  let profileImageSection = '';
+  if (profileImage) {
+    profileImageSection = `<img src="${profileImage}" alt="Profile" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; display: block;">`;
+  } else {
+    profileImageSection = `<i class="bx bx-user" style="font-size: 28px; color: white;"></i>`;
+  }
+
+  // Replace placeholders in template
+  let html = VERIFICATION_EMAIL_TEMPLATE
+    .replace(/{verificationCode}/g, verificationCode)
+    .replace(/{userName}/g, userName || 'User')
+    .replace(/{profileImageSection}/g, profileImageSection);
 
   await sendEmail({
     to: email,
