@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
 import "./CreateIngredient.scss";
 
 const CreateIngredient = ({ onCreated }) => {
@@ -15,8 +16,12 @@ const CreateIngredient = ({ onCreated }) => {
         setSuccess("");
         
         try {
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+            
             const response = await axios.post(
-                "http://localhost:5000/api/ingredients",
+                `${baseURL}/api/ingredients`,
                 { name },
                 { 
                     withCredentials: true,
@@ -49,63 +54,141 @@ const CreateIngredient = ({ onCreated }) => {
 
     return (
         <div className="create-ingredient">
-            <div className="create-ingredient__card">
+            <motion.div 
+                className="create-ingredient__container"
+                initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ 
+                    duration: 0.3, 
+                    ease: [0.4, 0, 0.2, 1],
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 30
+                }}
+            >
+                {/* Compact Header Section */}
                 <div className="create-ingredient__header">
-                    <h2 className="create-ingredient__title">Create New Ingredient</h2>
-                    <p className="create-ingredient__subtitle">Add a new ingredient to your database</p>
+                    <div className="header-icon">
+                        <i className="bx bx-leaf"></i>
+                    </div>
+                    <div className="header-text">
+                        <h2 className="create-ingredient__title">Add New Ingredient</h2>
+                        <p className="create-ingredient__subtitle">Expand your culinary collection</p>
+                    </div>
                 </div>
                 
-                <form onSubmit={handleSubmit} className="create-ingredient__form">
+                {/* Compact Form Section */}
+                <motion.form 
+                    onSubmit={handleSubmit} 
+                    className="create-ingredient__form"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.1, duration: 0.2 }}
+                >
                     <div className="form-group">
                         <label htmlFor="ingredient-name" className="form-label">
-                            Ingredient Name
+                            <i className="bx bx-food-menu"></i>
+                            <span>Ingredient Name</span>
                         </label>
-                        <input
-                            id="ingredient-name"
-                            type="text"
-                            placeholder="Enter ingredient name..."
-                            value={name}
-                            onChange={e => setName(e.target.value)}
-                            className="form-input"
-                            required
-                            disabled={loading}
-                        />
+                        <div className="input-container">
+                            <input
+                                id="ingredient-name"
+                                type="text"
+                                placeholder="e.g., Fresh Basil, Olive Oil, Tomatoes..."
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                className="form-input"
+                                required
+                                disabled={loading}
+                            />
+                            <div className="input-focus-ring"></div>
+                        </div>
                     </div>
                     
-                    <button 
+                    {/* Submit Button */}
+                    <motion.button 
                         type="submit" 
                         disabled={loading || !name.trim()}
-                        className="btn btn--primary"
+                        className="submit-btn"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     >
                         {loading ? (
-                            <span className="btn__loading">
-                                <span className="spinner"></span>
-                                Creating...
-                            </span>
+                            <div className="btn-loading">
+                                <div className="loading-spinner"></div>
+                                <span>Creating...</span>
+                            </div>
                         ) : (
-                            "Create Ingredient"
+                            <div className="btn-content">
+                                <i className="bx bx-plus-circle"></i>
+                                <span>Create Ingredient</span>
+                            </div>
                         )}
-                    </button>
-                </form>
+                    </motion.button>
+                </motion.form>
                 
-                {error && (
-                    <div className="alert alert--error">
-                        <svg className="alert__icon" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                        </svg>
-                        {error}
+                {/* Compact Alert Messages */}
+                <AnimatePresence mode="wait">
+                    {error && (
+                        <motion.div
+                            className="alert alert--error"
+                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <div className="alert-icon">
+                                <i className="bx bx-error-circle"></i>
+                            </div>
+                            <div className="alert-content">
+                                <div className="alert-message">{error}</div>
+                            </div>
+                            <button 
+                                className="alert-close"
+                                onClick={() => setError("")}
+                                type="button"
+                            >
+                                <i className="bx bx-x"></i>
+                            </button>
+                        </motion.div>
+                    )}
+                    
+                    {success && (
+                        <motion.div
+                            className="alert alert--success"
+                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <div className="alert-icon">
+                                <i className="bx bx-check-circle"></i>
+                            </div>
+                            <div className="alert-content">
+                                <div className="alert-message">{success}</div>
+                            </div>
+                            <button 
+                                className="alert-close"
+                                onClick={() => setSuccess("")}
+                                type="button"
+                            >
+                                <i className="bx bx-x"></i>
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Minimal Decorative Elements */}
+                <div className="decoration-elements">
+                    <div className="deco-leaf deco-leaf--1">
+                        <i className="bx bx-leaf"></i>
                     </div>
-                )}
-                
-                {success && (
-                    <div className="alert alert--success">
-                        <svg className="alert__icon" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                        {success}
+                    <div className="deco-leaf deco-leaf--2">
+                        <i className="bx bx-leaf"></i>
                     </div>
-                )}
-            </div>
+                </div>
+            </motion.div>
         </div>
     );
 };
