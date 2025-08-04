@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 .status-modal-overlay {
     position: fixed;
     top: 0;
@@ -5,7 +7,7 @@
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -13,125 +15,176 @@
     padding: 1rem;
 }
 
+@keyframes iconPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
 .status-modal {
-    background: white;
-    border-radius: 1rem;
-    max-width: 500px;
+    background: linear-gradient(145deg, #ffffff 0%, #fefefe 100%);
+    border-radius: 1.5rem;
+    max-width: 450px;
     width: 100%;
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    border: 3px solid #dc2626;
+    font-family: 'Inter', sans-serif;
+    position: relative;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #CF996C, #BB8860, #CF996C);
+        background-size: 200% 100%;
+        animation: shimmer 2s ease-in-out infinite;
+    }
+
+    &[data-status="suspended"]::before {
+        background: linear-gradient(90deg, #f59e0b, #d97706, #f59e0b);
+        background-size: 200% 100%;
+    }
+
+    &[data-status="banned"]::before {
+        background: linear-gradient(90deg, #ef4444, #dc2626, #ef4444);
+        background-size: 200% 100%;
+    }
 
     .status-modal-header {
-        padding: 1.5rem;
+        padding: 2rem 2rem 1rem 2rem;
         text-align: center;
-        color: white;
-        position: relative;
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
 
         .status-icon {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+            animation: iconPulse 2s ease-in-out infinite;
+            
+            &.suspended { color: #f59e0b; }
+            &.banned { color: #ef4444; }
         }
 
         h2 {
             margin: 0;
             font-size: 1.5rem;
             font-weight: 700;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            color: #1f2937;
+            letter-spacing: 0.3px;
         }
     }
 
     .status-modal-content {
-        padding: 2rem;
+        padding: 0 2rem 1.5rem 2rem;
 
         .status-message {
             margin-bottom: 1.5rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 0.5rem;
-            border-left: 4px solid #dc2626;
+            padding: 1.25rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border-radius: 0.75rem;
+            border-left: 4px solid #CF996C;
 
             p {
                 margin: 0;
                 color: #374151;
                 font-size: 1rem;
                 line-height: 1.5;
+                font-weight: 500;
             }
         }
 
-        .suspension-details, .ban-details {
+        .time-info {
             margin-bottom: 1.5rem;
-            padding: 1rem;
-            background: #fff7ed;
-            border-radius: 0.5rem;
-            border: 1px solid #fed7aa;
+            padding: 1.25rem;
+            background: linear-gradient(135deg, #fff8e1 0%, #fef3c7 100%);
+            border-radius: 0.75rem;
+            border: 1px solid #fbbf24;
+            text-align: center;
 
             .time-remaining {
-                font-size: 1.125rem;
-                color: #d97706;
+                font-size: 1.25rem;
+                font-weight: 700;
+                color: #92400e;
                 margin-bottom: 0.5rem;
             }
 
-            .suspension-until, .ban-date {
+            .ends-at {
                 font-size: 0.875rem;
-                color: #6b7280;
+                color: #78350f;
+                font-weight: 500;
             }
         }
 
-        .reason-section {
+        .ban-info {
             margin-bottom: 1.5rem;
-            padding: 1rem;
-            background: #fef2f2;
-            border-radius: 0.5rem;
-            border: 1px solid #fecaca;
+            padding: 1.25rem;
+            background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+            border-radius: 0.75rem;
+            border: 1px solid #f87171;
+            text-align: center;
+
+            .ban-date {
+                font-size: 1rem;
+                color: #991b1b;
+                font-weight: 600;
+            }
+        }
+
+        .reason-info {
+            margin-bottom: 1.5rem;
+            padding: 1.25rem;
+            background: linear-gradient(135deg, #fff1f2 0%, #fecaca 100%);
+            border-radius: 0.75rem;
+            border: 1px solid #fca5a5;
 
             strong {
                 color: #dc2626;
                 font-size: 1rem;
+                font-weight: 700;
+                display: block;
+                margin-bottom: 0.5rem;
             }
-
-            p {
-                margin: 0.5rem 0 0 0;
-                color: #374151;
-                font-style: italic;
-            }
-        }
-
-        .contact-support {
-            padding: 1rem;
-            background: #f0f9ff;
-            border-radius: 0.5rem;
-            border: 1px solid #bae6fd;
-            text-align: center;
 
             p {
                 margin: 0;
-                color: #0369a1;
-                font-size: 0.875rem;
+                color: #7f1d1d;
+                font-size: 0.9rem;
+                line-height: 1.4;
+                font-style: italic;
             }
         }
     }
 
     .status-modal-actions {
-        padding: 1.5rem;
-        background: #f8f9fa;
+        padding: 1.5rem 2rem 2rem 2rem;
         text-align: center;
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
 
-        .close-button {
-            background: #dc2626;
+        .action-button {
+            background: linear-gradient(135deg, #CF996C 0%, #BB8860 100%);
             color: white;
             border: none;
-            padding: 0.75rem 2rem;
-            border-radius: 0.5rem;
+            padding: 0.875rem 2.5rem;
+            border-radius: 2rem;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(207, 153, 108, 0.3);
 
             &:hover {
-                background: #b91c1c;
-                transform: translateY(-1px);
+                background: linear-gradient(135deg, #E0B787 0%, #CF996C 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(207, 153, 108, 0.4);
             }
 
             &:active {
@@ -139,18 +192,41 @@
             }
         }
     }
+
+    // Status-specific button colors
+    &[data-status="suspended"] .action-button {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        
+        &:hover {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+        }
+    }
+
+    &[data-status="banned"] .action-button {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        
+        &:hover {
+            background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+        }
+    }
 }
 
+// Tablet
 @media (max-width: 768px) {
     .status-modal {
-        margin: 1rem;
-        max-width: calc(100vw - 2rem);
+        max-width: 400px;
+        margin: 0 0.5rem;
 
         .status-modal-header {
-            padding: 1rem;
+            padding: 1.5rem 1.5rem 0.75rem 1.5rem;
 
             .status-icon {
-                font-size: 2.5rem;
+                font-size: 3rem;
+                margin-bottom: 0.75rem;
             }
 
             h2 {
@@ -159,11 +235,144 @@
         }
 
         .status-modal-content {
-            padding: 1.5rem;
+            padding: 0 1.5rem 1rem 1.5rem;
+
+            .status-message,
+            .time-info,
+            .ban-info,
+            .reason-info {
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .time-remaining {
+                font-size: 1.125rem;
+            }
+
+            .ends-at,
+            .ban-date {
+                font-size: 0.8rem;
+            }
+
+            strong {
+                font-size: 0.9rem;
+            }
+
+            p {
+                font-size: 0.85rem;
+            }
         }
 
         .status-modal-actions {
-            padding: 1rem;
+            padding: 1rem 1.5rem 1.5rem 1.5rem;
+
+            .action-button {
+                padding: 0.75rem 2rem;
+                font-size: 0.9rem;
+            }
+        }
+    }
+}
+
+// Mobile
+@media (max-width: 480px) {
+    .status-modal-overlay {
+        padding: 0.5rem;
+    }
+
+    .status-modal {
+        max-width: calc(100vw - 1rem);
+        margin: 0;
+
+        .status-modal-header {
+            padding: 1.25rem 1rem 0.5rem 1rem;
+
+            .status-icon {
+                font-size: 2.5rem;
+                margin-bottom: 0.5rem;
+            }
+
+            h2 {
+                font-size: 1.125rem;
+            }
+        }
+
+        .status-modal-content {
+            padding: 0 1rem 0.75rem 1rem;
+
+            .status-message,
+            .time-info,
+            .ban-info,
+            .reason-info {
+                padding: 0.875rem;
+                margin-bottom: 0.875rem;
+            }
+
+            .time-remaining {
+                font-size: 1rem;
+            }
+
+            .ends-at,
+            .ban-date {
+                font-size: 0.75rem;
+            }
+
+            strong {
+                font-size: 0.85rem;
+            }
+
+            p {
+                font-size: 0.8rem;
+            }
+        }
+
+        .status-modal-actions {
+            padding: 0.875rem 1rem 1.25rem 1rem;
+
+            .action-button {
+                padding: 0.75rem 1.5rem;
+                font-size: 0.85rem;
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+    }
+}
+
+// Very small screens
+@media (max-width: 350px) {
+    .status-modal {
+        .status-modal-header {
+            padding: 1rem 0.75rem 0.5rem 0.75rem;
+
+            .status-icon {
+                font-size: 2.25rem;
+            }
+
+            h2 {
+                font-size: 1rem;
+            }
+        }
+
+        .status-modal-content {
+            padding: 0 0.75rem 0.5rem 0.75rem;
+
+            .status-message,
+            .time-info,
+            .ban-info,
+            .reason-info {
+                padding: 0.75rem;
+                margin-bottom: 0.75rem;
+            }
+        }
+
+        .status-modal-actions {
+            padding: 0.75rem;
+
+            .action-button {
+                padding: 0.625rem 1.25rem;
+                font-size: 0.8rem;
+            }
         }
     }
 }

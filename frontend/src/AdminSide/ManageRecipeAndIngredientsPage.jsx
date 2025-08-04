@@ -50,13 +50,7 @@ const ManageRecipeAndIngredientsPage = ({
         <div className="manage-recipes-ingredients">
             {/* Page Header */}
             <div className="page-header">
-                <div className="header-content">
-                    <h1 className="page-title">
-                        <i className="bx bx-food-menu"></i>
-                        Recipe & Ingredient Management
-                    </h1>
-                    <p className="page-subtitle">Manage recipes and ingredients in your system</p>
-                </div>
+                
             </div>
 
             {/* Mobile Tab Navigation */}
