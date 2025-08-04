@@ -14,6 +14,7 @@ export const useAuthStore = create((set, get) => ({
     isLoading: false,
     isCheckingAuth: true,
     message: null,
+    accountStatus: null,
 
     signup: async (email, password, name) => {
         set({ isLoading: true, error: null });
@@ -31,20 +32,24 @@ export const useAuthStore = create((set, get) => ({
         }
     },
     login: async (email, password) => {
-        set({ isLoading: true, error: null });
+        set({ isLoading: true, error: null, accountStatus: null });
         try {
             const res = await axios.post(`${API_URL}/login`, { email, password }, { withCredentials: true });
             set({
-                user: res.data.user, // <-- This should be the latest user from DB
+                user: res.data.user,
                 isAuthenticated: true,
                 isLoading: false,
                 error: null,
+                accountStatus: null
             });
         } catch (error) {
+            const errorData = error.response?.data;
             set({
-                error: error.response?.data?.message || "Login failed",
+                error: errorData?.message || "Login failed",
                 isLoading: false,
+                accountStatus: errorData?.accountStatus || null
             });
+            throw error;
         }
     },
 
@@ -89,18 +94,26 @@ export const useAuthStore = create((set, get) => ({
         }
     },
     checkAuth: async () => {
-        set({ isCheckingAuth: true, error: null });
+        set({ isCheckingAuth: true, error: null, accountStatus: null });
         try {
             const response = await axios.get(`${API_URL}/check-auth`);
-            set({ user: response.data.user, isAuthenticated: true, isCheckingAuth: false });
+            set({ 
+                user: response.data.user, 
+                isAuthenticated: true, 
+                isCheckingAuth: false,
+                accountStatus: null
+            });
         } catch (error) {
-            // Only log errors that aren't authentication-related
-            if (error.response?.status !== 401) {
-                console.error('Unexpected auth check error:', error);
-            }
-            set({ error: null, isCheckingAuth: false, isAuthenticated: false });
+            const errorData = error.response?.data;
+            set({ 
+                user: null, 
+                isAuthenticated: false, 
+                isCheckingAuth: false,
+                accountStatus: errorData?.accountStatus || null
+            });
         }
     },
+
     forgotPassword: async (email) => {
         set({ isLoading: true, error: null });
         try {
@@ -149,4 +162,5 @@ export const useAuthStore = create((set, get) => ({
         }
     },
     setUser: (user) => set({ user }),
+    clearAccountStatus: () => set({ accountStatus: null }),
 }));
