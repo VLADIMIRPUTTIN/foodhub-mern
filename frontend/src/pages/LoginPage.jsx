@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Loader } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { GoogleLogin } from '@react-oauth/google';
 import axios from "axios";
 import './LoginPage.scss';
+import AccountStatusModal from '../components/AccountStatusModal';
 
 const LoginPage = () => {
     const [email, setEmail] = useState("");
@@ -14,11 +15,18 @@ const LoginPage = () => {
     const [forgotEmail, setForgotEmail] = useState("");
     const [forgotSubmitted, setForgotSubmitted] = useState(false);
 
-    const { login, isLoading, error, setUser, forgotPassword } = useAuthStore();
+    const { login, isLoading, error, setUser, forgotPassword, accountStatus, clearAccountStatus } = useAuthStore();
+    const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        await login(email, password);
+        try {
+            await login(email, password);
+            navigate("/dashboard");
+        } catch (error) {
+            // Error will be handled by auth store and accountStatus will be set if suspended/banned
+            console.log("Login failed:", error);
+        }
     };
 
     const handleGoogleLogin = async (credentialResponse) => {
@@ -28,27 +36,29 @@ const LoginPage = () => {
                 { credential: credentialResponse.credential },
                 { withCredentials: true }
             );
-            if (response.data.user) {
-                setUser(response.data.user);
-                // Save Google profile image to database/cloudinary if available
-                if (response.data.user.profileImage) {
-                    // Already set by backend, nothing to do
-                } else if (response.data.user.googleImage) {
-                    // If backend sends googleImage, update profileImage
-                    setUser(prev => ({
-                        ...prev,
-                        profileImage: response.data.user.googleImage
-                    }));
-                }
-            }
-            if (response.data.user && response.data.user.isVerified) {
-                window.location.reload();
-            } else {
-                window.location.href = "/verify-email";
-            }
+            
+            setUser(response.data.user);
+            navigate("/dashboard");
         } catch (error) {
-            alert("Google login failed");
+            console.error("Google login failed:", error);
+            const errorData = error.response?.data;
+            
+            // Handle account status (suspension/ban)
+            if (errorData?.accountStatus) {
+                // Use the auth store's method to set account status
+                const { setState } = useAuthStore;
+                setState({ accountStatus: errorData.accountStatus });
+            } else {
+                // Handle other errors
+                const { setState } = useAuthStore;
+                setState({ error: errorData?.message || "Google login failed" });
+            }
         }
+    };
+
+    const handleGoogleError = () => {
+        const { setState } = useAuthStore;
+        setState({ error: "Google login failed. Please try again." });
     };
 
     const handleForgotSubmit = async (e) => {
@@ -151,7 +161,7 @@ const LoginPage = () => {
                         <div className="google-button-wrapper">
                             <GoogleLogin
                                 onSuccess={handleGoogleLogin}
-                                onError={() => alert("Google login failed")}
+                                onError={handleGoogleError}
                             />
                         </div>
                     </div>
@@ -239,6 +249,13 @@ const LoginPage = () => {
                     `}</style>
                 </div>
             )}
+
+            {/* Account Status Modal */}
+            <AccountStatusModal
+                isOpen={!!accountStatus}
+                onClose={clearAccountStatus}
+                statusData={accountStatus}
+            />
         </div>
     );
 };

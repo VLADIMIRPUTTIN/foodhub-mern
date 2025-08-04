@@ -13,6 +13,7 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
     const [showBanModal, setShowBanModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [suspendMinutes, setSuspendMinutes] = useState('');
+    const [suspensionReason, setSuspensionReason] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -68,27 +69,22 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
 
     // Handle Suspend User
     const handleSuspend = async () => {
-        if (!suspendMinutes || suspendMinutes < 1) {
-            setError('Please enter a valid number of minutes');
-            clearMessage('error');
-            return;
-        }
-
+        if (!selectedUser || !suspendMinutes) return;
+        
         setActionLoading(true);
         try {
-            await axios.patch(`${baseURL}/api/users/${selectedUser._id}/suspend`, 
-                { minutes: parseInt(suspendMinutes) }, 
-                {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                }
+            const response = await axios.patch(
+                `${baseURL}/api/users/${selectedUser._id}/suspend`,
+                { 
+                    minutes: parseInt(suspendMinutes),
+                    reason: suspensionReason 
+                },
+                { withCredentials: true }
             );
-            await fetchUsers();
-            setSuccess(`User suspended for ${suspendMinutes} minutes!`);
-            setShowSuspendModal(false);
-            setSelectedUser(null);
-            setSuspendMinutes('');
+            
+            setSuccess(response.data.message);
+            fetchUsers();
+            closeAllModals();
             clearMessage('success');
         } catch (error) {
             setError('Failed to suspend user. Please try again.');
@@ -151,6 +147,7 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
         setShowBanModal(false);
         setSelectedUser(null);
         setSuspendMinutes('');
+        setSuspensionReason('');
     };
 
     // Clear search function
@@ -466,6 +463,16 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
                                         onChange={(e) => setSuspendMinutes(e.target.value)}
                                         min="1"
                                         step="1"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Reason for Suspension</label>
+                                    <textarea
+                                        className="form-input"
+                                        placeholder="Enter reason for suspension..."
+                                        value={suspensionReason}
+                                        onChange={(e) => setSuspensionReason(e.target.value)}
+                                        rows="3"
                                     />
                                 </div>
                             </div>
