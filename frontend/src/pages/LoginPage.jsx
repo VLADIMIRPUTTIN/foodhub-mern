@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { GoogleLogin } from '@react-oauth/google';
 import axios from "axios";
+import AccountStatusModal from "../components/AccountStatusModal"; // Import the modal
 import './LoginPage.scss';
 
 const LoginPage = () => {
@@ -13,12 +14,18 @@ const LoginPage = () => {
     const [showForgot, setShowForgot] = useState(false);
     const [forgotEmail, setForgotEmail] = useState("");
     const [forgotSubmitted, setForgotSubmitted] = useState(false);
+    const [showStatusModal, setShowStatusModal] = useState(false);
 
-    const { login, isLoading, error, setUser, forgotPassword } = useAuthStore();
+    const { login, isLoading, error, setUser, forgotPassword, accountStatus, clearAccountStatus } = useAuthStore();
 
     const handleLogin = async (e) => {
         e.preventDefault();
         await login(email, password);
+        
+        // Check if there's account status data and show modal
+        if (accountStatus) {
+            setShowStatusModal(true);
+        }
     };
 
     const handleGoogleLogin = async (credentialResponse) => {
@@ -30,11 +37,9 @@ const LoginPage = () => {
             );
             if (response.data.user) {
                 setUser(response.data.user);
-                // Save Google profile image to database/cloudinary if available
                 if (response.data.user.profileImage) {
                     // Already set by backend, nothing to do
                 } else if (response.data.user.googleImage) {
-                    // If backend sends googleImage, update profileImage
                     setUser(prev => ({
                         ...prev,
                         profileImage: response.data.user.googleImage
@@ -55,6 +60,11 @@ const LoginPage = () => {
         e.preventDefault();
         await forgotPassword(forgotEmail);
         setForgotSubmitted(true);
+    };
+
+    const handleCloseStatusModal = () => {
+        setShowStatusModal(false);
+        clearAccountStatus();
     };
 
     return (
@@ -115,7 +125,7 @@ const LoginPage = () => {
                             </div>
                         </div>
 
-                        {error && <p className="error-message">{error}</p>}
+                        {error && !accountStatus && <p className="error-message">{error}</p>}
 
                         <div style={{ textAlign: "right", marginBottom: "1rem" }}>
                             <button
@@ -124,7 +134,7 @@ const LoginPage = () => {
                                 style={{ 
                                     background: "none", 
                                     border: "none", 
-                                    color: "#fff", // changed from green to white
+                                    color: "#fff",
                                     cursor: "pointer", 
                                     fontSize: "0.95em" 
                                 }}
@@ -161,6 +171,13 @@ const LoginPage = () => {
                     </div>
                 </motion.div>
             </div>
+
+            {/* Account Status Modal */}
+            <AccountStatusModal
+                isOpen={showStatusModal}
+                onClose={handleCloseStatusModal}
+                statusData={accountStatus}
+            />
 
             {/* Forgot Password Modal */}
             {showForgot && (

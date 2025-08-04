@@ -14,6 +14,7 @@ export const useAuthStore = create((set, get) => ({
     isLoading: false,
     isCheckingAuth: true,
     message: null,
+    accountStatus: null, // Add this for account status
 
     signup: async (email, password, name) => {
         set({ isLoading: true, error: null });
@@ -31,22 +32,37 @@ export const useAuthStore = create((set, get) => ({
         }
     },
     login: async (email, password) => {
-        set({ isLoading: true, error: null });
+        set({ isLoading: true, error: null, accountStatus: null });
         try {
             const res = await axios.post(`${API_URL}/login`, { email, password }, { withCredentials: true });
             set({
-                user: res.data.user, // <-- This should be the latest user from DB
+                user: res.data.user,
                 isAuthenticated: true,
                 isLoading: false,
                 error: null,
+                accountStatus: null,
             });
         } catch (error) {
-            set({
-                error: error.response?.data?.message || "Login failed",
-                isLoading: false,
-            });
+            const errorData = error.response?.data;
+            
+            // Check if it's an account status error (suspended/banned)
+            if (error.response?.status === 403 && errorData?.statusData) {
+                set({
+                    error: errorData.message,
+                    isLoading: false,
+                    accountStatus: errorData.statusData, // Store the detailed status info
+                });
+            } else {
+                set({
+                    error: errorData?.message || "Login failed",
+                    isLoading: false,
+                    accountStatus: null,
+                });
+            }
         }
     },
+
+    clearAccountStatus: () => set({ accountStatus: null }),
 
     logout: async () => {
         set({ isLoading: true, error: null });

@@ -1,4 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
@@ -14,13 +16,28 @@ import UserProfilePage from "./pages/UserProfilePage";
 import SharedRecipePage from "./recipessection/SharedRecipePage";
 
 import LoadingSpinner from "./components/LoadingSpinner";
-import { ToastProvider } from "./components/ui/toast"; // Add this import
+import AccountStatusModal from "./components/AccountStatusModal";
+import { ToastProvider } from "./components/ui/toast";
 import { SocketProvider } from './context/SocketContext';
 import NotificationToast from './components/NotificationToast';
 
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
-import { useEffect } from "react";
+
+// Global axios interceptor for handling account status errors
+const setupAxiosInterceptors = (setGlobalAccountStatus) => {
+    axios.interceptors.response.use(
+        (response) => response,
+        (error) => {
+            if (error.response?.status === 403 && error.response?.data?.statusData) {
+                setGlobalAccountStatus(error.response.data.statusData);
+                // Clear user authentication
+                useAuthStore.getState().logout();
+            }
+            return Promise.reject(error);
+        }
+    );
+};
 
 // protect routes that require authentication
 const ProtectedRoute = ({ children }) => {
@@ -73,15 +90,21 @@ const RedirectAuthenticatedUser = ({ children }) => {
 
 function App() {
     const { isCheckingAuth, checkAuth } = useAuthStore();
+    const [globalAccountStatus, setGlobalAccountStatus] = useState(null);
 
     useEffect(() => {
         checkAuth();
+        setupAxiosInterceptors(setGlobalAccountStatus);
     }, [checkAuth]);
+
+    const handleCloseGlobalStatusModal = () => {
+        setGlobalAccountStatus(null);
+    };
 
     if (isCheckingAuth) return <LoadingSpinner />;
 
     return (
-        <ToastProvider> {/* Wrap everything with ToastProvider */}
+        <ToastProvider>
             <SocketProvider>
                 <div>
                     <Routes>
@@ -158,11 +181,17 @@ function App() {
                             path='/shared-recipes'
                             element={<SharedRecipePage />}
                         />
-                        {/* catch all routes */}
                         <Route path='*' element={<Navigate to='/' replace />} />
                     </Routes>
                     <Toaster />
                     <NotificationToast />
+                    
+                    {/* Global Account Status Modal */}
+                    <AccountStatusModal
+                        isOpen={!!globalAccountStatus}
+                        onClose={handleCloseGlobalStatusModal}
+                        statusData={globalAccountStatus}
+                    />
                 </div>
             </SocketProvider>
         </ToastProvider>

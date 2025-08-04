@@ -215,14 +215,33 @@ export const login = async (req, res) => {
 
         // Check if banned
         if (user.status === "banned") {
-            return res.status(403).json({ success: false, message: "Your account has been banned." });
+            return res.status(403).json({ 
+                success: false, 
+                message: "Your account has been banned.",
+                statusData: {
+                    status: 'banned',
+                    message: "Your account has been permanently banned from accessing FoodHub.",
+                    banReason: user.banReason,
+                    bannedAt: user.updatedAt
+                }
+            });
         }
 
         // Check if suspended and if suspension expired
         if (user.status === "suspended") {
             if (user.suspendedUntil && user.suspendedUntil > new Date()) {
-                const mins = Math.ceil((user.suspendedUntil - new Date()) / 60000);
-                return res.status(403).json({ success: false, message: `Your account is suspended. Try again in ${mins} minute(s).` });
+                const timeRemaining = Math.ceil((user.suspendedUntil - new Date()) / 60000);
+                return res.status(403).json({ 
+                    success: false, 
+                    message: `Your account is suspended for ${timeRemaining} more minute(s).`,
+                    statusData: {
+                        status: 'suspended',
+                        message: `Your account is temporarily suspended from accessing FoodHub.`,
+                        timeRemaining: timeRemaining,
+                        suspendedUntil: user.suspendedUntil,
+                        suspensionReason: "Account suspended by administrator"
+                    }
+                });
             } else {
                 // Suspension expired, reactivate
                 user.status = "active";
