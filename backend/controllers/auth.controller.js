@@ -205,71 +205,30 @@ export const verifyEmail = async (req, res) => {
     }
 };
 
-// Helper function to check account status
-const checkAccountStatus = async (user) => {
-    console.log("🔍 Checking account status for:", user.email);
-    console.log("📋 User status:", user.status);
-    console.log("📋 Suspended until:", user.suspendedUntil);
-    console.log("📋 Current time:", new Date());
-    
-    if (user.status === 'banned') {
-        console.log("❌ User is banned");
-        return {
-            isBlocked: true,
-            status: 'banned',
-            message: 'Your account has been permanently banned.',
-            bannedAt: user.bannedAt,
-            banReason: user.banReason
-        };
-    }
-    
-    if (user.status === 'suspended') {
-        const now = new Date();
-        if (user.suspendedUntil && now < user.suspendedUntil) {
-            const timeRemaining = Math.ceil((user.suspendedUntil - now) / (1000 * 60)); // minutes
-            console.log("❌ User is suspended, time remaining:", timeRemaining, "minutes");
-            return {
-                isBlocked: true,
-                status: 'suspended',
-                message: 'Your account is temporarily suspended.',
-                suspendedUntil: user.suspendedUntil,
-                timeRemaining: timeRemaining,
-                suspensionReason: user.suspensionReason
-            };
-        } else {
-            // Suspension expired, reactivate user
-            console.log("✅ Suspension expired, reactivating user");
-            user.status = 'active';
-            user.suspendedUntil = null;
-            user.suspensionReason = null;
-            await user.save(); // Add await here
-        }
-    }
-    
-    console.log("✅ User account status is clear");
-    return { isBlocked: false };
-};
-
 export const login = async (req, res) => {
     const { email, password } = req.body;
     try {
-        if (!email || !password) {
-            throw new Error("All fields are required");
-        }
-
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ success: false, message: "Invalid credentials" });
         }
 
-        // Check account status - add await
-        const statusCheck = await checkAccountStatus(user);
-        if (statusCheck.isBlocked) {
-            return res.status(403).json({ 
-                success: false, 
-                message: statusCheck.message,
-                accountStatus: statusCheck
-            });
+        // Check if banned
+        if (user.status === "banned") {
+            return res.status(403).json({ success: false, message: "Your account has been banned." });
+        }
+
+        // Check if suspended and if suspension expired
+        if (user.status === "suspended") {
+            if (user.suspendedUntil && user.suspendedUntil > new Date()) {
+                const mins = Math.ceil((user.suspendedUntil - new Date()) / 60000);
+                return res.status(403).json({ success: false, message: `Your account is suspended. Try again in ${mins} minute(s).` });
+            } else {
+                // Suspension expired, reactivate
+                user.status = "active";
+                user.suspendedUntil = null;
+                await user.save();
+            }
         }
 
         const isPasswordValid = await bcryptjs.compare(password, user.password);
@@ -371,18 +330,6 @@ export const checkAuth = async (req, res) => {
             return res.status(400).json({ success: false, message: "User not found" });
         }
 
-        // Check account status - add await
-        const statusCheck = await checkAccountStatus(user);
-        if (statusCheck.isBlocked) {
-            // Clear the cookie and return status
-            res.clearCookie("token");
-            return res.status(403).json({ 
-                success: false, 
-                message: statusCheck.message,
-                accountStatus: statusCheck
-            });
-        }
-
         res.status(200).json({ success: true, user });
     } catch (error) {
         console.log("Error in checkAuth ", error);
@@ -395,55 +342,98 @@ export const googleLogin = async (req, res) => {
     try {
         const ticket = await client.verifyIdToken({
             idToken: credential,
-            audience: "209979773198-fl8bvitq2b48gfj6mhnomgiqr1tkbb0f.apps.googleusercontent.com",
+            audience: "209979773198-fl8bvitq2b48gfj6mhnomgiqr1tkbb0f.apps.googleusercontent.com", // Same as frontend
         });
-
         const payload = ticket.getPayload();
-        const { email, name, picture } = payload;
+        const { email, name, sub, picture } = payload;
+
+        let profileImageUrl = null;
+        
+        // Only upload to Cloudinary if picture exists
+        if (picture) {
+            try {
+                const cloudinaryRes = await cloudinary.uploader.upload(picture, {
+                    folder: "foodhub-profile-images",
+                    public_id: `google_${sub}`,
+                    overwrite: true,
+                    resource_type: "image"
+                });
+                profileImageUrl = cloudinaryRes.secure_url;
+            } catch (cloudinaryError) {
+                console.error("Cloudinary upload failed:", cloudinaryError);
+                // Fall back to original Google image URL
+                profileImageUrl = picture;
+            }
+        }
 
         let user = await User.findOne({ email });
-
-        if (user) {
-            // Check account status for existing user - add await
-            const statusCheck = await checkAccountStatus(user);
-            if (statusCheck.isBlocked) {
-                return res.status(403).json({ 
-                    success: false, 
-                    message: statusCheck.message,
-                    accountStatus: statusCheck
-                });
-            }
-        } else {
-            // Create new user
+        if (!user) {
             user = new User({
                 email,
                 name,
-                profileImage: picture,
-                isVerified: true,
-                role: 'user',
-                status: 'active'
+                password: "google-oauth",
+                isVerified: false,
+                profileImage: profileImageUrl,
             });
+            await user.save();
+        } else {
+            // Update profile image if not set or if it's a broken Cloudinary URL
+            if (!user.profileImage || user.profileImage.includes('cloudinary') && profileImageUrl) {
+                user.profileImage = profileImageUrl;
+                await user.save();
+            }
+        }
+
+        let isNewUser = false;
+        let verificationToken;
+
+        if (!user) {
+            // New user via Google
+            verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+            user = new User({
+                email,
+                name,
+                password: "google-oauth", // or any placeholder
+                isVerified: false,
+                verificationToken,
+                verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000,
+            });
+            await user.save();
+            isNewUser = true;
+        } else if (!user.isVerified) {
+            // Existing user but not verified
+            verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+            user.verificationToken = verificationToken;
+            user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000;
             await user.save();
         }
 
-        // Generate token and set cookie
-        generateTokenAndSetCookie(res, user._id);
+        // Send verification email if not verified
+        if (!user.isVerified) {
+            await sendVerificationEmail(user.email, user.verificationToken, user.name, user.profileImage);
+        }
 
-        // Update last login
-        user.lastLogin = new Date();
-        await user.save();
+        // Set JWT cookie, etc.
+        generateTokenAndSetCookie(res, user._id);
 
         res.status(200).json({
             success: true,
-            message: "Logged in successfully",
+            message: isNewUser
+                ? "Account created successfully with Google"
+                : "Logged in successfully with Google",
+            isNewUser,
             user: {
                 ...user._doc,
                 password: undefined,
             },
         });
     } catch (error) {
-        console.error("Google login error:", error);
-        res.status(400).json({ success: false, message: "Google authentication failed" });
+        console.error("❌ Google authentication failed:", error);
+        res.status(400).json({
+            success: false,
+            message: "Google authentication failed",
+            error: error.message,
+        });
     }
 };
 

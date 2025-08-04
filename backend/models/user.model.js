@@ -39,8 +39,6 @@ const userSchema = new mongoose.Schema(
 		verificationTokenExpiresAt: Date,
 		banReason: { type: String, default: null },
 		suspendedUntil: { type: Date, default: null },
-		suspensionReason: { type: String, default: null },
-		bannedAt: { type: Date, default: null },
 		profileImage: { type: String, default: null },
 		bio: { type: String, default: "" }, // <-- this line must exist
 	},

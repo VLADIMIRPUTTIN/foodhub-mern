@@ -19,12 +19,11 @@ export const getAllUsers = async (req, res) => {
 };
 
 export const suspendUser = async (req, res) => {
-    const { minutes, reason } = req.body;
+    const { minutes } = req.body;
     const suspendedUntil = new Date(Date.now() + minutes * 60000);
     await User.findByIdAndUpdate(req.params.id, {
         status: "suspended",
-        suspendedUntil,
-        suspensionReason: reason || "No reason provided"
+        suspendedUntil
     });
     res.json({ success: true, message: `User suspended for ${minutes} minutes.` });
 };
@@ -33,7 +32,6 @@ export const banUser = async (req, res) => {
     const { reason } = req.body;
     await User.findByIdAndUpdate(req.params.id, {
         status: "banned",
-        bannedAt: new Date(),
         banReason: reason || "No reason provided"
     });
     res.json({ success: true, message: "User banned." });
@@ -43,9 +41,7 @@ export const activateUser = async (req, res) => {
     await User.findByIdAndUpdate(req.params.id, {
         status: "active",
         suspendedUntil: null,
-        suspensionReason: null,
-        banReason: null,
-        bannedAt: null
+        banReason: null
     });
     res.json({ success: true, message: "User activated." });
 };
