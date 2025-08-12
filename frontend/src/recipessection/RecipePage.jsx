@@ -640,8 +640,8 @@ const RecipePage = () => {
                                             )}
                                             
                                             <div className="recipe-price">
-                                                <i className='bx bx-money-withdraw'></i>
-                                                Estimated Price: $
+                                                <i className='bx bx-money'></i>
+                                                Estimated Price: ₱
                                                 {typeof recipe.price === 'number' 
                                                     ? recipe.price.toFixed(2)
                                                     : "0.00"
