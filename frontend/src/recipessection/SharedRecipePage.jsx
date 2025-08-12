@@ -2,13 +2,19 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../pages/NavbarPage";
 import { useSocket } from '../context/SocketContext';
+import { useAuthStore } from '../store/authStore';
+import CommunityRateRecipe from '../components/CommunityRateRecipe';
+import RatingModal from '../components/RatingModal';
 import "./SharedRecipePage.scss";
 
 const SharedRecipePage = () => {
     const [recipes, setRecipes] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+    const [selectedRecipeForRating, setSelectedRecipeForRating] = useState(null);
     const navigate = useNavigate();
     const { socket } = useSocket();
+    const { isAuthenticated } = useAuthStore();
 
     // Fetch shared recipes from the server
     const fetchSharedRecipes = () => {
@@ -19,7 +25,6 @@ const SharedRecipePage = () => {
         fetch(`${baseURL}/api/recipes/shared`)
             .then(res => res.json())
             .then(data => {
-                // Make sure to populate createdBy in your backend for this to work!
                 if (Array.isArray(data.recipes)) {
                     setRecipes(data.recipes);
                 } else if (Array.isArray(data.sharedRecipes)) {
@@ -37,15 +42,12 @@ const SharedRecipePage = () => {
     };
 
     useEffect(() => {
-        // Fetch shared recipes on component mount
         fetchSharedRecipes();
     }, []);
 
-    // Add useEffect to listen for new approved recipes
     useEffect(() => {
         if (socket) {
             const handleRecipeApproved = () => {
-                // Refresh the shared recipes list when a new recipe is approved
                 fetchSharedRecipes();
             };
 
@@ -71,12 +73,34 @@ const SharedRecipePage = () => {
         return `/${cleanPath}`;
     };
 
+    const handleRateRecipe = (recipe, e) => {
+        e.stopPropagation();
+        if (!isAuthenticated) {
+            navigate('/login');
+            return;
+        }
+        setSelectedRecipeForRating(recipe);
+        setIsRatingModalOpen(true);
+    };
+
+    const handleRatingModalClose = (updatedRecipe) => {
+        setIsRatingModalOpen(false);
+        setSelectedRecipeForRating(null);
+        
+        if (updatedRecipe) {
+            fetchSharedRecipes();
+        }
+    };
+
+    const handleCardClick = (recipeId) => {
+        navigate(`/recipe/${recipeId}`);
+    };
+
     return (
         <>
             <Navbar />
             <div className="shared-recipes-page">
                 <div className="page-container">
-                    {/* Simplified Header */}
                     <div className="community-header">
                         <div className="header-badge">
                             <i className="bx bx-group"></i>
@@ -119,7 +143,7 @@ const SharedRecipePage = () => {
                                 <div
                                     key={recipe._id}
                                     className="recipe-card"
-                                    onClick={() => navigate(`/recipe/${recipe._id}`)}
+                                    onClick={() => handleCardClick(recipe._id)}
                                     title="View full recipe"
                                 >
                                     <div className="recipe-image">
@@ -138,7 +162,33 @@ const SharedRecipePage = () => {
                                     <div className="recipe-content">
                                         <h3 className="recipe-title">{recipe.title}</h3>
                                         <p className="recipe-desc">{recipe.description}</p>
-                                        <div className="recipe-category">{recipe.category}</div>
+                                        
+                                        {/* Match RecipePage layout: category and rate button in same row */}
+                                        <div className="recipe-meta">
+                                            <div className="recipe-category">{recipe.category}</div>
+                                            <CommunityRateRecipe 
+                                                recipe={recipe}
+                                                onRateClick={handleRateRecipe}
+                                            />
+                                        </div>
+                                        
+                                        {/* Rating Display */}
+                                        {recipe.averageRating > 0 && (
+                                            <div className="recipe-rating-display">
+                                                <div className="stars">
+                                                    {[1, 2, 3, 4, 5].map(star => (
+                                                        <i 
+                                                            key={star}
+                                                            className={`bx ${star <= Math.round(recipe.averageRating) ? 'bxs-star' : 'bx-star'}`}
+                                                            style={{ color: '#CF996C' }}
+                                                        ></i>
+                                                    ))}
+                                                </div>
+                                                <span className="rating-text">
+                                                    {recipe.averageRating.toFixed(1)} ({recipe.ratings?.length || 0} {recipe.ratings?.length === 1 ? 'rating' : 'ratings'})
+                                                </span>
+                                            </div>
+                                        )}
                                         
                                         {/* Enhanced Author Info */}
                                         <div className="recipe-meta author-meta">
@@ -174,6 +224,13 @@ const SharedRecipePage = () => {
                     )}
                 </div>
             </div>
+
+            {/* Rating Modal */}
+            <RatingModal
+                isOpen={isRatingModalOpen}
+                onClose={handleRatingModalClose}
+                recipe={selectedRecipeForRating}
+            />
         </>
     );
 };
