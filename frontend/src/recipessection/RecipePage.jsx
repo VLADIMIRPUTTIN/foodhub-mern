@@ -170,6 +170,7 @@ const RecipePage = () => {
         );
     }, [ingredientSearch, ingredients]);
 
+    // Update the filtered recipes logic with more robust price handling
     const filteredRecipes = recipes.filter(recipe => {
         // Handle both 'name' and 'title' fields for backward compatibility
         const recipeName = recipe.title || recipe.name || '';
@@ -183,8 +184,34 @@ const RecipePage = () => {
                 )
             );
         const matchesCategory = !categoryFilter || recipe.category === categoryFilter;
-        const matchesMinPrice = !minPrice || (recipe.price && recipe.price >= Number(minPrice));
-        const matchesMaxPrice = !maxPrice || (recipe.price && recipe.price <= Number(maxPrice));
+        
+        // Enhanced price filtering with more careful parsing
+        // Convert recipe price to number and handle edge cases
+        const recipePrice = typeof recipe.price === 'number' 
+            ? recipe.price 
+            : recipe.price 
+                ? parseFloat(recipe.price) 
+                : 0;
+                
+        // Parse min price - if empty string or invalid, set to null (no minimum filter)
+        const minPriceNum = minPrice !== '' && !isNaN(parseFloat(minPrice)) 
+            ? parseFloat(minPrice) 
+            : null;
+            
+        // Parse max price - if empty string or invalid, set to null (no maximum filter)
+        const maxPriceNum = maxPrice !== '' && !isNaN(parseFloat(maxPrice)) 
+            ? parseFloat(maxPrice) 
+            : null;
+        
+        // Apply min price filter if set, otherwise pass all recipes
+        // Example: if min price is 500, only show recipes with price >= 500
+        const matchesMinPrice = minPriceNum === null || recipePrice >= minPriceNum;
+        
+        // Apply max price filter if set, otherwise pass all recipes
+        // Example: if max price is 1000, only show recipes with price <= 1000
+        const matchesMaxPrice = maxPriceNum === null || recipePrice <= maxPriceNum;
+        
+        // Recipe passes if it matches BOTH the min and max conditions
         return matchesSearch && matchesIngredients && matchesCategory && matchesMinPrice && matchesMaxPrice;
     });
 
@@ -489,16 +516,30 @@ const RecipePage = () => {
                                 className="filter-price min-price"
                                 placeholder="Min Price"
                                 value={minPrice}
-                                onChange={e => setMinPrice(e.target.value)}
-                                min={0}
+                                onChange={e => {
+                                    // Only allow positive numbers
+                                    const value = e.target.value;
+                                    if (value === '' || parseFloat(value) >= 0) {
+                                        setMinPrice(value);
+                                    }
+                                }}
+                                min="0"
+                                step="any"
                             />
                             <input
                                 type="number"
                                 className="filter-price max-price"
                                 placeholder="Max Price"
                                 value={maxPrice}
-                                onChange={e => setMaxPrice(e.target.value)}
-                                min={0}
+                                onChange={e => {
+                                    // Only allow positive numbers
+                                    const value = e.target.value;
+                                    if (value === '' || parseFloat(value) >= 0) {
+                                        setMaxPrice(value);
+                                    }
+                                }}
+                                min="0"
+                                step="any"
                             />
                         </div>
                     </div>
@@ -542,7 +583,11 @@ const RecipePage = () => {
                                             <p className="recipe-desc">{recipe.description}</p>
                                             <div className="recipe-price">
                                                 <i className='bx bx-money-withdraw'></i>
-                                                Estimated Price: ${recipe.price ? recipe.price.toFixed(2) : "0.00"}
+                                                Estimated Price: $
+                                                {typeof recipe.price === 'number' 
+                                                    ? recipe.price.toFixed(2)
+                                                    : "0.00"
+                                                }
                                             </div>
                                             <div className="recipe-category">{recipe.category}</div>
                                         </div>
