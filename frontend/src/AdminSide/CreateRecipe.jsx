@@ -23,6 +23,7 @@ const CreateRecipe = ({ onRecipeSaved }) => {
     const [activeTab, setActiveTab] = useState('basic');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [price, setPrice] = useState('');
 
     useEffect(() => {
         const fetchIngredients = async () => {
@@ -78,6 +79,7 @@ const CreateRecipe = ({ onRecipeSaved }) => {
         setImage(null);
         setImagePreview(null);
         setActiveTab('basic');
+        setPrice('');
     };
 
     const handleSubmit = async (e) => {
@@ -96,6 +98,7 @@ const CreateRecipe = ({ onRecipeSaved }) => {
             if (image) {
                 formData.append('image', image);
             }
+            formData.append('price', price);
 
             const baseURL = import.meta.env.MODE === "development" 
                 ? "http://localhost:5000" 
@@ -199,6 +202,26 @@ const CreateRecipe = ({ onRecipeSaved }) => {
                                         onChange={e => setDescription(e.target.value)} 
                                         required 
                                     />
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        <i className="bx bx-money-withdraw"></i>
+                                        Recipe Price
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        className="form-input"
+                                        placeholder="Enter recipe price (e.g. 250.00)"
+                                        value={price} 
+                                        onChange={e => setPrice(e.target.value)} 
+                                        min="0"
+                                        step="0.01"
+                                    />
+                                    <p className="form-description">
+                                        <i className="bx bx-info-circle"></i>
+                                        Estimated cost of ingredients in PHP
+                                    </p>
                                 </div>
                                 
                                 <div className="form-group">

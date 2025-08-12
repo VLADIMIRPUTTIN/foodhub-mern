@@ -540,12 +540,11 @@ const RecipePage = () => {
                                         <div className="recipe-content">
                                             <h3 className="recipe-title">{recipe.title || recipe.name}</h3>
                                             <p className="recipe-desc">{recipe.description}</p>
+                                            <div className="recipe-price">
+                                                <i className='bx bx-money-withdraw'></i>
+                                                Estimated Price: ${recipe.price ? recipe.price.toFixed(2) : "0.00"}
+                                            </div>
                                             <div className="recipe-category">{recipe.category}</div>
-                                            {recipe.price && (
-                                                <div className="recipe-price">
-                                                    Estimated Price: ${recipe.price.toFixed(2)}
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
                                 ) : (

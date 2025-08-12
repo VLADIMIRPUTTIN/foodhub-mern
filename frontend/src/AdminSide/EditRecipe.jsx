@@ -17,6 +17,7 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [activeTab, setActiveTab] = useState('basic');
+    const [price, setPrice] = useState(recipe?.price || ''); // Add price state
 
     useEffect(() => {
         const fetchIngredients = async () => {
@@ -89,7 +90,8 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
                     description,
                     ingredients,
                     steps,
-                    imageUrl
+                    imageUrl,
+                    price // Include price in the update request
                 },
                 { withCredentials: true }
             );
@@ -165,6 +167,22 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
                                     onChange={e => setDescription(e.target.value)} 
                                     required 
                                 />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Price</label>
+                                <input 
+                                    type="number" 
+                                    className="form-input"
+                                    placeholder="Recipe price"
+                                    value={price} 
+                                    onChange={e => setPrice(e.target.value)} 
+                                    min="0"
+                                    step="0.01"
+                                />
+                                <p className="form-description">
+                                    <i className="bx bx-info-circle"></i>
+                                    Estimated cost of ingredients in PHP
+                                </p>
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Change Image</label>

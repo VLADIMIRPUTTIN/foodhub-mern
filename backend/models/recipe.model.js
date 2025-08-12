@@ -19,7 +19,8 @@ const recipeSchema = new mongoose.Schema({
         enum: ['not_shared', 'pending', 'approved', 'rejected'], 
         default: 'not_shared' 
     },
-    rejectionReason: { type: String }
+    rejectionReason: { type: String },
+    price: { type: Number, default: 0 } // Added price field
 }, { timestamps: true });
 
 export const Recipe = mongoose.model("Recipe", recipeSchema);

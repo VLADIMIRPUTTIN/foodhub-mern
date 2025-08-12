@@ -924,7 +924,7 @@ i[class*=" bx-"] {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   cursor: pointer;
-  height: 320px; // Increased height for larger cards
+  height: 375px; // Increased height for larger cards
   display: flex;
   flex-direction: column;
   position: relative; // Add this for heart positioning
@@ -998,10 +998,28 @@ i[class*=" bx-"] {
     }
 
     .recipe-price {
-      color: #CF996C;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem; /* Add margin bottom to separate from category */
+      padding: 0.35rem 0.7rem;
+      background: rgba(207, 153, 108, 0.1);
+      border-radius: 8px;
+      color: #b86b1b;
       font-weight: 600;
-      font-size: 0.875rem;
-      margin-top: auto;
+      font-size: 0.85rem;
+      width: fit-content;
+      border: 1px solid rgba(207, 153, 108, 0.2);
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      
+      i {
+          font-size: 1rem;
+          color: #CF996C;
+          flex-shrink: 0;
+      }
     }
   }
 
@@ -1598,5 +1616,5 @@ i[class*=" bx-"] {
     height: 100% !important;
   }
 }
-  }
+}
 }
