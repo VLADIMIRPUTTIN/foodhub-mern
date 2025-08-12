@@ -19,7 +19,7 @@ export const uploadMiddleware = upload.single('image');
 
 export const createRecipe = async (req, res) => {
     try {
-        const { title, description, ingredients, instructions, category, cookingTime, servings, difficulty } = req.body;
+        const { title, description, ingredients, instructions, category, cookingTime, servings, difficulty, price } = req.body;
         
         // Validate required fields
         if (!title || !description || !ingredients || !instructions) {
@@ -69,7 +69,8 @@ export const createRecipe = async (req, res) => {
             difficulty: difficulty || 'Easy',
             imageUrl,
             createdBy: req.userId,
-            isPublic: isPublic // Add this field
+            isPublic: isPublic,
+            price: price ? parseFloat(price) : 0 // Added this line to save the price
         });
 
         await recipe.save();
@@ -159,6 +160,11 @@ export const updateRecipe = async (req, res) => {
         recipe.servings = req.body.servings || recipe.servings;
         recipe.difficulty = req.body.difficulty || recipe.difficulty;
         recipe.imageUrl = imageUrl;
+        
+        // Add this line to handle price updates
+        if (req.body.price !== undefined) {
+            recipe.price = parseFloat(req.body.price);
+        }
 
         await recipe.save();
 
