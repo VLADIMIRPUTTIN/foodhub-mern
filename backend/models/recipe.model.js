@@ -20,7 +20,15 @@ const recipeSchema = new mongoose.Schema({
         default: 'not_shared' 
     },
     rejectionReason: { type: String },
-    price: { type: Number, default: 0 } // Added price field
+    price: { type: Number, default: 0 }, // Added price field
+    ratings: [
+        {
+            user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            rating: { type: Number, min: 1, max: 5, required: true },
+            createdAt: { type: Date, default: Date.now }
+        }
+    ],
+    averageRating: { type: Number, default: 0 }
 }, { timestamps: true });
 
 export const Recipe = mongoose.model("Recipe", recipeSchema);

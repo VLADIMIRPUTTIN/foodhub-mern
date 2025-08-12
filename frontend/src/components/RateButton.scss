@@ -1,0 +1,59 @@
+.rate-recipe-btn {
+  display: inline-flex;
+  justify-content: center;
+  background: #CF996C; /* Exact same color as category buttons */
+  color: white;
+  padding: 0.25rem 0.75rem; /* Match category button padding */
+  border-radius: 12px; /* Match category button border-radius */
+  font-size: 0.75rem; /* Match category button font size */
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: none; /* Match category button (no shadow) */
+  gap: 0.35rem;
+  position: relative;
+  overflow: hidden;
+  margin-left: 6.7rem;
+margin-bottom: 1rem;
+  height: 25px; /* Match category button height */
+  
+  &:hover {
+    background: #BB8860;
+    transform: translateY(-1px);
+    
+    i {
+      animation: starShine 1.2s infinite;
+    }
+  }
+  
+  &:active {
+    transform: scale(0.97);
+  }
+  
+  i {
+    font-size: 0.9rem;
+    color: white;
+    transition: all 0.3s ease;
+  }
+}
+
+@keyframes starShine {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .rate-recipe-btn {
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem;
+    border-radius: 10px;
+    height: 26px;
+    
+    i {
+      font-size: 0.8rem;
+    }
+  }
+}

@@ -125,4 +125,73 @@ router.delete("/:id", verifyToken, async (req, res) => {
 // Add this route after the existing routes
 router.post("/:id/unshare", verifyToken, unshareRecipe);
 
+// Add this route
+router.post("/:id/rate", verifyToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { rating } = req.body;
+        const userId = req.userId;
+
+        // Validate rating value
+        if (!rating || rating < 1 || rating > 5) {
+            return res.status(400).json({
+                success: false,
+                message: "Rating must be between 1 and 5"
+            });
+        }
+
+        const recipe = await Recipe.findById(id);
+        if (!recipe) {
+            return res.status(404).json({
+                success: false,
+                message: "Recipe not found"
+            });
+        }
+
+        // Check if user has already rated this recipe
+        const existingRatingIndex = recipe.ratings.findIndex(
+            r => r.user.toString() === userId
+        );
+
+        if (existingRatingIndex !== -1) {
+            // Update existing rating
+            recipe.ratings[existingRatingIndex].rating = rating;
+            recipe.ratings[existingRatingIndex].createdAt = Date.now();
+        } else {
+            // Add new rating
+            recipe.ratings.push({
+                user: userId,
+                rating,
+                createdAt: Date.now()
+            });
+        }
+
+        // Calculate average rating
+        if (recipe.ratings.length > 0) {
+            const sum = recipe.ratings.reduce((total, r) => total + r.rating, 0);
+            recipe.averageRating = sum / recipe.ratings.length;
+        } else {
+            recipe.averageRating = 0;
+        }
+
+        await recipe.save();
+
+        res.json({
+            success: true,
+            message: "Rating submitted successfully",
+            recipe: {
+                ...recipe._doc,
+                ratingCount: recipe.ratings.length,
+                userRating: rating
+            }
+        });
+    } catch (error) {
+        console.error('Rate recipe error:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
 export default router;

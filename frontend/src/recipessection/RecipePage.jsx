@@ -8,6 +8,8 @@ import { Sheet, SheetContent, SheetTrigger } from "../components/ui/sheet";
 import { useAuthStore } from '../store/authStore';
 import LoginPromptModal from '../components/ui/login-prompt-modal';
 import { useToast } from '../components/ui/toast'; // Add this import
+import RatingModal from "../components/RatingModal"; // Import the RatingModal at the top
+import RateButton from '../components/RateButton'; // Add this import
 
 const RecipePage = () => {
     const { user } = useAuthStore();
@@ -28,6 +30,9 @@ const RecipePage = () => {
     const [sheetOut, setSheetOut] = useState(false);
     const [favoriteRecipes, setFavoriteRecipes] = useState([]); // New state for favorites
     const [showLoginPrompt, setShowLoginPrompt] = useState(false); // New state for login prompt
+    const [ratingModalOpen, setRatingModalOpen] = useState(false); // Add to the state variables
+    const [recipeToRate, setRecipeToRate] = useState(null); // Add to the state variables
+    // const [filteredRecipes, setFilteredRecipes] = useState([]); // Removed duplicate declaration
     
     // Touch/swipe handling refs and states
     const gridContainerRef = useRef(null);
@@ -358,6 +363,32 @@ const RecipePage = () => {
         }
     };
 
+    // Add this function to handle rating button click
+    const handleRateClick = (recipe, e) => {
+        e.stopPropagation(); // Prevent opening the recipe modal
+        setRecipeToRate(recipe);
+        setRatingModalOpen(true);
+    };
+
+    // Add this function to handle rating modal close
+    const handleRatingModalClose = (updatedRecipe) => {
+        setRatingModalOpen(false);
+        
+        // If the recipe was updated, update it in the recipes list
+        if (updatedRecipe) {
+            // Update in the main recipes list
+            const updatedRecipes = recipes.map(r => 
+                r._id === updatedRecipe._id ? updatedRecipe : r
+            );
+            setRecipes(updatedRecipes);
+            
+            // No need to update filteredRecipes as it's automatically 
+            // recalculated when recipes changes
+        }
+        
+        setRecipeToRate(null);
+    };
+
     return (
         <div className="recipe-page">
             <Navbar />
@@ -581,6 +612,33 @@ const RecipePage = () => {
                                         <div className="recipe-content">
                                             <h3 className="recipe-title">{recipe.title || recipe.name}</h3>
                                             <p className="recipe-desc">{recipe.description}</p>
+                                            
+                                            <div className="recipe-meta">
+                                                <div className="recipe-category">{recipe.category}</div>
+                                                <RateButton 
+                                                    recipe={recipe} 
+                                                    onRateClick={handleRateClick} 
+                                                />
+                                            </div>
+                                            
+                                            {recipe.averageRating > 0 && (
+                                                <div className="star-rating-display">
+                                                    {[1, 2, 3, 4, 5].map((star) => (
+                                                        <i
+                                                            key={star}
+                                                            className={`bx ${
+                                                                star <= Math.round(recipe.averageRating) 
+                                                                    ? "bxs-star text-yellow-400" 
+                                                                    : "bx-star text-gray-300"
+                                                            }`}
+                                                        ></i>
+                                                    ))}
+                                                    <span className="star-rating-value">
+                                                        {recipe.averageRating.toFixed(1)} ({recipe.ratings?.length || 0})
+                                                    </span>
+                                                </div>
+                                            )}
+                                            
                                             <div className="recipe-price">
                                                 <i className='bx bx-money-withdraw'></i>
                                                 Estimated Price: $
@@ -589,7 +647,6 @@ const RecipePage = () => {
                                                     : "0.00"
                                                 }
                                             </div>
-                                            <div className="recipe-category">{recipe.category}</div>
                                         </div>
                                     </div>
                                 ) : (
@@ -691,6 +748,13 @@ const RecipePage = () => {
                 onViewFull={() => {
                     window.location.href = `/recipes/${selectedRecipe._id}`;
                 }}
+            />
+            
+            {/* Add the RatingModal component here */}
+            <RatingModal 
+                isOpen={ratingModalOpen}
+                onClose={handleRatingModalClose}
+                recipe={recipeToRate}
             />
         </div>
     );
