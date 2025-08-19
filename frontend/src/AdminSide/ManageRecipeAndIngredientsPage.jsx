@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EditRecipe from './EditRecipe';
 import EditIngredientModal from './EditIngredientModal';
-import ConfirmDialog from '../components/ConfirmDialog';
 import './ManageRecipeAndIngredientsPage.scss';
 
 const ManageRecipeAndIngredientsPage = ({
@@ -22,16 +21,6 @@ const ManageRecipeAndIngredientsPage = ({
     const [editingIngredient, setEditingIngredient] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('recipes'); // For mobile view
-    
-    // Delete confirmation states for recipes
-    const [deleteRecipeConfirmOpen, setDeleteRecipeConfirmOpen] = useState(false);
-    const [recipeToDelete, setRecipeToDelete] = useState(null);
-    const [isDeletingRecipe, setIsDeletingRecipe] = useState(false);
-
-    // Delete confirmation states for ingredients
-    const [deleteIngredientConfirmOpen, setDeleteIngredientConfirmOpen] = useState(false);
-    const [ingredientToDelete, setIngredientToDelete] = useState(null);
-    const [isDeletingIngredient, setIsDeletingIngredient] = useState(false);
 
     const handleIngredientUpdated = (updatedIngredient) => {
         setEditingIngredient(null);
@@ -55,80 +44,6 @@ const ManageRecipeAndIngredientsPage = ({
 
     const clearIngredientSearch = () => {
         setIngredientSearch('');
-    };
-
-    // Handle delete recipe click
-    const handleDeleteRecipeClick = (recipe) => {
-        setRecipeToDelete(recipe);
-        setDeleteRecipeConfirmOpen(true);
-    };
-
-    // Confirm delete recipe
-    const confirmDeleteRecipe = async () => {
-        if (!recipeToDelete) return;
-        
-        console.log('Attempting to delete recipe:', recipeToDelete._id); // Add this debug log
-        setIsDeletingRecipe(true);
-        
-        try {
-            const result = await handleDeleteRecipe(recipeToDelete._id);
-            console.log('Delete recipe result:', result); // Add this debug log
-            
-            if (result && result.success) {
-                setDeleteRecipeConfirmOpen(false);
-                setRecipeToDelete(null);
-                await fetchRecipes(); // Make sure to await this
-            } else {
-                console.error('Delete failed:', result);
-            }
-        } catch (error) {
-            console.error('Error deleting recipe:', error);
-        } finally {
-            setIsDeletingRecipe(false);
-        }
-    };
-
-    // Cancel delete recipe
-    const cancelDeleteRecipe = () => {
-        setDeleteRecipeConfirmOpen(false);
-        setRecipeToDelete(null);
-    };
-
-    // Handle delete ingredient click
-    const handleDeleteIngredientClick = (ingredient) => {
-        setIngredientToDelete(ingredient);
-        setDeleteIngredientConfirmOpen(true);
-    };
-
-    // Confirm delete ingredient
-    const confirmDeleteIngredient = async () => {
-        if (!ingredientToDelete) return;
-        
-        console.log('Attempting to delete ingredient:', ingredientToDelete._id); // Add this debug log
-        setIsDeletingIngredient(true);
-        
-        try {
-            const result = await handleDeleteIngredient(ingredientToDelete._id);
-            console.log('Delete ingredient result:', result); // Add this debug log
-            
-            if (result && result.success) {
-                setDeleteIngredientConfirmOpen(false);
-                setIngredientToDelete(null);
-                await fetchIngredients(); // Make sure to await this
-            } else {
-                console.error('Delete failed:', result);
-            }
-        } catch (error) {
-            console.error('Error deleting ingredient:', error);
-        } finally {
-            setIsDeletingIngredient(false);
-        }
-    };
-
-    // Cancel delete ingredient
-    const cancelDeleteIngredient = () => {
-        setDeleteIngredientConfirmOpen(false);
-        setIngredientToDelete(null);
     };
 
     return (
@@ -219,13 +134,12 @@ const ManageRecipeAndIngredientsPage = ({
                                 </div>
                             ) : (
                                 filteredRecipes.map((recipe, index) => (
-                                    <div
+                                    <motion.div
                                         key={recipe._id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.05 }}
                                         className="list-item recipe-item"
-                                        style={{
-                                            opacity: 1,
-                                            transform: 'translateY(0)',
-                                        }}
                                     >
                                         <div className="item-content">
                                             <div className="item-header">
@@ -261,14 +175,14 @@ const ManageRecipeAndIngredientsPage = ({
                                             </button>
                                             <button 
                                                 className="btn btn--destructive btn--sm"
-                                                onClick={() => handleDeleteRecipeClick(recipe)}
+                                                onClick={() => handleDeleteRecipe(recipe._id)}
                                                 title="Delete Recipe"
                                             >
                                                 <i className="bx bx-trash"></i>
                                                 <span>Delete</span>
                                             </button>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 ))
                             )}
                         </div>
@@ -336,13 +250,12 @@ const ManageRecipeAndIngredientsPage = ({
                                 </div>
                             ) : (
                                 filteredIngredients.map((ingredient, index) => (
-                                    <div
+                                    <motion.div
                                         key={ingredient._id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.05 }}
                                         className="list-item ingredient-item"
-                                        style={{
-                                            opacity: 1,
-                                            transform: 'translateY(0)',
-                                        }}
                                     >
                                         <div className="item-content">
                                             <div className="item-header">
@@ -368,14 +281,14 @@ const ManageRecipeAndIngredientsPage = ({
                                             </button>
                                             <button 
                                                 className="btn btn--destructive btn--sm"
-                                                onClick={() => handleDeleteIngredientClick(ingredient)}
+                                                onClick={() => handleDeleteIngredient(ingredient._id)}
                                                 title="Delete Ingredient"
                                             >
                                                 <i className="bx bx-trash"></i>
                                                 <span>Delete</span>
                                             </button>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 ))
                             )}
                         </div>
@@ -384,26 +297,34 @@ const ManageRecipeAndIngredientsPage = ({
             </div>
 
             {/* Edit Recipe Modal */}
-            {editingRecipe && (
-                <div
-                    className="modal-overlay"
-                    onClick={() => setEditingRecipe(null)}
-                >
-                    <div
-                        className="modal-content"
-                        onClick={(e) => e.stopPropagation()}
+            <AnimatePresence>
+                {editingRecipe && (
+                    <motion.div
+                        className="modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setEditingRecipe(null)}
                     >
-                        <EditRecipe
-                            recipe={editingRecipe}
-                            onRecipeUpdated={() => {
-                                setEditingRecipe(null);
-                                fetchRecipes();
-                            }}
-                            onCancel={() => setEditingRecipe(null)}
-                        />
-                    </div>
-                </div>
-            )}
+                        <motion.div
+                            className="modal-content"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <EditRecipe
+                                recipe={editingRecipe}
+                                onRecipeUpdated={() => {
+                                    setEditingRecipe(null);
+                                    fetchRecipes();
+                                }}
+                                onCancel={() => setEditingRecipe(null)}
+                            />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             
             {/* Edit Ingredient Modal */}
             <EditIngredientModal
@@ -411,38 +332,6 @@ const ManageRecipeAndIngredientsPage = ({
                 onUpdated={handleIngredientUpdated}
                 onCancel={closeEditModal}
                 isOpen={isEditModalOpen}
-            />
-
-            {/* Delete Recipe Confirmation Dialog */}
-            <ConfirmDialog
-                open={deleteRecipeConfirmOpen}
-                title="Delete Recipe"
-                description={
-                    recipeToDelete
-                        ? `Are you sure you want to delete "${recipeToDelete.title || recipeToDelete.name}"? This action cannot be undone.`
-                        : ""
-                }
-                confirmText="Delete Recipe"
-                cancelText="Cancel"
-                onConfirm={confirmDeleteRecipe}
-                onCancel={cancelDeleteRecipe}
-                loading={isDeletingRecipe}
-            />
-
-            {/* Delete Ingredient Confirmation Dialog */}
-            <ConfirmDialog
-                open={deleteIngredientConfirmOpen}
-                title="Delete Ingredient"
-                description={
-                    ingredientToDelete
-                        ? `Are you sure you want to delete "${ingredientToDelete.name}"? This action cannot be undone and may affect recipes that use this ingredient.`
-                        : ""
-                }
-                confirmText="Delete Ingredient"
-                cancelText="Cancel"
-                onConfirm={confirmDeleteIngredient}
-                onCancel={cancelDeleteIngredient}
-                loading={isDeletingIngredient}
             />
         </div>
     );
