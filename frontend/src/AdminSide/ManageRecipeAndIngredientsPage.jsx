@@ -67,11 +67,20 @@ const ManageRecipeAndIngredientsPage = ({
     const confirmDeleteRecipe = async () => {
         if (!recipeToDelete) return;
         
+        console.log('Attempting to delete recipe:', recipeToDelete._id); // Add this debug log
         setIsDeletingRecipe(true);
+        
         try {
-            await handleDeleteRecipe(recipeToDelete._id);
-            setDeleteRecipeConfirmOpen(false);
-            setRecipeToDelete(null);
+            const result = await handleDeleteRecipe(recipeToDelete._id);
+            console.log('Delete recipe result:', result); // Add this debug log
+            
+            if (result && result.success) {
+                setDeleteRecipeConfirmOpen(false);
+                setRecipeToDelete(null);
+                await fetchRecipes(); // Make sure to await this
+            } else {
+                console.error('Delete failed:', result);
+            }
         } catch (error) {
             console.error('Error deleting recipe:', error);
         } finally {
@@ -95,11 +104,20 @@ const ManageRecipeAndIngredientsPage = ({
     const confirmDeleteIngredient = async () => {
         if (!ingredientToDelete) return;
         
+        console.log('Attempting to delete ingredient:', ingredientToDelete._id); // Add this debug log
         setIsDeletingIngredient(true);
+        
         try {
-            await handleDeleteIngredient(ingredientToDelete._id);
-            setDeleteIngredientConfirmOpen(false);
-            setIngredientToDelete(null);
+            const result = await handleDeleteIngredient(ingredientToDelete._id);
+            console.log('Delete ingredient result:', result); // Add this debug log
+            
+            if (result && result.success) {
+                setDeleteIngredientConfirmOpen(false);
+                setIngredientToDelete(null);
+                await fetchIngredients(); // Make sure to await this
+            } else {
+                console.error('Delete failed:', result);
+            }
         } catch (error) {
             console.error('Error deleting ingredient:', error);
         } finally {
