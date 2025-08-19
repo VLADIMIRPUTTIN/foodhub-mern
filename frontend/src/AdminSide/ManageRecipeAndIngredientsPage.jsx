@@ -201,12 +201,13 @@ const ManageRecipeAndIngredientsPage = ({
                                 </div>
                             ) : (
                                 filteredRecipes.map((recipe, index) => (
-                                    <motion.div
+                                    <div
                                         key={recipe._id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.05 }}
                                         className="list-item recipe-item"
+                                        style={{
+                                            opacity: 1,
+                                            transform: 'translateY(0)',
+                                        }}
                                     >
                                         <div className="item-content">
                                             <div className="item-header">
@@ -249,7 +250,7 @@ const ManageRecipeAndIngredientsPage = ({
                                                 <span>Delete</span>
                                             </button>
                                         </div>
-                                    </motion.div>
+                                    </div>
                                 ))
                             )}
                         </div>
@@ -317,12 +318,13 @@ const ManageRecipeAndIngredientsPage = ({
                                 </div>
                             ) : (
                                 filteredIngredients.map((ingredient, index) => (
-                                    <motion.div
+                                    <div
                                         key={ingredient._id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.05 }}
                                         className="list-item ingredient-item"
+                                        style={{
+                                            opacity: 1,
+                                            transform: 'translateY(0)',
+                                        }}
                                     >
                                         <div className="item-content">
                                             <div className="item-header">
@@ -355,7 +357,7 @@ const ManageRecipeAndIngredientsPage = ({
                                                 <span>Delete</span>
                                             </button>
                                         </div>
-                                    </motion.div>
+                                    </div>
                                 ))
                             )}
                         </div>
@@ -364,34 +366,26 @@ const ManageRecipeAndIngredientsPage = ({
             </div>
 
             {/* Edit Recipe Modal */}
-            <AnimatePresence>
-                {editingRecipe && (
-                    <motion.div
-                        className="modal-overlay"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setEditingRecipe(null)}
+            {editingRecipe && (
+                <div
+                    className="modal-overlay"
+                    onClick={() => setEditingRecipe(null)}
+                >
+                    <div
+                        className="modal-content"
+                        onClick={(e) => e.stopPropagation()}
                     >
-                        <motion.div
-                            className="modal-content"
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <EditRecipe
-                                recipe={editingRecipe}
-                                onRecipeUpdated={() => {
-                                    setEditingRecipe(null);
-                                    fetchRecipes();
-                                }}
-                                onCancel={() => setEditingRecipe(null)}
-                            />
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        <EditRecipe
+                            recipe={editingRecipe}
+                            onRecipeUpdated={() => {
+                                setEditingRecipe(null);
+                                fetchRecipes();
+                            }}
+                            onCancel={() => setEditingRecipe(null)}
+                        />
+                    </div>
+                </div>
+            )}
             
             {/* Edit Ingredient Modal */}
             <EditIngredientModal
