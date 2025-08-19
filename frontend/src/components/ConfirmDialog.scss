@@ -1,0 +1,148 @@
+.confirm-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+
+.confirm-dialog-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 380px;
+  padding: 1.5rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.confirm-dialog-header {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.confirm-dialog-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fee2e2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.8rem auto;
+
+  i {
+    font-size: 1.3rem;
+    color: #dc2626;
+  }
+}
+
+.confirm-dialog-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.confirm-dialog-description {
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.confirm-dialog-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+  font-family: inherit;
+  height: 40px;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  i {
+    font-size: 0.9rem;
+  }
+
+  &--cancel {
+    background: #f3f4f6;
+    color: #374151;
+    border-color: #d1d5db;
+
+    &:hover:not(:disabled) {
+      background: #e5e7eb;
+    }
+  }
+
+  &--destructive {
+    background: #dc2626;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background: #b91c1c;
+    }
+  }
+}
+
+.confirm-dialog-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Mobile responsive - keep the complexity for mobile only
+@media (max-width: 480px) {
+  .confirm-dialog-content {
+    padding: 1.2rem;
+    max-width: calc(100vw - 2rem);
+  }
+
+  .confirm-dialog-actions {
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+    
+    .confirm-dialog-btn {
+      width: 100%;
+      height: 44px;
+    }
+  }
+
+  .confirm-dialog-title {
+    font-size: 1rem;
+  }
+
+  .confirm-dialog-description {
+    font-size: 0.85rem;
+  }
+}

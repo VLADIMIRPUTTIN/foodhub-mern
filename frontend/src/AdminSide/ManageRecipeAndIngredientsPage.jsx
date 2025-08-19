@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EditRecipe from './EditRecipe';
 import EditIngredientModal from './EditIngredientModal';
+import ConfirmDialog from '../components/ConfirmDialog';
 import './ManageRecipeAndIngredientsPage.scss';
 
 const ManageRecipeAndIngredientsPage = ({
@@ -21,6 +22,16 @@ const ManageRecipeAndIngredientsPage = ({
     const [editingIngredient, setEditingIngredient] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('recipes'); // For mobile view
+    
+    // Delete confirmation states for recipes
+    const [deleteRecipeConfirmOpen, setDeleteRecipeConfirmOpen] = useState(false);
+    const [recipeToDelete, setRecipeToDelete] = useState(null);
+    const [isDeletingRecipe, setIsDeletingRecipe] = useState(false);
+
+    // Delete confirmation states for ingredients
+    const [deleteIngredientConfirmOpen, setDeleteIngredientConfirmOpen] = useState(false);
+    const [ingredientToDelete, setIngredientToDelete] = useState(null);
+    const [isDeletingIngredient, setIsDeletingIngredient] = useState(false);
 
     const handleIngredientUpdated = (updatedIngredient) => {
         setEditingIngredient(null);
@@ -44,6 +55,62 @@ const ManageRecipeAndIngredientsPage = ({
 
     const clearIngredientSearch = () => {
         setIngredientSearch('');
+    };
+
+    // Handle delete recipe click
+    const handleDeleteRecipeClick = (recipe) => {
+        setRecipeToDelete(recipe);
+        setDeleteRecipeConfirmOpen(true);
+    };
+
+    // Confirm delete recipe
+    const confirmDeleteRecipe = async () => {
+        if (!recipeToDelete) return;
+        
+        setIsDeletingRecipe(true);
+        try {
+            await handleDeleteRecipe(recipeToDelete._id);
+            setDeleteRecipeConfirmOpen(false);
+            setRecipeToDelete(null);
+        } catch (error) {
+            console.error('Error deleting recipe:', error);
+        } finally {
+            setIsDeletingRecipe(false);
+        }
+    };
+
+    // Cancel delete recipe
+    const cancelDeleteRecipe = () => {
+        setDeleteRecipeConfirmOpen(false);
+        setRecipeToDelete(null);
+    };
+
+    // Handle delete ingredient click
+    const handleDeleteIngredientClick = (ingredient) => {
+        setIngredientToDelete(ingredient);
+        setDeleteIngredientConfirmOpen(true);
+    };
+
+    // Confirm delete ingredient
+    const confirmDeleteIngredient = async () => {
+        if (!ingredientToDelete) return;
+        
+        setIsDeletingIngredient(true);
+        try {
+            await handleDeleteIngredient(ingredientToDelete._id);
+            setDeleteIngredientConfirmOpen(false);
+            setIngredientToDelete(null);
+        } catch (error) {
+            console.error('Error deleting ingredient:', error);
+        } finally {
+            setIsDeletingIngredient(false);
+        }
+    };
+
+    // Cancel delete ingredient
+    const cancelDeleteIngredient = () => {
+        setDeleteIngredientConfirmOpen(false);
+        setIngredientToDelete(null);
     };
 
     return (
@@ -175,7 +242,7 @@ const ManageRecipeAndIngredientsPage = ({
                                             </button>
                                             <button 
                                                 className="btn btn--destructive btn--sm"
-                                                onClick={() => handleDeleteRecipe(recipe._id)}
+                                                onClick={() => handleDeleteRecipeClick(recipe)}
                                                 title="Delete Recipe"
                                             >
                                                 <i className="bx bx-trash"></i>
@@ -281,7 +348,7 @@ const ManageRecipeAndIngredientsPage = ({
                                             </button>
                                             <button 
                                                 className="btn btn--destructive btn--sm"
-                                                onClick={() => handleDeleteIngredient(ingredient._id)}
+                                                onClick={() => handleDeleteIngredientClick(ingredient)}
                                                 title="Delete Ingredient"
                                             >
                                                 <i className="bx bx-trash"></i>
@@ -332,6 +399,38 @@ const ManageRecipeAndIngredientsPage = ({
                 onUpdated={handleIngredientUpdated}
                 onCancel={closeEditModal}
                 isOpen={isEditModalOpen}
+            />
+
+            {/* Delete Recipe Confirmation Dialog */}
+            <ConfirmDialog
+                open={deleteRecipeConfirmOpen}
+                title="Delete Recipe"
+                description={
+                    recipeToDelete
+                        ? `Are you sure you want to delete "${recipeToDelete.title || recipeToDelete.name}"? This action cannot be undone.`
+                        : ""
+                }
+                confirmText="Delete Recipe"
+                cancelText="Cancel"
+                onConfirm={confirmDeleteRecipe}
+                onCancel={cancelDeleteRecipe}
+                loading={isDeletingRecipe}
+            />
+
+            {/* Delete Ingredient Confirmation Dialog */}
+            <ConfirmDialog
+                open={deleteIngredientConfirmOpen}
+                title="Delete Ingredient"
+                description={
+                    ingredientToDelete
+                        ? `Are you sure you want to delete "${ingredientToDelete.name}"? This action cannot be undone and may affect recipes that use this ingredient.`
+                        : ""
+                }
+                confirmText="Delete Ingredient"
+                cancelText="Cancel"
+                onConfirm={confirmDeleteIngredient}
+                onCancel={cancelDeleteIngredient}
+                loading={isDeletingIngredient}
             />
         </div>
     );
