@@ -38,29 +38,36 @@ const SignUpPage = () => {
 
     const handleGoogleSignUp = async (credentialResponse) => {
         try {
-            console.log("Starting Google signup process...");
+            console.log("🚀 Starting Google signup...");
+            console.log("Credential received:", !!credentialResponse.credential);
             
-            // Send the credential to your backend for verification
             const response = await axios.post(
                 `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/auth/google-login" : "/api/auth/google-login"}`,
                 { credential: credentialResponse.credential },
-                { withCredentials: true }
+                { 
+                    withCredentials: true,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
             );
 
-            // Set user in auth store so verification page knows the email
+            console.log("✅ Google signup response:", response.data);
+
             if (response.data.user) {
                 setUser(response.data.user);
-            }
-
-            if (response.data.user && response.data.user.isVerified) {
-                navigate("/");
-                window.location.reload();
-            } else {
+                
+                // Always go to verification page for Google signup
+                // since we're now requiring email verification for all users
                 navigate("/verify-email");
             }
         } catch (error) {
             console.error("❌ Google signup failed:", error);
-            alert("Google signup failed. Please try again.");
+            console.error("Error response:", error.response?.data);
+            console.error("Error status:", error.response?.status);
+            
+            const errorMessage = error.response?.data?.message || "Google signup failed. Please try again.";
+            alert(errorMessage);
         }
     };
 

@@ -147,20 +147,43 @@ const EmailVerificationPage = () => {
     };
 
     const handleResendCode = async () => {
+        if (resendLoading || resendCooldown > 0) return;
+        
         setResendLoading(true);
         try {
             // Use the email from the user object in authStore
-            const email = useAuthStore.getState().user?.email;
+            const { user } = useAuthStore.getState();
+            const email = user?.email;
+            
             if (!email) {
-                toast.error("No email found for resend.");
+                toast.error("No email found. Please log in again.");
                 setResendLoading(false);
                 return;
             }
-            await axios.post(`${API_URL}/resend-verification`, { email });
-            toast.success("Verification code resent!");
-            setResendCooldown(30); // 30 seconds cooldown
+
+            console.log("🔄 Resending verification code to:", email);
+            
+            const response = await axios.post(`${API_URL}/resend-verification`, { email }, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            console.log("✅ Resend response:", response.data);
+            
+            toast.success("Verification code resent! Please check your email.");
+            setResendCooldown(60); // 60 seconds cooldown
+            
+            // Clear the current code input
+            setCode(["", "", "", "", "", ""]);
+            inputRefs.current[0]?.focus();
+            
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to resend code");
+            console.error("❌ Resend failed:", error);
+            console.error("Error response:", error.response?.data);
+            
+            const errorMessage = error.response?.data?.message || "Failed to resend verification code";
+            toast.error(errorMessage);
         } finally {
             setResendLoading(false);
         }

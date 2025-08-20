@@ -29,30 +29,61 @@ const LoginPage = () => {
     };
 
     const handleGoogleLogin = async (credentialResponse) => {
+        console.log("🔍 Google Login Response:", credentialResponse);
+        
         try {
+            if (!credentialResponse.credential) {
+                console.error("❌ No credential received from Google");
+                alert("Google login failed - no credential received");
+                return;
+            }
+
+            const API_URL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000/api/auth" 
+                : "/api/auth";
+
+            console.log("📡 Sending request to:", `${API_URL}/google-login`);
+
             const response = await axios.post(
-                `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/auth/google-login" : "/api/auth/google-login"}`,
+                `${API_URL}/google-login`,
                 { credential: credentialResponse.credential },
-                { withCredentials: true }
-            );
-            if (response.data.user) {
-                setUser(response.data.user);
-                if (response.data.user.profileImage) {
-                    // Already set by backend, nothing to do
-                } else if (response.data.user.googleImage) {
-                    setUser(prev => ({
-                        ...prev,
-                        profileImage: response.data.user.googleImage
-                    }));
+                { 
+                    withCredentials: true,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 }
-            }
-            if (response.data.user && response.data.user.isVerified) {
-                window.location.reload();
+            );
+
+            console.log("✅ Google login response:", response.data);
+
+            if (response.data.success && response.data.user) {
+                setUser(response.data.user);
+                
+                // Check if user requires verification
+                if (response.data.requiresVerification || !response.data.user.isVerified) {
+                    // Navigate to email verification page
+                    window.location.href = "/verify-email";
+                } else {
+                    // User is verified, go to home page
+                    window.location.href = "/";
+                }
             } else {
-                window.location.href = "/verify-email";
+                throw new Error(response.data.message || "Login failed");
             }
+
         } catch (error) {
-            alert("Google login failed");
+            console.error("❌ Google login error:", error);
+            
+            if (error.response?.data?.message) {
+                alert(`Google login failed: ${error.response.data.message}`);
+            } else if (error.response?.status === 400) {
+                alert("Google login failed: Invalid request. Please try again.");
+            } else if (error.response?.status === 500) {
+                alert("Google login failed: Server error. Please try again later.");
+            } else {
+                alert("Google login failed. Please try again.");
+            }
         }
     };
 
