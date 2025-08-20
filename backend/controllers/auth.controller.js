@@ -358,192 +358,100 @@ export const checkAuth = async (req, res) => {
 
 export const googleLogin = async (req, res) => {
     const { credential } = req.body;
-    
-    console.log("🔍 Google Login Request:");
-    console.log("Credential received:", !!credential);
-    
     try {
-        if (!credential) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Google credential is required" 
-            });
-        }
-
-        // Verify the Google token
         const ticket = await client.verifyIdToken({
             idToken: credential,
-            audience: "209979773198-fl8bvitq2b48gfj6mhnomgiqr1tkbb0f.apps.googleusercontent.com"
+            audience: "209979773198-fl8bvitq2b48gfj6mhnomgiqr1tkbb0f.apps.googleusercontent.com", // Same as frontend
         });
-        
         const payload = ticket.getPayload();
-        console.log("Google payload:", payload);
+        const { email, name, sub, picture } = payload;
+
+        let profileImageUrl = null;
         
-        if (!payload) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Invalid Google token" 
-            });
+        // Only upload to Cloudinary if picture exists
+        if (picture) {
+            try {
+                const cloudinaryRes = await cloudinary.uploader.upload(picture, {
+                    folder: "foodhub-profile-images",
+                    public_id: `google_${sub}`,
+                    overwrite: true,
+                    resource_type: "image"
+                });
+                profileImageUrl = cloudinaryRes.secure_url;
+            } catch (cloudinaryError) {
+                console.error("Cloudinary upload failed:", cloudinaryError);
+                // Fall back to original Google image URL
+                profileImageUrl = picture;
+            }
         }
 
-        const { email, name, picture, sub: googleId } = payload;
-
-        // Check if user exists
-        let user = await User.findOne({ 
-            $or: [
-                { email: email },
-                { googleId: googleId }
-            ]
-        });
-
-        if (user) {
-            // User exists, update Google info if needed
-            if (!user.googleId) {
-                user.googleId = googleId;
-            }
-            if (!user.profileImage && picture) {
-                user.profileImage = picture;
-            }
-            
-            // Check if user is verified - if not, send verification email
-            if (!user.isVerified) {
-                // Generate new verification token for Google user
-                const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
-                user.verificationToken = verificationToken;
-                user.verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-                
-                await user.save();
-                
-                // Send verification email
-                try {
-                    await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
-                    console.log("✅ Verification email sent to Google user");
-                } catch (emailError) {
-                    console.error("❌ Failed to send verification email:", emailError);
-                }
-                
-                // Generate token and set cookie even for unverified users
-                generateTokenAndSetCookie(res, user._id);
-                
-                return res.status(200).json({
-                    success: true,
-                    message: "Please verify your email to complete the login process",
-                    user: {
-                        ...user._doc,
-                        password: undefined,
-                    },
-                    requiresVerification: true
-                });
-            }
-            
-            await user.save();
-        } else {
-            // Create new user - NOT auto-verified
-            const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
-            
+        let user = await User.findOne({ email });
+        if (!user) {
             user = new User({
                 email,
                 name,
-                googleId,
-                profileImage: picture,
-                isVerified: false, // Changed: Google users also need verification
-                verificationToken: verificationToken,
-                verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
-                password: 'google-auth-' + Date.now(), // Random password for Google users
+                password: "google-oauth",
+                isVerified: false,
+                profileImage: profileImageUrl,
             });
-            
             await user.save();
-            
-            // Send verification email to new Google user
-            try {
-                await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
-                console.log("✅ Verification email sent to new Google user");
-            } catch (emailError) {
-                console.error("❌ Failed to send verification email:", emailError);
-            }
-            
-            // Generate token and set cookie
-            generateTokenAndSetCookie(res, user._id);
-            
-            return res.status(200).json({
-                success: true,
-                message: "Account created! Please verify your email to complete the login process",
-                user: {
-                    ...user._doc,
-                    password: undefined,
-                },
-                requiresVerification: true
-            });
-        }
-
-        // Check account status for verified users
-        if (user.status === "banned") {
-            return res.status(403).json({ 
-                success: false, 
-                message: "Your account has been banned.",
-                statusData: {
-                    status: 'banned',
-                    message: "Your account has been permanently banned from accessing FoodHub.",
-                    banReason: user.banReason,
-                    bannedAt: user.updatedAt
-                }
-            });
-        }
-
-        if (user.status === "suspended") {
-            if (user.suspendedUntil && user.suspendedUntil > new Date()) {
-                const timeRemaining = Math.ceil((user.suspendedUntil - new Date()) / 60000);
-                return res.status(403).json({ 
-                    success: false, 
-                    message: `Your account is suspended for ${timeRemaining} more minute(s).`,
-                    statusData: {
-                        status: 'suspended',
-                        message: `Your account is temporarily suspended from accessing FoodHub.`,
-                        timeRemaining: timeRemaining,
-                        suspendedUntil: user.suspendedUntil,
-                        suspensionReason: "Account suspended by administrator"
-                    }
-                });
-            } else {
-                // Suspension expired, reactivate
-                user.status = "active";
-                user.suspendedUntil = null;
+        } else {
+            // Update profile image if not set or if it's a broken Cloudinary URL
+            if (!user.profileImage || user.profileImage.includes('cloudinary') && profileImageUrl) {
+                user.profileImage = profileImageUrl;
                 await user.save();
             }
         }
 
-        // Generate token and set cookie for verified users
+        let isNewUser = false;
+        let verificationToken;
+
+        if (!user) {
+            // New user via Google
+            verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+            user = new User({
+                email,
+                name,
+                password: "google-oauth", // or any placeholder
+                isVerified: false,
+                verificationToken,
+                verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000,
+            });
+            await user.save();
+            isNewUser = true;
+        } else if (!user.isVerified) {
+            // Existing user but not verified
+            verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+            user.verificationToken = verificationToken;
+            user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000;
+            await user.save();
+        }
+
+        // Send verification email if not verified
+        if (!user.isVerified) {
+            await sendVerificationEmail(user.email, user.verificationToken, user.name, user.profileImage);
+        }
+
+        // Set JWT cookie, etc.
         generateTokenAndSetCookie(res, user._id);
 
         res.status(200).json({
             success: true,
-            message: "Google login successful",
+            message: isNewUser
+                ? "Account created successfully with Google"
+                : "Logged in successfully with Google",
+            isNewUser,
             user: {
                 ...user._doc,
                 password: undefined,
             },
         });
-
     } catch (error) {
-        console.error("❌ Google login error:", error);
-        
-        if (error.message.includes('Token used too early')) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Google token timing error. Please try again." 
-            });
-        }
-        
-        if (error.message.includes('Invalid token')) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Invalid Google credentials. Please try again." 
-            });
-        }
-        
-        res.status(500).json({ 
-            success: false, 
-            message: "Google login failed. Please try again." 
+        console.error("❌ Google authentication failed:", error);
+        res.status(400).json({
+            success: false,
+            message: "Google authentication failed",
+            error: error.message,
         });
     }
 };
