@@ -10,6 +10,8 @@ import LoginPromptModal from '../components/ui/login-prompt-modal';
 import { useToast } from '../components/ui/toast'; // Add this import
 import RatingModal from "../components/RatingModal"; // Import the RatingModal at the top
 import RateButton from '../components/RateButton'; // Add this import
+import BottomNavbar from "../components/BottomNavbar";
+import CameraModal from "../components/CameraModal";
 
 const RecipePage = () => {
     const { user } = useAuthStore();
@@ -32,8 +34,8 @@ const RecipePage = () => {
     const [showLoginPrompt, setShowLoginPrompt] = useState(false); // New state for login prompt
     const [ratingModalOpen, setRatingModalOpen] = useState(false); // Add to the state variables
     const [recipeToRate, setRecipeToRate] = useState(null); // Add to the state variables
-    // const [filteredRecipes, setFilteredRecipes] = useState([]); // Removed duplicate declaration
-    
+    const [cameraOpen, setCameraOpen] = useState(false);
+
     // Touch/swipe handling refs and states
     const gridContainerRef = useRef(null);
     const [touchStart, setTouchStart] = useState(null);
@@ -387,6 +389,22 @@ const RecipePage = () => {
         }
         
         setRecipeToRate(null);
+    };
+
+    const handleCameraClick = () => {
+        setCameraOpen(true);
+    };
+
+    const handleCameraClose = () => {
+        setCameraOpen(false);
+    };
+
+    const handleCapture = async (imageBase64) => {
+        // imageBase64 is a data URL (e.g. "data:image/jpeg;base64,/...")
+        // TODO: send it to your backend for ingredient detection / AI recipe suggestion
+        console.log("Captured image length:", imageBase64?.length);
+        // Example placeholder: send to API
+        // await axios.post("/api/vision/scan", { image: imageBase64 });
     };
 
     return (
@@ -755,6 +773,15 @@ const RecipePage = () => {
                 isOpen={ratingModalOpen}
                 onClose={handleRatingModalClose}
                 recipe={recipeToRate}
+            />
+
+            {/* Place BottomNavbar at the end so it's always on top of content */}
+            <BottomNavbar onCameraClick={handleCameraClick} />
+
+            <CameraModal
+                isOpen={cameraOpen}
+                onClose={handleCameraClose}
+                onCapture={handleCapture}
             />
         </div>
     );

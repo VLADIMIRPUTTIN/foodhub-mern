@@ -1,0 +1,49 @@
+.bottom-navbar {
+  display: none; // hide by default on desktop
+
+  @media (max-width: 768px) {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 70px;
+    margin: 0;
+    background: #fff;
+    border-radius: 0;
+    justify-content: center;
+    align-items: center;
+    padding: 0.75rem 0;
+    z-index: 1000;
+    pointer-events: auto;
+    box-shadow: 0 -1px 6px rgba(0,0,0,0.08);
+  }
+}
+
+.camera-btn {
+  background: #CF996C;
+  border: none;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: background 0.2s;
+  outline: none;
+  margin-bottom: 0.5rem;
+
+  &:hover,
+  &:focus {
+    background: #cf8a53;
+  }
+}
+
+.icon {
+  color: #fff;
+  width: 28px;
+  height: 28px;
+}
