@@ -1,0 +1,489 @@
+.market-list-container {
+  background: linear-gradient(135deg, #fff8ee 0%, #fff1e0 100%);
+  border-radius: 18px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1), 
+              0 4px 12px rgba(207, 153, 108, 0.15),
+              inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  width: 290px; // Reduced from 320px
+  max-height: 85vh; // Increased from 80vh
+  overflow-y: hidden;
+  padding: 1.2rem 1rem; // Reduced horizontal padding
+  margin-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(201, 122, 43, 0.1);
+  
+  @media (max-width: 992px) {
+    width: 100%;
+    max-width: 420px; // Reduced from 450px
+    margin-left: 0;
+    margin-top: 1rem;
+    max-height: calc(100vh - 80px);
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1rem 0.8rem; // Reduced horizontal padding further
+    border-radius: 16px;
+    max-height: 100%;
+  }
+  
+  /* Scrollbar styling remains the same */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 225, 184, 0.4);
+    border-radius: 10px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(226, 106, 0, 0.3);
+    border-radius: 10px;
+    
+    &:hover {
+      background: rgba(226, 106, 0, 0.5);
+    }
+  }
+  
+  .market-list-header {
+    margin-bottom: 0.8rem; // Reduced from 1rem
+    border-bottom: 1px solid rgba(201, 122, 43, 0.15);
+    padding-bottom: 0.6rem; // Reduced padding
+    position: relative;
+    flex-shrink: 0;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, 
+          transparent, 
+          rgba(201, 122, 43, 0.3),
+          rgba(201, 122, 43, 0.3),
+          transparent
+      );
+    }
+    
+    h3 {
+      font-size: 1.1rem; // Reduced from 1.2rem
+      color: #e26a00;
+      margin-bottom: 0.4rem; // Reduced from 0.5rem
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      
+      i {
+        color: #e26a00;
+      }
+    }
+    
+    .market-list-subtitle {
+      font-size: 0.8rem; // Reduced from 0.85rem
+      color: #b86b1b;
+    }
+  }
+
+  .market-list-tabs {
+    display: flex;
+    background: rgba(226, 106, 0, 0.05);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 0.7rem; // Reduced from 0.8rem
+    border: 1px solid rgba(201, 122, 43, 0.1);
+    flex-shrink: 0;
+    
+    .tab-button {
+      flex: 1;
+      background: none;
+      border: none;
+      padding: 0.5rem 0.25rem;
+      font-size: 0.75rem;
+      color: #7a5a36;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      
+      &.active {
+        background: rgba(255, 255, 255, 0.8);
+        color: #e26a00;
+        font-weight: 600;
+        box-shadow: 0 2px 5px rgba(226, 106, 0, 0.1);
+      }
+      
+      &:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.5);
+      }
+    }
+  }
+  
+  .market-list-items {
+    flex: 1;
+    margin-bottom: 0.8rem; // Reduced from 1rem
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-height: 160px; // Increased from 120px
+    max-height: 340px; // Increased from 300px
+    overflow-y: auto;
+    padding-right: 0.2rem;
+    
+    /* Scrollbar styling remains the same */
+    &::-webkit-scrollbar {
+      width: 5px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: rgba(255, 225, 184, 0.2);
+      border-radius: 10px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: rgba(226, 106, 0, 0.2);
+      border-radius: 10px;
+      
+      &:hover {
+        background: rgba(226, 106, 0, 0.4);
+      }
+    }
+    
+    .market-list-item {
+      display: flex;
+      align-items: center;
+      padding: 0.6rem 0.7rem; // Reduced padding
+      border-radius: 10px;
+      background-color: rgba(255, 248, 238, 0.7);
+      transition: all 0.2s ease;
+      border: 1px solid rgba(201, 122, 43, 0.1);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+      
+      &:hover {
+        background-color: rgba(255, 248, 238, 0.9);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+      }
+      
+      &.checked {
+        background-color: rgba(76, 175, 80, 0.1);
+        border-color: rgba(76, 175, 80, 0.2);
+        
+        .ingredient-name {
+          text-decoration: line-through;
+          color: #888;
+        }
+      }
+      
+      .checkbox-container {
+        position: relative;
+        padding-left: 26px; // Reduced from 30px
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        user-select: none;
+        margin-right: 0.4rem; // Reduced from 0.5rem
+        
+        input {
+          position: absolute;
+          opacity: 0;
+          cursor: pointer;
+          height: 0;
+          width: 0;
+        }
+        
+        .checkmark {
+          position: absolute;
+          left: 0;
+          height: 18px; // Reduced from 20px
+          width: 18px; // Reduced from 20px
+          background-color: #fff;
+          border: 2px solid rgba(201, 122, 43, 0.3);
+          border-radius: 4px;
+          box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+          
+          &:after {
+            content: "";
+            position: absolute;
+            display: none;
+            left: 5px; // Adjusted for smaller checkbox
+            top: 2px;
+            width: 5px;
+            height: 9px; // Reduced from 10px
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+          }
+        }
+        
+        input:checked ~ .checkmark {
+          background-color: #4caf50;
+          border-color: #4caf50;
+        }
+        
+        input:checked ~ .checkmark:after {
+          display: block;
+        }
+      }
+      
+      .ingredient-amount {
+        margin: 0 0.2rem 0 0;
+        font-weight: 500;
+        color: #e26a00;
+        font-size: 0.75rem;
+        min-width: 40px; // Reduced from 50px
+      }
+      
+      .ingredient-name {
+        flex: 1;
+        font-size: 0.8rem; // Reduced from 0.85rem
+        color: #7a5a36;
+      }
+    }
+    
+    .empty-list-message {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100px;
+      color: #b86b1b;
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 0 1rem;
+      line-height: 1.5;
+      background: rgba(255, 248, 238, 0.5);
+      border-radius: 10px;
+      border: 1px dashed rgba(201, 122, 43, 0.2);
+    }
+  }
+  
+  .market-list-summary {
+    background: linear-gradient(135deg, rgba(226, 106, 0, 0.05), rgba(184, 107, 27, 0.1));
+    border-radius: 10px;
+    padding: 0.7rem 0.9rem; // Reduced padding
+    margin-bottom: 0.7rem; // Reduced from 0.8rem
+    font-size: 0.8rem; // Reduced from 0.85rem
+    border: 1px solid rgba(201, 122, 43, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.3rem;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+      
+      span {
+        color: #7a5a36;
+        font-weight: 500;
+      }
+      
+      .summary-count {
+        font-weight: 600;
+        color: #e26a00;
+      }
+    }
+  }
+  
+  .market-list-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem; // Reduced from 0.5rem
+    flex-shrink: 0;
+    margin-top: 0.2rem; // Added small margin top
+    
+    .generate-instructions-btn, .print-shopping-list-btn {
+      background: linear-gradient(135deg, #e09f56, #d35400);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 0.6rem 0.9rem; // Reduced padding
+      font-size: 0.8rem; // Reduced from 0.85rem
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem; // Reduced from 0.5rem
+      transition: all 0.2s ease;
+      box-shadow: 0 8px 15px rgba(226, 106, 0, 0.2),
+                  0 2px 5px rgba(226, 106, 0, 0.1),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      letter-spacing: 0.025em;
+      position: relative;
+      overflow: hidden;
+      
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0; left: -100%;
+        width: 100%; height: 100%;
+        background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+        transition: left 0.8s ease;
+      }
+      
+      &:hover::before {
+        left: 100%;
+      }
+      
+      &:disabled {
+        background: #ccc;
+        box-shadow: none;
+        cursor: not-allowed;
+        
+        &::before {
+          display: none;
+        }
+      }
+      
+      i {
+        font-size: 1rem; // Reduced from 1.05rem
+      }
+      
+      &:hover:not(:disabled) {
+        transform: translateY(-1px);
+      }
+      
+      &:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: 0 5px 10px rgba(226, 106, 0, 0.2);
+      }
+    }
+    
+    .print-shopping-list-btn {
+      background: linear-gradient(135deg, #70a1d7, #3c88e8);
+      box-shadow: 0 8px 15px rgba(60, 136, 232, 0.2),
+                  0 2px 5px rgba(60, 136, 232, 0.1),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      
+      &:active:not(:disabled) {
+        box-shadow: 0 5px 10px rgba(60, 136, 232, 0.2);
+      }
+    }
+  }
+  
+  // Adjust max-height based on screen size
+  @media (max-height: 700px) {
+    .market-list-items {
+      max-height: 180px; // Increased from 160px
+    }
+  }
+  
+  @media (min-height: 800px) {
+    .market-list-items {
+      max-height: 420px; // Increased from 400px
+    }
+  }
+  
+  // Additional responsive styles
+  @media (max-width: 768px) {
+    .market-list-header h3 {
+      font-size: 1rem; // Reduced from 1.1rem
+    }
+    
+    .market-list-items {
+      max-height: 200px; // Increased from 180px
+    }
+    
+    .market-list-actions {
+      padding-bottom: 0.5rem;
+      position: relative;
+      z-index: 2;
+      
+      .generate-instructions-btn, .print-shopping-list-btn {
+        padding: 0.55rem 0.7rem; // Reduced padding
+        font-size: 0.75rem; // Reduced from 0.8rem
+      }
+    }
+  }
+  
+  @media (max-width: 480px) {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    max-height: calc(100vh - 100px);
+    padding: 0.9rem 0.7rem; // Further reduced padding
+    
+    .market-list-summary {
+      padding: 0.65rem 0.8rem; // Reduced padding
+      margin-bottom: 0.8rem;
+      background: linear-gradient(135deg, rgba(226, 106, 0, 0.1), rgba(184, 107, 27, 0.15));
+      border: 1px solid rgba(201, 122, 43, 0.2);
+      font-weight: 500;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      
+      // Hide label text on mobile
+      .summary-row {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.2rem;
+        
+        span:not(.summary-count) {
+          display: none; // Hide the label text
+        }
+        
+        .summary-count {
+          font-size: 1.1rem; // Make the count larger
+          font-weight: 700;
+          color: #e26a00;
+          position: relative;
+          
+          // Add small icon indicators
+          &::before {
+            font-family: 'boxicons' !important;
+            font-size: 0.8rem;
+            position: absolute;
+            top: -0.9rem;
+            left: 50%;
+            transform: translateX(-50%);
+          }
+        }
+        
+        // First row is "Available"
+        &:first-child .summary-count::before {
+          content: "\ea9c"; // checkmark icon
+          color: #4caf50;
+        }
+        
+        // Second row is "Need to buy"
+        &:last-child .summary-count::before {
+          content: "\ec2d"; // shopping bag icon
+          color: #e26a00;
+        }
+      }
+    }
+    
+    .market-list-items {
+      max-height: 170px; // Increased from 150px
+      margin-bottom: 0.7rem; // Reduced from 0.8rem
+    }
+    
+    .market-list-tabs .tab-button {
+      font-size: 0.65rem; // Reduced from 0.7rem
+      padding: 0.4rem 0.2rem; // Reduced padding
+    }
+    
+    .market-list-actions {
+      position: sticky;
+      bottom: 0;
+      background: linear-gradient(to top, rgba(255, 248, 238, 1) 90%, rgba(255, 248, 238, 0.98) 100%);
+      padding: 0.8rem 0 0.5rem;
+      margin: 0 -0.7rem -0.9rem -0.7rem;
+      padding-left: 0.7rem;
+      padding-right: 0.7rem;
+      border-radius: 0 0 16px 16px;
+      z-index: 3;
+      box-shadow: 0 -5px 15px rgba(255, 248, 238, 0.9);
+    }
+  }
+}

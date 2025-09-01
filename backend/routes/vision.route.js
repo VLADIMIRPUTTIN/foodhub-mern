@@ -1,10 +1,20 @@
 import express from "express";
-import axios from "axios";
-import FormData from "form-data";
-import { Ingredient } from "../models/ingredient.model.js";
-import cloudinary from "../utils/cloudinary.js";
+import { verifyToken } from "../middleware/verifyToken.js";
+import dotenv from "dotenv";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+dotenv.config();
 
 const router = express.Router();
+
+// Setup Google Gemini API if the key exists
+let genAI = null;
+if (process.env.GEMINI_API_KEY) {
+  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  console.log("Gemini API initialized successfully");
+} else {
+  console.warn("GEMINI_API_KEY not found in environment variables");
+}
 
 // Log Roboflow env at startup for easier debug
 console.log('ROBOFLOW env:', {
@@ -15,29 +25,6 @@ console.log('ROBOFLOW env:', {
   hasProject: !!process.env.ROBOFLOW_PROJECT,
   project: process.env.ROBOFLOW_PROJECT,
   modelVersion: process.env.ROBOFLOW_MODEL_VERSION || '1'
-});
-
-function stripDataUrl(dataUrlOrBase64) {
-  if (!dataUrlOrBase64) return null;
-  const comma = dataUrlOrBase64.indexOf(",");
-  return comma === -1 ? dataUrlOrBase64 : dataUrlOrBase64.slice(comma + 1);
-}
-
-// Upload ingredient image and create Ingredient record
-router.post("/upload-ingredient", async (req, res) => {
-  try {
-    const { name, imageBase64 } = req.body;
-    if (!name || !imageBase64) return res.status(400).json({ success: false, message: "Name and imageBase64 required" });
-
-    const result = await cloudinary.uploader.upload(imageBase64, { folder: "foodhub/ingredients" });
-    const ingredient = new Ingredient({ name: name.trim(), imageUrl: result.secure_url });
-    await ingredient.save();
-
-    res.status(201).json({ success: true, ingredient });
-  } catch (error) {
-    console.error("Upload ingredient error:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
 });
 
 // Detect objects using configured image-recognition provider (Roboflow preferred)
@@ -211,6 +198,101 @@ router.post("/detect-and-suggest", async (req, res) => {
   } catch (error) {
     console.error("detect-and-suggest error:", error);
     return res.status(500).json({ success: false, message: error.message || "Internal error" });
+  }
+});
+
+// Add this route after your existing routes
+router.post("/generate-cooking-instructions", verifyToken, async (req, res) => {
+  try {
+    const { recipeName, recipeInstructions, availableIngredients, missingIngredients } = req.body;
+    
+    if (!recipeName || !recipeInstructions || !availableIngredients) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing required information" 
+      });
+    }
+    
+    // Check if Gemini API is available
+    if (!genAI) {
+      return res.status(500).json({
+        success: false,
+        message: "AI service is not configured. Please add GEMINI_API_KEY to your environment variables."
+      });
+    }
+    
+    // Convert recipe instructions to string if it's an array
+    const instructionsText = Array.isArray(recipeInstructions) 
+      ? recipeInstructions.join("\n") 
+      : recipeInstructions;
+    
+    // Create the prompt for Gemini
+    const prompt = `
+    You are a helpful cooking assistant. I want to make "${recipeName}" but I'm missing some ingredients.
+
+    The original recipe instructions are:
+    ${instructionsText}
+    
+    Ingredients I HAVE:
+    ${availableIngredients.join(", ")}
+    
+    Ingredients I DON'T HAVE:
+    ${missingIngredients.join(", ")}
+    
+    Please help me adapt the recipe using only the ingredients I have. If it's not possible to make something similar, suggest alternative simple dishes I could make with my available ingredients. Make your response conversational and encouraging.
+    `;
+    
+    try {
+      // Generate content with Gemini
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      res.json({ 
+        success: true, 
+        instructions: text 
+      });
+    } catch (aiError) {
+      console.error("Gemini API error:", aiError);
+      
+      // Provide a fallback response when the AI service fails
+      const fallbackResponse = `
+I see you're making ${recipeName}.
+
+Here are some general tips for adapting recipes:
+
+1. For missing ingredients, look for substitutes with similar properties:
+   - Missing oil? Try butter or another type of oil
+   - Missing an herb? Use a different herb or spice with a similar flavor profile
+   - Missing a vegetable? Substitute with a similar textured vegetable
+
+2. Focus on the cooking techniques:
+   - Most recipes follow basic patterns (sauté, roast, steam, etc.)
+   - You can often adapt the method to work with what you have
+
+3. Simplify the recipe:
+   - Many garnishes and secondary ingredients can be omitted
+   - Focus on getting the core flavors right
+
+4. Try a different cooking method:
+   - If you can't make the exact dish, think about different ways to use your ingredients
+
+Check the full recipe and see which steps you can still follow with your available ingredients!
+      `;
+      
+      res.json({
+        success: true,
+        instructions: fallbackResponse
+      });
+    }
+  } catch (error) {
+    console.error("Error generating cooking instructions:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to generate cooking instructions",
+      error: error.message 
+    });
   }
 });
 

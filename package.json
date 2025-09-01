@@ -13,6 +13,7 @@
   "type": "module",
   "license": "ISC",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@radix-ui/react-dialog": "^1.1.14",
     "@react-oauth/google": "^0.12.2",
     "bcryptjs": "^2.4.3",
