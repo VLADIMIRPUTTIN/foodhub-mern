@@ -7,26 +7,137 @@ import "./CameraModal.scss";
 const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.MODE === "development" ? "http://localhost:5000" : "");
 
 const CameraModal = ({ isOpen, onClose, onCapture }) => {
-  const webcamRef = useRef(null);
-  const imgRef = useRef(null);
-  const [preview, setPreview] = useState(null); // dataUrl after capture
+  // All useState hooks must be at the top and always called
+  const [preview, setPreview] = useState(null);
   const [scanResults, setScanResults] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [ingredientNames, setIngredientNames] = useState([]);
   const [geminiResult, setGeminiResult] = useState(null);
   const [showGeminiRecipe, setShowGeminiRecipe] = useState(false);
   const [geminiParsed, setGeminiParsed] = useState({ title: "", ingredients: [], steps: [] });
-  const [newIngredient, setNewIngredient] = useState(""); // ADD THIS
+  const [newIngredient, setNewIngredient] = useState("");
+  const [uploadMode, setUploadMode] = useState(false);
 
-  const capture = useCallback(() => {
+  // All useRef hooks
+  const webcamRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const imgRef = useRef(null);
+
+  // All useCallback hooks
+  const handleAutoScan = useCallback(async (imageSrc) => {
+    setScanning(true);
+    setScanResults(null);
+    
+    try {
+      const resp = await fetch(`${API_BASE}/api/vision/detect-and-suggest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: imageSrc })
+      });
+      
+      if (!resp.ok) {
+        const txt = await resp.text().catch(() => "");
+        console.error("Recognition request failed:", resp.status, txt);
+        setScanResults([]);
+        return;
+      }
+      
+      const text = await resp.text();
+      const data = text ? JSON.parse(text) : {};
+      
+      if (data && data.segmentation) {
+        setScanResults(data.segmentation);
+        setIngredientNames(data.segmentation.map(item => item.label));
+      } else if (data && data.detected) {
+        setScanResults(data.detected.map(d => ({ label: d, box: null })));
+        setIngredientNames(data.detected);
+      } else {
+        setScanResults([]);
+        setIngredientNames([]);
+      }
+    } catch (e) {
+      console.error("Auto-scan failed", e);
+      setScanResults([]);
+    } finally {
+      setScanning(false);
+    }
+  }, []);
+
+  const captureWithScan = useCallback(async () => {
     if (!webcamRef.current) return;
     const imageSrc = webcamRef.current.getScreenshot();
     if (imageSrc) {
       setPreview(imageSrc);
+      setUploadMode(false);
       if (onCapture) onCapture(imageSrc);
+      // Auto-scan after capture
+      await handleAutoScan(imageSrc);
     }
-  }, [onCapture]);
+  }, [onCapture, handleAutoScan]);
 
+  const handleFileUploadWithScan = useCallback(async (event) => {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const imageSrc = e.target.result;
+        setPreview(imageSrc);
+        setUploadMode(true);
+        if (onCapture) onCapture(imageSrc);
+        // Auto-scan after upload
+        await handleAutoScan(imageSrc);
+      };
+      reader.readAsDataURL(file);
+    }
+  }, [onCapture, handleAutoScan]);
+
+  const handleRetake = useCallback(() => {
+    setPreview(null);
+    setScanResults(null);
+    setIngredientNames([]);
+    setUploadMode(false);
+  }, []);
+
+  const handleProceed = useCallback(async () => {
+    if (ingredientNames.length === 0) {
+      alert("Please add some ingredients first!");
+      return;
+    }
+
+    setGeminiResult("Loading...");
+    
+    try {
+      const resp = await fetch(`${API_BASE}/api/vision/generate-recipe-suggestion`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          ingredients: ingredientNames 
+        })
+      });
+
+      if (!resp.ok) {
+        throw new Error("Failed to generate recipe");
+      }
+
+      const data = await resp.json();
+      
+      if (data.success && data.recipe) {
+        setGeminiParsed({
+          title: data.recipe.title || "AI Generated Recipe",
+          ingredients: data.recipe.ingredients || [],
+          steps: data.recipe.steps || []
+        });
+        setShowGeminiRecipe(true);
+      } else {
+        throw new Error("No recipe generated");
+      }
+    } catch (e) {
+      console.error("Recipe generation failed:", e);
+      setGeminiResult("Failed to get recipe suggestion. Please try again.");
+    }
+  }, [ingredientNames]);
+
+  // All useEffect hooks
   useEffect(() => {
     const handleKey = (e) => {
       if (e.key === "Escape") onClose();
@@ -40,60 +151,17 @@ const CameraModal = ({ isOpen, onClose, onCapture }) => {
       setPreview(null);
       setScanResults(null);
       setScanning(false);
-      setIngredientNames([]); // <--- ADD THIS to reset detected ingredients
-      setGeminiResult(null);  // <--- Optional: reset Gemini result
-      setShowGeminiRecipe(false); // <--- Optional: reset recipe view
-      setGeminiParsed({ title: "", ingredients: [], steps: [] }); // <--- Optional: reset parsed recipe
-      setNewIngredient(""); // <--- Optional: reset add ingredient input
+      setIngredientNames([]);
+      setGeminiResult(null);
+      setShowGeminiRecipe(false);
+      setGeminiParsed({ title: "", ingredients: [], steps: [] });
+      setNewIngredient("");
+      setUploadMode(false);
     }
   }, [isOpen]);
 
+  // Early return after all hooks
   if (!isOpen) return null;
-
-  // send image to server detect endpoint
-  const handleScan = async () => {
-    if (!webcamRef.current) return;
-    const imageSrc = webcamRef.current.getScreenshot();
-    if (!imageSrc) return;
-    setPreview(imageSrc);
-    setScanning(true);
-    setScanResults(null);
-    try {
-      const resp = await fetch(`${API_BASE}/api/vision/detect-and-suggest`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: imageSrc })
-      });
-      if (!resp.ok) {
-        const txt = await resp.text().catch(() => "");
-        console.error("Recognition request failed:", resp.status, txt);
-        setScanResults([]);
-        return;
-      }
-      const text = await resp.text();
-      const data = text ? JSON.parse(text) : {};
-      if (data && data.segmentation) {
-        setScanResults(data.segmentation);
-        setIngredientNames(data.segmentation.map(item => item.label));
-      } else if (data && data.detected) {
-        setScanResults(data.detected.map(d => ({ label: d, box: null })));
-        setIngredientNames(data.detected);
-      } else {
-        setScanResults([]);
-        setIngredientNames([]);
-      }
-    } catch (e) {
-      console.error("Scan failed", e);
-      setScanResults([]);
-    } finally {
-      setScanning(false);
-    }
-  };
-
-  const handleRetake = () => {
-    setPreview(null);
-    setScanResults(null);
-  };
 
   // Render overlay boxes on preview image
   const renderBoxes = () => {
@@ -118,7 +186,6 @@ const CameraModal = ({ isOpen, onClose, onCapture }) => {
         );
       }
 
-      // If coordinates look normalized (<=1), render in percentages
       let left, top, width, height;
       if (Math.abs(box.x) <= 1 && Math.abs(box.y) <= 1 && Math.abs(box.w) <= 1 && Math.abs(box.h) <= 1) {
         left = `${box.x * 100}%`;
@@ -126,7 +193,6 @@ const CameraModal = ({ isOpen, onClose, onCapture }) => {
         width = `${box.w * 100}%`;
         height = `${box.h * 100}%`;
       } else {
-        // absolute pixel coords -> convert to percent
         left = `${(box.x / imgW) * 100}%`;
         top = `${(box.y / imgH) * 100}%`;
         width = `${(box.w / imgW) * 100}%`;
@@ -163,41 +229,6 @@ const CameraModal = ({ isOpen, onClose, onCapture }) => {
     });
   };
 
-  async function handleProceed() {
-    setGeminiResult("Loading...");
-    try {
-      const apiKey = "AIzaSyDGZT79Y2ixgLCL9sGAGf-eFIRNzPAiAVA";
-      const prompt = `Suggest a recipe using only these ingredients: ${ingredientNames.join(", ")}. Give the recipe name and instructions.`;
-      const resp = await fetch(
-        "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" + apiKey,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }]
-          })
-        }
-      );
-      const data = await resp.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      // Simple parsing logic
-      const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
-      let title = lines[0];
-      let ingStart = lines.findIndex(l => l.toLowerCase().includes("ingredient"));
-      let stepStart = lines.findIndex(l => l.toLowerCase().includes("how to prepare") || l.toLowerCase().includes("instructions"));
-      let ingredients = [];
-      let steps = [];
-      if (ingStart !== -1 && stepStart !== -1) {
-        ingredients = lines.slice(ingStart + 1, stepStart).filter(l => l && !l.toLowerCase().includes("ingredient"));
-        steps = lines.slice(stepStart + 1).filter(l => l && !l.toLowerCase().includes("how to prepare") && !l.toLowerCase().includes("instructions"));
-      }
-      setGeminiParsed({ title, ingredients, steps });
-      setShowGeminiRecipe(true);
-    } catch (e) {
-      setGeminiResult("Failed to get recipe suggestion.");
-    }
-  }
-
   return (
     <div className="camera-modal-overlay" onClick={onClose}>
       <div className="camera-modal-main" onClick={e => e.stopPropagation()}>
@@ -211,17 +242,37 @@ const CameraModal = ({ isOpen, onClose, onCapture }) => {
         ) : (
           <>
             {!preview ? (
-              <Webcam
-                audio={false}
-                ref={webcamRef}
-                screenshotFormat="image/jpeg"
-                videoConstraints={{
-                  facingMode: "environment",
-                  width: { ideal: 1920 },
-                  height: { ideal: 1080 }
-                }}
-                className="camera-modal-webcam"
-              />
+              <div className="camera-modal-capture-section">
+                <Webcam
+                  audio={false}
+                  ref={webcamRef}
+                  screenshotFormat="image/jpeg"
+                  videoConstraints={{
+                    facingMode: "environment",
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                  }}
+                  className="camera-modal-webcam"
+                />
+                
+                {/* Upload option */}
+                <div className="camera-modal-upload-section">
+                  <p>Or upload an image:</p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUploadWithScan}
+                    style={{ display: 'none' }}
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="camera-modal-btn upload"
+                  >
+                    📁 Upload Image
+                  </button>
+                </div>
+              </div>
             ) : (
               <div style={{ position: "relative", width: "100%" }}>
                 <img
@@ -233,17 +284,25 @@ const CameraModal = ({ isOpen, onClose, onCapture }) => {
                 <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
                   {renderBoxes()}
                 </div>
+                
+                {/* Scanning indicator */}
+                {scanning && (
+                  <div className="scanning-overlay">
+                    <div className="scanning-spinner"></div>
+                    <p>AI is analyzing your ingredients...</p>
+                  </div>
+                )}
               </div>
             )}
 
             <div className="camera-modal-btn-row">
               {!preview ? (
                 <button
-                  onClick={handleScan}
+                  onClick={captureWithScan}
                   disabled={scanning}
-                  className="camera-modal-btn"
+                  className="camera-modal-btn capture"
                 >
-                  {scanning ? "Scanning..." : "Scan"}
+                  📸 Capture & Scan
                 </button>
               ) : (
                 <>
@@ -251,13 +310,14 @@ const CameraModal = ({ isOpen, onClose, onCapture }) => {
                     onClick={handleRetake}
                     className="camera-modal-btn retake"
                   >
-                    Retake
+                    🔄 Retake
                   </button>
                   <button
-                    onClick={() => { if (onCapture) onCapture(preview); onClose(); }}
-                    className="camera-modal-btn use-photo"
+                    onClick={() => handleAutoScan(preview)}
+                    className="camera-modal-btn rescan"
+                    disabled={scanning}
                   >
-                    Use Photo
+                    {scanning ? "Scanning..." : "🔍 Rescan"}
                   </button>
                 </>
               )}
@@ -265,14 +325,17 @@ const CameraModal = ({ isOpen, onClose, onCapture }) => {
                 onClick={onClose}
                 className="camera-modal-btn close"
               >
-                Close
+                ✕ Close
               </button>
             </div>
 
+            {/* Ingredients editing section */}
             <div className="camera-modal-ingredients-edit">
-              <strong>Ingredients detected (edit if incorrect):</strong>
-              {ingredientNames.length === 0 ? (
-                <div style={{color:'#888',padding:'8px 0'}}>No ingredients detected.</div>
+              <strong>🥗 Detected Ingredients {scanning && "(Analyzing...)"}</strong>
+              {ingredientNames.length === 0 && !scanning ? (
+                <div style={{color:'#888',padding:'8px 0'}}>
+                  {preview ? "No ingredients detected. Try rescanning or add manually." : "Take a photo or upload an image to detect ingredients."}
+                </div>
               ) : (
                 <ul>
                   {ingredientNames.map((name, i) => (
@@ -288,15 +351,7 @@ const CameraModal = ({ isOpen, onClose, onCapture }) => {
                       />
                       <button
                         type="button"
-                        style={{
-                          marginLeft: 4,
-                          background: "#e26a00",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: "4px",
-                          padding: "2px 8px",
-                          cursor: "pointer"
-                        }}
+                        className="remove-ingredient-btn"
                         onClick={() => {
                           const newNames = ingredientNames.filter((_, idx) => idx !== i);
                           setIngredientNames(newNames);
@@ -308,21 +363,15 @@ const CameraModal = ({ isOpen, onClose, onCapture }) => {
                   ))}
                 </ul>
               )}
-              <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+              
+              {/* Add ingredient manually */}
+              <div className="add-ingredient-section">
                 <input
                   type="text"
-                  placeholder="Add ingredient"
+                  placeholder="Add ingredient manually"
                   value={newIngredient}
                   onChange={e => setNewIngredient(e.target.value)}
-                  style={{
-                    fontSize: "1.05rem",
-                    padding: "5px 10px",
-                    borderRadius: "6px",
-                    border: "1px solid #ccc",
-                    width: "70%",
-                    marginRight: 4,
-                    outline: "none"
-                  }}
+                  className="add-ingredient-input"
                   onKeyDown={e => {
                     if (e.key === "Enter" && newIngredient.trim()) {
                       setIngredientNames([...ingredientNames, newIngredient.trim()]);
@@ -332,8 +381,7 @@ const CameraModal = ({ isOpen, onClose, onCapture }) => {
                 />
                 <button
                   type="button"
-                  className="camera-modal-btn"
-                  style={{ padding: "6px 12px", fontSize: "0.98rem", background: "#CF996C" }}
+                  className="camera-modal-btn add"
                   onClick={() => {
                     if (newIngredient.trim()) {
                       setIngredientNames([...ingredientNames, newIngredient.trim()]);
@@ -342,15 +390,17 @@ const CameraModal = ({ isOpen, onClose, onCapture }) => {
                   }}
                   disabled={!newIngredient.trim()}
                 >
-                  Add
+                  ➕ Add
                 </button>
               </div>
+              
+              {/* Proceed button */}
               <button
                 onClick={handleProceed}
                 className="camera-modal-btn proceed"
                 disabled={ingredientNames.length === 0}
               >
-                Proceed
+                🤖 Generate Recipe with AI
               </button>
             </div>
           </>

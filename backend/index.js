@@ -14,6 +14,7 @@ import ingredientRoutes from "./routes/ingredient.route.js";
 import userRoutes from "./routes/user.route.js";
 import favoriteRoutes from './routes/favoriteRoutes.js';
 import visionRoutes from "./routes/vision.route.js";
+import youtubeRoutes from "./routes/youtube.route.js"; // Add this import
 
 dotenv.config();
 
@@ -83,9 +84,10 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use("/api/auth", authRoutes);
 app.use("/api/recipes", recipeRoutes);
 app.use("/api/ingredients", ingredientRoutes);
-app.use("/api/favorites", favoriteRoutes); // Add this line
+app.use("/api/favorites", favoriteRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/vision", visionRoutes);
+app.use("/api/youtube", youtubeRoutes); // Add this route
 
 if (process.env.NODE_ENV === "production") {
     app.use(express.static(path.join(__dirname, "/frontend/dist")));

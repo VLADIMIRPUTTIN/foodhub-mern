@@ -6,21 +6,44 @@
   justify-content: center;
   align-items: center;
   z-index: 2000;
+  padding: 10px;
 }
 
 .camera-modal-main {
   width: 96vw;
   max-width: 540px;
-  background: #fff;
+  background: linear-gradient(135deg, #fff8ee 0%, #fff1e0 100%);
   border-radius: 16px;
   padding: 18px 12px 18px 12px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   align-items: center;
-  box-shadow: 0 8px 32px rgba(44, 32, 16, 0.18);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1), 
+              0 4px 12px rgba(207, 153, 108, 0.15);
   max-height: 96vh;
   overflow-y: auto;
+  border: 1px solid rgba(201, 122, 43, 0.1);
+}
+
+.camera-modal-capture-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.camera-modal-upload-section {
+  text-align: center;
+  padding: 12px;
+  border-top: 1px solid rgba(201, 122, 43, 0.15);
+  
+  p {
+    margin-bottom: 8px;
+    color: #7a5a36;
+    font-size: 0.9rem;
+  }
 }
 
 .camera-modal-webcam,
@@ -34,73 +57,111 @@
   background: #222;
   margin-bottom: 10px;
   position: relative;
+  border: 2px solid rgba(201, 122, 43, 0.2);
 }
 
 .camera-modal-preview-img {
   display: block;
 }
 
+.scanning-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: white;
+  
+  .scanning-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #CF996C;
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 10px;
+  }
+  
+  p {
+    font-size: 0.9rem;
+    text-align: center;
+    margin: 0;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .camera-modal-btn-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   justify-content: center;
   margin-bottom: 6px;
+  flex-wrap: wrap;
 }
 
 .camera-modal-btn {
-  padding: 10px 18px;
-  background: #34A853;
+  padding: 10px 16px;
+  background: #CF996C;
   color: #fff;
   border: none;
   border-radius: 8px;
-  font-size: 1.08rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  
   &:disabled {
     background: #b7b7b7;
     cursor: not-allowed;
   }
+  
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(207, 153, 108, 0.3);
+  }
+  
+  &.capture {
+    background: #4CAF50;
+  }
+  
   &.retake {
-    background: #e5e7eb;
-    color: #333;
+    background: #FF9800;
   }
-  &.use-photo {
-    background: #CF996C;
-    color: #fff;
+  
+  &.rescan {
+    background: #2196F3;
   }
+  
+  &.upload {
+    background: #9C27B0;
+  }
+  
   &.close {
-    background: #e5e7eb;
-    color: #333;
+    background: #F44336;
   }
+  
   &.proceed {
-    background: #4285F4;
-    color: #fff;
-    margin-top: 8px;
+    background: linear-gradient(135deg, #e09f56, #d35400);
+    margin-top: 12px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    width: 100%;
+    box-shadow: 0 8px 15px rgba(226, 106, 0, 0.2);
   }
-}
-
-.camera-modal-scan-results {
-  width: 100%;
-  text-align: left;
-  margin-top: 8px;
-  strong {
-    font-size: 1.08rem;
-  }
-  .camera-modal-scan-list {
-    margin-top: 6px;
-    max-height: 140px;
-    overflow: auto;
-    font-size: 0.98rem;
-    div {
-      padding: 6px 0;
-      border-bottom: 1px solid #f3f4f6;
-    }
-    .box-coords {
-      color: #6b7280;
-      font-size: 0.92rem;
-    }
+  
+  &.add {
+    background: #4CAF50;
+    padding: 8px 12px;
+    font-size: 0.85rem;
   }
 }
 
@@ -108,29 +169,82 @@
   width: 100%;
   text-align: left;
   margin-top: 8px;
+  
   strong {
-    font-size: 1.08rem;
+    font-size: 1.1rem;
+    color: #e26a00;
+    display: block;
+    margin-bottom: 8px;
   }
+  
   ul {
     padding-left: 0;
-    margin-bottom: 0.5rem;
-  }
-  li {
+    margin-bottom: 12px;
     list-style: none;
-    margin-bottom: 4px;
   }
+  
+  li {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
   input[type="text"] {
-    font-size: 1.05rem;
-    padding: 5px 10px;
+    flex: 1;
+    font-size: 0.9rem;
+    padding: 8px 10px;
     border-radius: 6px;
-    border: 1px solid #ccc;
-    width: 90%;
-    margin-right: 4px;
-    margin-bottom: 2px;
+    border: 1px solid rgba(201, 122, 43, 0.3);
+    background: rgba(255, 248, 238, 0.7);
     outline: none;
-    transition: border 0.15s;
+    transition: border 0.2s ease;
+    
     &:focus {
-      border: 1.5px solid #4285F4;
+      border: 2px solid #e26a00;
+      background: white;
+    }
+  }
+  
+  .remove-ingredient-btn {
+    background: #F44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s ease;
+    
+    &:hover {
+      background: #d32f2f;
+    }
+  }
+}
+
+.add-ingredient-section {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  width: 100%;
+  
+  .add-ingredient-input {
+    flex: 1;
+    font-size: 0.9rem;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(201, 122, 43, 0.3);
+    background: rgba(255, 248, 238, 0.7);
+    outline: none;
+    transition: border 0.2s ease;
+    
+    &:focus {
+      border: 2px solid #e26a00;
+      background: white;
     }
   }
 }
@@ -138,16 +252,27 @@
 @media (max-width: 600px) {
   .camera-modal-main {
     max-width: 99vw;
-    padding: 8px 2px 12px 2px;
+    padding: 12px 8px;
   }
+  
   .camera-modal-webcam,
   .camera-modal-preview-img {
-    height: min(70vw, 220px);
-    max-height: 220px;
+    height: min(70vw, 250px);
+    max-height: 250px;
     border-radius: 8px;
   }
+  
   .camera-modal-btn {
-    font-size: 0.98rem;
-    padding: 8px 10px;
+    font-size: 0.8rem;
+    padding: 8px 12px;
+  }
+  
+  .camera-modal-btn-row {
+    gap: 6px;
+  }
+  
+  .add-ingredient-section {
+    flex-direction: column;
+    gap: 6px;
   }
 }

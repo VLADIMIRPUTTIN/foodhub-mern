@@ -2,6 +2,8 @@ import express from "express";
 import { verifyToken } from "../middleware/verifyToken.js";
 import dotenv from "dotenv";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import axios from "axios";
+import FormData from "form-data";
 
 dotenv.config();
 
@@ -16,200 +18,395 @@ if (process.env.GEMINI_API_KEY) {
   console.warn("GEMINI_API_KEY not found in environment variables");
 }
 
-// Log Roboflow env at startup for easier debug
-console.log('ROBOFLOW env:', {
-  hasKey: !!process.env.ROBOFLOW_API_KEY,
-  keyPreview: process.env.ROBOFLOW_API_KEY ? process.env.ROBOFLOW_API_KEY.slice(0, 6) + '...' : undefined,
-  hasUrl: !!process.env.ROBOFLOW_URL,
-  url: process.env.ROBOFLOW_URL,
-  hasProject: !!process.env.ROBOFLOW_PROJECT,
-  project: process.env.ROBOFLOW_PROJECT,
-  modelVersion: process.env.ROBOFLOW_MODEL_VERSION || '1'
-});
+// Helper function to strip data URL prefix
+function stripDataUrl(dataUrl) {
+  if (!dataUrl || typeof dataUrl !== "string") return null;
+  const match = dataUrl.match(/^data:[^;]+;base64,(.+)$/);
+  return match ? match[1] : dataUrl;
+}
 
-// Detect objects using configured image-recognition provider (Roboflow preferred)
+// Enhanced Roboflow detection with multiple methods
 router.post("/detect-and-suggest", async (req, res) => {
   try {
     let { imageBase64 } = req.body;
-    if (!imageBase64) return res.status(400).json({ success: false, message: "imageBase64 required" });
-
-    // detect MIME type from data URL (if provided), default to jpeg
-    const mimeMatch = (imageBase64 || "").match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/);
-    const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
-    const rawBase64 = stripDataUrl(imageBase64);
-    if (!rawBase64) return res.status(400).json({ success: false, message: "Invalid imageBase64" });
-
-    // providerData will hold the recognition response
-    let providerData = null;
-
-    // Roboflow integration
-    if (process.env.ROBOFLOW_API_KEY && (process.env.ROBOFLOW_URL || process.env.ROBOFLOW_PROJECT)) {
-      const rfKey = process.env.ROBOFLOW_API_KEY;
-      const rfProject = process.env.ROBOFLOW_PROJECT;
-      const rfVersion = process.env.ROBOFLOW_MODEL_VERSION || "1";
-
-      // Prefer explicit ROBOFLOW_URL, otherwise build serverless URL
-      let rfUrl = process.env.ROBOFLOW_URL || `https://serverless.roboflow.com/${rfProject}/${rfVersion}`;
-      // ensure api_key present
-      rfUrl = rfUrl.includes("api_key=") ? rfUrl : (rfUrl.includes("?") ? `${rfUrl}&api_key=${rfKey}` : `${rfUrl}?api_key=${rfKey}`);
-
-      console.log("Roboflow URL:", rfUrl);
-
-      const imageBuffer = Buffer.from(rawBase64, "base64");
-
-      // helper to pretty log headers
-      const debugHeaders = (h) => console.log("-> Sending headers:", JSON.stringify(h));
-
-      // Try serverless (raw binary) first
-      try {
-        const serverlessHeaders = {
-          "Content-Type": mimeType,
-          "Content-Length": imageBuffer.length,
-          "Accept": "application/json"
-        };
-        debugHeaders(serverlessHeaders);
-
-        const resp = await axios.post(rfUrl, imageBuffer, {
-          headers: serverlessHeaders,
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity,
-          timeout: 45000,
-          validateStatus: () => true
-        });
-
-        console.log("Roboflow serverless response status:", resp.status);
-        console.log("Roboflow serverless response data:", resp.data);
-
-        if (resp.status >= 200 && resp.status < 300) {
-          providerData = resp.data || {};
-        } else if (resp.status === 403) {
-          console.error("Roboflow 403 — check ROBOFLOW_API_KEY (use Private API Key) and ROBOFLOW_URL", resp.data);
-          return res.status(502).json({
-            success: false,
-            message: "Roboflow returned 403 Forbidden — check ROBOFLOW_API_KEY (use Private API Key) and ROBOFLOW_URL. Make sure you are using a PRIVATE API KEY from Roboflow dashboard.",
-            detail: resp.data
-          });
-        } else {
-          // inspect message to decide fallback
-          const bodyMessage = (resp.data && (resp.data.message || resp.data.error || "")) || "";
-          if (resp.status >= 400 && resp.status < 500 && (bodyMessage.toLowerCase().includes("content-type") || resp.status === 405 || resp.status === 415)) {
-            console.warn("Serverless rejected request; falling back to detect.roboflow (multipart/form-data)");
-            const detectUrl = process.env.ROBOFLOW_URL && process.env.ROBOFLOW_URL.includes("detect.roboflow")
-              ? process.env.ROBOFLOW_URL
-              : `https://detect.roboflow.com/${rfProject}/${rfVersion}?api_key=${rfKey}`;
-            console.log("Roboflow detect URL:", detectUrl);
-
-            const form = new FormData();
-            form.append("file", imageBuffer, { filename: "image.jpg", contentType: mimeType });
-            debugHeaders(form.getHeaders());
-
-            const detectResp = await axios.post(detectUrl, form, {
-              headers: { ...form.getHeaders() },
-              maxContentLength: Infinity,
-              maxBodyLength: Infinity,
-              timeout: 45000,
-              validateStatus: () => true
-            });
-
-            console.log("Roboflow detect response status:", detectResp.status);
-            console.log("Roboflow detect response data:", detectResp.data);
-
-            if (detectResp.status >= 200 && detectResp.status < 300) {
-              providerData = detectResp.data || {};
-            } else if (detectResp.status === 403) {
-              console.error("Roboflow detect 403 — check API key permissions", detectResp.data);
-              return res.status(502).json({
-                success: false,
-                message: "Roboflow detect returned 403 Forbidden — check API key permissions. Make sure you are using a PRIVATE API KEY from Roboflow dashboard.",
-                detail: detectResp.data
-              });
-            } else {
-              return res.status(502).json({ success: false, message: "Roboflow returned error on both serverless and detect", detail: { serverless: resp.data, detect: detectResp.data } });
-            }
-          } else {
-            return res.status(502).json({ success: false, message: "Roboflow serverless returned error", detail: resp.data });
-          }
-        }
-      } catch (err) {
-        console.error("Roboflow recognition request failed (exception):", err?.response?.data || err?.message || err);
-        return res.status(502).json({ success: false, message: "Image recognition request to Roboflow failed", detail: err?.response?.data || err?.message });
-      }
-    } else {
-      // Better debug: tell which env vars are missing so it's easier to fix
-      const missing = [];
-      if (!process.env.ROBOFLOW_API_KEY) missing.push('ROBOFLOW_API_KEY');
-      if (!process.env.ROBOFLOW_URL && !process.env.ROBOFLOW_PROJECT) missing.push('ROBOFLOW_URL|ROBOFLOW_PROJECT');
-      console.error('Roboflow not configured. Missing env vars:', missing);
-      return res.status(400).json({
-        success: false,
-        message: "Roboflow not configured on server",
-        missing
+    if (!imageBase64) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "imageBase64 required" 
       });
     }
 
-    // 3) Normalize provider response into segmentation-like items
-    // Support Roboflow shapes: predictions array with x,y,width,height,confidence,class or label/name
-    let items = [];
-    try {
-      if (!providerData) providerData = {};
-      if (Array.isArray(providerData.predictions)) {
-        items = providerData.predictions.map(p => {
-          // Roboflow often returns center x,y and width,height (pixels)
-          const x = typeof p.x === "number" ? p.x : (p.bbox && p.bbox.x) || null;
-          const y = typeof p.y === "number" ? p.y : (p.bbox && p.bbox.y) || null;
-          const w = typeof p.width === "number" ? p.width : (p.bbox && p.bbox.width) || null;
-          const h = typeof p.height === "number" ? p.height : (p.bbox && p.bbox.height) || null;
-
-          let box = null;
-          if (x != null && y != null && w != null && h != null) {
-            // convert center -> top-left coordinates
-            box = { x: x - (w / 2), y: y - (h / 2), w: w, h: h };
-          } else if (p.bbox && typeof p.bbox.x_min === "number") {
-            // alternative bbox shape
-            box = { x: p.bbox.x_min, y: p.bbox.y_min, w: p.bbox.x_max - p.bbox.x_min, h: p.bbox.y_max - p.bbox.y_min };
-          }
-
-          return {
-            label: p.class || p.label || p.name || (p.prediction && p.prediction.class) || "item",
-            probability: (p.confidence || p.conf || p.score) ? Number(p.confidence || p.conf || p.score) : undefined,
-            box,
-            raw: p
-          };
-        });
-      } else if (Array.isArray(providerData.results)) {
-        // other possible shape
-        items = providerData.results;
-      } else if (Array.isArray(providerData.items)) {
-        items = providerData.items;
-      }
-    } catch (e) {
-      console.warn("Failed to normalize provider response:", e);
+    // Extract base64 data
+    const rawBase64 = stripDataUrl(imageBase64);
+    if (!rawBase64) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid imageBase64 format" 
+      });
     }
 
-    // Build segmentation array with { label, probability, box, raw }
-    const segmentation = (items || []).map(item => ({
-      label: item.label || (item.raw && item.raw.name) || "item",
-      probability: item.probability,
-      box: item.box || (item.raw && item.raw.bbox) || null,
-      raw: item.raw || item
-    }));
+    // Check if Roboflow is configured
+    if (!process.env.ROBOFLOW_API_KEY) {
+      console.warn("Roboflow not configured - using Gemini fallback");
+      return await handleGeminiFallback(rawBase64, res);
+    }
 
-    return res.json({ success: true, segmentation, providerData });
+    const rfKey = process.env.ROBOFLOW_API_KEY;
+    const rfProject = process.env.ROBOFLOW_PROJECT;
+    const rfVersion = process.env.ROBOFLOW_MODEL_VERSION || "1";
+
+    console.log("Starting enhanced Roboflow detection...");
+
+    // Method 1: Try the standard detect.roboflow.com API
+    const detectResults = await tryRoboflowDetect(rawBase64, rfProject, rfVersion, rfKey);
+    
+    if (detectResults.success) {
+      console.log("Roboflow detect successful");
+      return res.json(detectResults);
+    }
+
+    // Method 2: Try the infer.roboflow.com API (alternative endpoint)
+    const inferResults = await tryRoboflowInfer(rawBase64, rfProject, rfVersion, rfKey);
+    
+    if (inferResults.success) {
+      console.log("Roboflow infer successful");
+      return res.json(inferResults);
+    }
+
+    // Method 3: Try upload with hosted model URL
+    const hostedResults = await tryRoboflowHosted(rawBase64, rfProject, rfVersion, rfKey);
+    
+    if (hostedResults.success) {
+      console.log("Roboflow hosted successful");
+      return res.json(hostedResults);
+    }
+
+    // Fallback to Gemini if all Roboflow methods fail
+    console.warn("All Roboflow methods failed, falling back to Gemini");
+    return await handleGeminiFallback(rawBase64, res);
+
   } catch (error) {
     console.error("detect-and-suggest error:", error);
-    return res.status(500).json({ success: false, message: error.message || "Internal error" });
+    return res.status(500).json({ 
+      success: false, 
+      message: "Internal server error",
+      error: error.message 
+    });
   }
 });
 
-// Add this route after your existing routes
-router.post("/generate-cooking-instructions", verifyToken, async (req, res) => {
+// Method 1: Standard Roboflow Detect API
+async function tryRoboflowDetect(base64Image, project, version, apiKey) {
   try {
-    const { recipeName, recipeInstructions, availableIngredients, missingIngredients } = req.body;
+    const detectUrl = `https://detect.roboflow.com/${project}/${version}?api_key=${apiKey}&format=json`;
     
-    if (!recipeName || !recipeInstructions || !availableIngredients) {
+    console.log("Trying Roboflow detect URL:", detectUrl);
+
+    const response = await axios({
+      method: 'POST',
+      url: detectUrl,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      data: base64Image,
+      timeout: 30000,
+      validateStatus: () => true
+    });
+
+    console.log("Roboflow detect response status:", response.status);
+    console.log("Roboflow detect response:", JSON.stringify(response.data, null, 2));
+
+    if (response.status >= 200 && response.status < 300 && response.data) {
+      return processRoboflowResponse(response.data, 'detect');
+    }
+
+    return { success: false, error: `Status ${response.status}` };
+  } catch (error) {
+    console.error("Roboflow detect error:", error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+// Method 2: Roboflow Infer API
+async function tryRoboflowInfer(base64Image, project, version, apiKey) {
+  try {
+    const inferUrl = `https://infer.roboflow.com/${project}/${version}?api_key=${apiKey}`;
+    
+    console.log("Trying Roboflow infer URL:", inferUrl);
+
+    const imageBuffer = Buffer.from(base64Image, "base64");
+    const form = new FormData();
+    form.append("file", imageBuffer, { 
+      filename: "image.jpg", 
+      contentType: "image/jpeg" 
+    });
+
+    const response = await axios.post(inferUrl, form, {
+      headers: {
+        ...form.getHeaders(),
+      },
+      timeout: 30000,
+      validateStatus: () => true
+    });
+
+    console.log("Roboflow infer response status:", response.status);
+    console.log("Roboflow infer response:", JSON.stringify(response.data, null, 2));
+
+    if (response.status >= 200 && response.status < 300 && response.data) {
+      return processRoboflowResponse(response.data, 'infer');
+    }
+
+    return { success: false, error: `Status ${response.status}` };
+  } catch (error) {
+    console.error("Roboflow infer error:", error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+// Method 3: Roboflow Hosted Model
+async function tryRoboflowHosted(base64Image, project, version, apiKey) {
+  try {
+    const hostedUrl = `https://api.roboflow.com/v1/detect/${project}/${version}?api_key=${apiKey}`;
+    
+    console.log("Trying Roboflow hosted URL:", hostedUrl);
+
+    const response = await axios({
+      method: 'POST',
+      url: hostedUrl,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      data: {
+        image: `data:image/jpeg;base64,${base64Image}`
+      },
+      timeout: 30000,
+      validateStatus: () => true
+    });
+
+    console.log("Roboflow hosted response status:", response.status);
+    console.log("Roboflow hosted response:", JSON.stringify(response.data, null, 2));
+
+    if (response.status >= 200 && response.status < 300 && response.data) {
+      return processRoboflowResponse(response.data, 'hosted');
+    }
+
+    return { success: false, error: `Status ${response.status}` };
+  } catch (error) {
+    console.error("Roboflow hosted error:", error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+// Process Roboflow response into consistent format
+function processRoboflowResponse(data, method) {
+  try {
+    let items = [];
+    
+    // Handle different response formats
+    if (Array.isArray(data.predictions)) {
+      items = data.predictions.map(p => ({
+        label: p.class || p.label || p.name || "ingredient",
+        probability: p.confidence || p.conf || p.score || 0.5,
+        box: p.x && p.y && p.width && p.height ? {
+          x: (p.x - (p.width / 2)) / (data.image?.width || 640),
+          y: (p.y - (p.height / 2)) / (data.image?.height || 640),
+          w: p.width / (data.image?.width || 640),
+          h: p.height / (data.image?.height || 640)
+        } : null,
+        raw: p
+      }));
+    } else if (Array.isArray(data.detections)) {
+      items = data.detections.map(d => ({
+        label: d.class || d.label || d.name || "ingredient",
+        probability: d.confidence || d.conf || d.score || 0.5,
+        box: d.bbox ? {
+          x: d.bbox[0] / (data.image_width || 640),
+          y: d.bbox[1] / (data.image_height || 640),
+          w: d.bbox[2] / (data.image_width || 640),
+          h: d.bbox[3] / (data.image_height || 640)
+        } : null,
+        raw: d
+      }));
+    } else if (data.predicted_classes) {
+      // Classification format
+      items = data.predicted_classes.map(cls => ({
+        label: cls.class || cls.name || "ingredient",
+        probability: cls.confidence || 0.5,
+        box: null,
+        raw: cls
+      }));
+    }
+
+    // Filter out low confidence detections
+    items = items.filter(item => item.probability > 0.3);
+
+    const segmentation = items.map(item => ({
+      label: item.label,
+      probability: item.probability,
+      box: item.box,
+      raw: item.raw
+    }));
+
+    console.log(`Processed ${items.length} ingredients from ${method} method`);
+
+    return { 
+      success: true, 
+      segmentation, 
+      providerData: data,
+      provider: `roboflow-${method}`,
+      count: items.length
+    };
+  } catch (error) {
+    console.error("Error processing Roboflow response:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Enhanced Gemini Vision fallback with better ingredient detection
+async function handleGeminiFallback(base64Image, res) {
+  try {
+    if (!genAI) {
+      return res.status(500).json({
+        success: false,
+        message: "Both Roboflow and Gemini are not configured"
+      });
+    }
+
+    console.log("Using enhanced Gemini Vision API for ingredient detection");
+
+    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+    
+    const prompt = `
+    You are an expert food ingredient detector. Analyze this image very carefully and identify ALL visible food ingredients, cooking items, spices, vegetables, fruits, proteins, grains, and any edible items.
+
+    Look for:
+    - Fresh vegetables and fruits
+    - Meat, fish, and proteins
+    - Grains, rice, pasta, bread
+    - Spices and seasonings
+    - Dairy products
+    - Canned or packaged foods
+    - Cooking oils and sauces
+    - Herbs and aromatics
+
+    Return ONLY a JSON array in this exact format:
+    [
+      {"name": "tomato", "confidence": 0.95},
+      {"name": "onion", "confidence": 0.90},
+      {"name": "garlic", "confidence": 0.85}
+    ]
+
+    Be very specific with ingredient names. If you see multiple items, list them all. Only return the JSON array, nothing else.
+    `;
+
+    const imagePart = {
+      inlineData: {
+        data: base64Image,
+        mimeType: "image/jpeg"
+      }
+    };
+
+    const result = await model.generateContent([prompt, imagePart]);
+    const response = await result.response;
+    const text = response.text();
+
+    console.log("Gemini raw response:", text);
+
+    // Enhanced JSON parsing
+    let ingredients = [];
+    try {
+      // Try to extract JSON array
+      const jsonMatch = text.match(/\[[\s\S]*?\]/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        ingredients = parsed.filter(item => 
+          item.name && 
+          item.name.trim().length > 0 &&
+          typeof item.confidence === 'number'
+        );
+      }
+    } catch (parseError) {
+      console.warn("Failed to parse Gemini JSON, using text extraction");
+      
+      // Enhanced text extraction
+      const lines = text.split('\n');
+      const ingredientWords = [];
+      
+      for (const line of lines) {
+        // Look for ingredient names in quotes or after common patterns
+        const matches = line.match(/["']([a-zA-Z\s]+)["']|(\b[a-zA-Z]{3,}\b)/g);
+        if (matches) {
+          matches.forEach(match => {
+            const clean = match.replace(/['"]/g, '').trim().toLowerCase();
+            if (clean.length > 2 && !clean.includes('name') && !clean.includes('confidence')) {
+              ingredientWords.push(clean);
+            }
+          });
+        }
+      }
+      
+      // Convert to ingredient objects
+      ingredients = [...new Set(ingredientWords)].slice(0, 15).map(name => ({
+        name: name,
+        confidence: 0.7
+      }));
+    }
+
+    // If still no ingredients, try one more extraction method
+    if (ingredients.length === 0) {
+      const commonIngredients = [
+        'tomato', 'onion', 'garlic', 'rice', 'chicken', 'beef', 'pork', 
+        'potato', 'carrot', 'bell pepper', 'ginger', 'soy sauce', 'oil',
+        'salt', 'pepper', 'egg', 'flour', 'sugar', 'lettuce', 'cabbage'
+      ];
+      
+      const textLower = text.toLowerCase();
+      ingredients = commonIngredients
+        .filter(ing => textLower.includes(ing))
+        .slice(0, 8)
+        .map(name => ({ name, confidence: 0.6 }));
+    }
+
+    const segmentation = ingredients.map(ing => ({
+      label: ing.name,
+      probability: ing.confidence,
+      box: null,
+      raw: ing
+    }));
+
+    console.log(`Gemini detected ${ingredients.length} ingredients:`, ingredients.map(i => i.name));
+
+    return res.json({
+      success: true,
+      segmentation,
+      provider: 'gemini-enhanced',
+      note: "Detected using enhanced Gemini Vision API",
+      count: ingredients.length
+    });
+
+  } catch (geminiError) {
+    console.error("Enhanced Gemini fallback error:", geminiError);
+    
+    // Last resort: return empty results but with success=true
+    return res.json({
+      success: true,
+      segmentation: [],
+      provider: 'fallback',
+      note: "Could not detect ingredients. Please add them manually.",
+      count: 0
+    });
+  }
+}
+
+// Generate recipe suggestions based on ingredients
+router.post("/generate-recipe-suggestion", async (req, res) => {
+  try {
+    const { ingredients } = req.body;
+    
+    if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
       return res.status(400).json({ 
         success: false, 
-        message: "Missing required information" 
+        message: "Ingredients array is required" 
       });
     }
     
@@ -221,12 +418,150 @@ router.post("/generate-cooking-instructions", verifyToken, async (req, res) => {
       });
     }
     
-    // Convert recipe instructions to string if it's an array
+    // Create the prompt for recipe generation
+    const prompt = `
+    You are a professional chef and recipe creator. Based on the following ingredients, create a delicious and practical recipe:
+
+    Available Ingredients: ${ingredients.join(", ")}
+
+    Please provide:
+    1. A creative recipe name
+    2. A complete ingredients list (including quantities and any additional ingredients needed)
+    3. Step-by-step cooking instructions
+
+    Format your response exactly like this:
+    RECIPE NAME: [Name of the recipe]
+
+    INGREDIENTS:
+    - [ingredient 1 with quantity]
+    - [ingredient 2 with quantity]
+    - [etc...]
+
+    INSTRUCTIONS:
+    1. [First step]
+    2. [Second step]
+    3. [etc...]
+
+    Make sure the recipe is practical and uses most of the detected ingredients. If some ingredients don't work well together, suggest the best combination and mention alternatives.
+    `;
+    
+    try {
+      // Generate content with Gemini
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      // Parse the response
+      const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      
+      let title = "AI Generated Recipe";
+      let ingredients_list = [];
+      let steps = [];
+      
+      let currentSection = 'none';
+      
+      for (const line of lines) {
+        if (line.startsWith('RECIPE NAME:')) {
+          title = line.replace('RECIPE NAME:', '').trim();
+        } else if (line.toUpperCase().includes('INGREDIENTS:')) {
+          currentSection = 'ingredients';
+        } else if (line.toUpperCase().includes('INSTRUCTIONS:')) {
+          currentSection = 'instructions';
+        } else if (currentSection === 'ingredients' && (line.startsWith('-') || line.startsWith('•'))) {
+          ingredients_list.push(line.replace(/^[-•]\s*/, '').trim());
+        } else if (currentSection === 'instructions' && /^\d+\./.test(line)) {
+          steps.push(line.replace(/^\d+\.\s*/, '').trim());
+        }
+      }
+      
+      // Fallback parsing if structured format fails
+      if (ingredients_list.length === 0 || steps.length === 0) {
+        const titleMatch = text.match(/(?:recipe name|title):\s*(.+)/i);
+        if (titleMatch) title = titleMatch[1].trim();
+        
+        const ingredientSection = text.match(/ingredients?:?\s*([\s\S]*?)(?:instructions?|steps?|method)/i);
+        if (ingredientSection) {
+          ingredients_list = ingredientSection[1]
+            .split('\n')
+            .map(line => line.replace(/^[-•*]\s*/, '').trim())
+            .filter(line => line.length > 0);
+        }
+        
+        const instructionSection = text.match(/(?:instructions?|steps?|method):?\s*([\s\S]*)/i);
+        if (instructionSection) {
+          steps = instructionSection[1]
+            .split('\n')
+            .map(line => line.replace(/^\d+\.\s*/, '').trim())
+            .filter(line => line.length > 0);
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        recipe: {
+          title,
+          ingredients: ingredients_list,
+          steps
+        },
+        rawResponse: text
+      });
+    } catch (aiError) {
+      console.error("Gemini API error:", aiError);
+      
+      // Provide a fallback response
+      const fallbackRecipe = {
+        title: `Simple Recipe with ${ingredients.slice(0, 3).join(", ")}`,
+        ingredients: ingredients.map(ing => `1 portion ${ing}`),
+        steps: [
+          "Prepare all ingredients by washing and cutting as needed.",
+          "Heat a pan or pot over medium heat.",
+          "Add the main ingredients and cook according to their requirements.",
+          "Season with salt, pepper, and any available spices.",
+          "Cook until tender and flavors are well combined.",
+          "Serve hot and enjoy your meal!"
+        ]
+      };
+      
+      res.json({
+        success: true,
+        recipe: fallbackRecipe,
+        note: "Generated using fallback method due to AI service limitations."
+      });
+    }
+  } catch (error) {
+    console.error("Error generating recipe suggestion:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to generate recipe suggestion",
+      error: error.message 
+    });
+  }
+});
+
+// Generate cooking instructions route
+router.post("/generate-cooking-instructions", verifyToken, async (req, res) => {
+  try {
+    const { recipeName, recipeInstructions, availableIngredients, missingIngredients } = req.body;
+    
+    if (!recipeName || !recipeInstructions || !availableIngredients) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing required information" 
+      });
+    }
+    
+    if (!genAI) {
+      return res.status(500).json({
+        success: false,
+        message: "AI service is not configured. Please add GEMINI_API_KEY to your environment variables."
+      });
+    }
+    
     const instructionsText = Array.isArray(recipeInstructions) 
       ? recipeInstructions.join("\n") 
       : recipeInstructions;
     
-    // Create the prompt for Gemini
     const prompt = `
     You are a helpful cooking assistant. I want to make "${recipeName}" but I'm missing some ingredients.
 
@@ -243,7 +578,6 @@ router.post("/generate-cooking-instructions", verifyToken, async (req, res) => {
     `;
     
     try {
-      // Generate content with Gemini
       const model = genAI.getGenerativeModel({ model: "gemini-pro" });
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -256,27 +590,15 @@ router.post("/generate-cooking-instructions", verifyToken, async (req, res) => {
     } catch (aiError) {
       console.error("Gemini API error:", aiError);
       
-      // Provide a fallback response when the AI service fails
       const fallbackResponse = `
 I see you're making ${recipeName}.
 
 Here are some general tips for adapting recipes:
 
-1. For missing ingredients, look for substitutes with similar properties:
-   - Missing oil? Try butter or another type of oil
-   - Missing an herb? Use a different herb or spice with a similar flavor profile
-   - Missing a vegetable? Substitute with a similar textured vegetable
-
-2. Focus on the cooking techniques:
-   - Most recipes follow basic patterns (sauté, roast, steam, etc.)
-   - You can often adapt the method to work with what you have
-
-3. Simplify the recipe:
-   - Many garnishes and secondary ingredients can be omitted
-   - Focus on getting the core flavors right
-
-4. Try a different cooking method:
-   - If you can't make the exact dish, think about different ways to use your ingredients
+1. For missing ingredients, look for substitutes with similar properties
+2. Focus on the cooking techniques from the original recipe
+3. Simplify the recipe by omitting non-essential ingredients
+4. Try a different cooking method if needed
 
 Check the full recipe and see which steps you can still follow with your available ingredients!
       `;
