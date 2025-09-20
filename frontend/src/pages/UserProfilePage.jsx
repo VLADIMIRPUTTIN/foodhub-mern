@@ -190,17 +190,19 @@ const UserProfilePage = () => {
     const handleLogout = async () => {
         try {
             await logout();
-            // Clear any component state
+            
+            // Clear component state
             setUserRecipes([]);
             setFavoriteRecipes([]);
             setFavoriteCount(0);
+            
             // Navigate to home page
             navigate('/', { replace: true });
+            
         } catch (error) {
             console.error("Logout error:", error);
-            // Force logout even if request fails
+            // Even if logout fails, navigate away
             navigate('/', { replace: true });
-            window.location.reload();
         }
     };
 
