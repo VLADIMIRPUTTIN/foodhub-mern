@@ -22,12 +22,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: [
-            "http://localhost:5173",
-            "https://foodhub-mern-production.up.railway.app",
-            "https://foodhubrecipe.shop",
-            "https://www.foodhubrecipe.shop"
-        ],
+        origin: process.env.NODE_ENV === "production" ? false : ["http://localhost:3000", "http://localhost:5173"],
         credentials: true
     }
 });
@@ -65,19 +60,15 @@ const __dirname = path.resolve();
 const allowedOrigins = [
     "http://localhost:5173",
     "https://foodhub-mern-production.up.railway.app",
-    "https://foodhubrecipe.shop",
-    "https://www.foodhubrecipe.shop"
+    "https://foodhubrecipe.shop"
 ];
 
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
-        
         if (allowedOrigins.includes(origin)) {
             return callback(null, true);
         }
-        console.log(`Blocked by CORS: ${origin}`);
         return callback(new Error("Not allowed by CORS"));
     },
     credentials: true
