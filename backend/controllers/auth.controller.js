@@ -66,7 +66,7 @@ export const signup = async (req, res) => {
             
             try {
                 // FIX: Correct parameter order - email, name, verificationCode
-                await sendVerificationEmail(user.email, user.name, verificationToken);
+                await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
                 console.log("✅ Verification email process completed");
             } catch (emailError) {
                 console.error("❌ Verification email process failed:", emailError.message);
@@ -358,7 +358,7 @@ export const forgotPassword = async (req, res) => {
 
         // send email
         console.log("CLIENT_URL:", process.env.CLIENT_URL);
-        await sendPasswordResetEmail(user.email, `${process.env.CLIENT_URL}/reset-password/${resetToken}`);
+        await sendPasswordResetEmail(user.email, `${process.env.CLIENT_URL}/reset-password/${resetToken}`, user.name, user.profileImage);
 
         res.status(200).json({ success: true, message: "Password reset link sent to your email" });
     } catch (error) {
@@ -388,7 +388,7 @@ export const resetPassword = async (req, res) => {
         user.resetPasswordExpiresAt = undefined;
         await user.save();
 
-        await sendResetSuccessEmail(user.email);
+        await sendResetSuccessEmail(user.email, user.name, user.profileImage);
 
         res.status(200).json({ success: true, message: "Password reset successful" });
     } catch (error) {
@@ -543,7 +543,7 @@ export const googleLogin = async (req, res) => {
                 await user.save();
                 
                 // Send verification email
-                await sendVerificationEmail(user.email, user.name, verificationToken);
+                await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
                 
                 // Generate token for the session
                 generateTokenAndSetCookie(res, user._id);
@@ -613,7 +613,7 @@ export const googleLogin = async (req, res) => {
             
             // Send verification email only if not admin
             if (!isVerified) {
-                await sendVerificationEmail(user.email, user.name, verificationToken);
+                await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
             }
             
             // Generate token
@@ -677,7 +677,7 @@ export const resendVerification = async (req, res) => {
         await user.save();
 
         // Send verification email
-        await sendVerificationEmail(user.email, user.name, verificationCode);
+        await sendVerificationEmail(user.email, user.name, verificationCode, user.profileImage);
 
         res.status(200).json({
             success: true,

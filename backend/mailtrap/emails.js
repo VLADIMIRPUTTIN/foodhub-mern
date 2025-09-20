@@ -5,25 +5,42 @@ import {
     PASSWORD_RESET_SUCCESS_TEMPLATE 
 } from './emailTemplates.js';
 
-export const sendVerificationEmail = async (email, name, verificationCode) => {
+export const sendVerificationEmail = async (email, verificationToken, userName, profileImage = null) => {
     try {
         console.log("Attempting to send verification email via Resend:");
         console.log("To:", email);
         console.log("From:", sender.email);
-        console.log("Code:", verificationCode);
-        console.log("Name:", name);
+        console.log("Code:", verificationToken);
+        console.log("Name:", userName);
 
         if (!email) {
             throw new Error("Email is required");
         }
 
-        const profileImageSection = `<div style="width: 100%; height: 100%; background-color: #CF996C; display: flex; align-items: center; justify-content: center;">
-            <span style="font-size: 28px; font-weight: bold; color: white;">${name.charAt(0).toUpperCase()}</span>
-        </div>`;
+        // Create profile image section
+        let profileImageSection = '';
+        
+        if (profileImage) {
+            // If user has a profile image (Google photo or uploaded image)
+            profileImageSection = `
+                <img src="${profileImage}" 
+                     alt="${userName}'s profile" 
+                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; background: rgba(255,255,255,0.1);">
+                    <i class="bx bx-user" style="font-size: 32px; color: white;"></i>
+                </div>
+            `;
+        } else {
+            // Default icon if no profile image
+            profileImageSection = `
+                <i class="bx bx-user" style="font-size: 36px; color: white;"></i>
+            `;
+        }
 
         const htmlContent = VERIFICATION_EMAIL_TEMPLATE
-            .replace(/{userName}/g, name)
-            .replace(/{verificationCode}/g, verificationCode)
+            .replace(/{userName}/g, userName)
+            .replace(/{verificationCode}/g, verificationToken)
             .replace(/{profileImageSection}/g, profileImageSection);
 
         // Use Resend instead of Gmail
@@ -38,7 +55,7 @@ export const sendVerificationEmail = async (email, name, verificationCode) => {
         return result;
     } catch (error) {
         console.error("Error sending verification email:", error);
-        throw error;
+        throw new Error(`Error sending verification email: ${error}`);
     }
 };
 
@@ -63,44 +80,91 @@ export const sendWelcomeEmail = async (email, name) => {
     }
 };
 
-export const sendPasswordResetEmail = async (email, resetURL) => {
+export const sendPasswordResetEmail = async (email, resetURL, userName, profileImage = null) => {
     try {
         if (!email) {
             throw new Error("Email is required");
         }
 
+        // Create profile image section
+        let profileImageSection = '';
+        
+        if (profileImage) {
+            profileImageSection = `
+                <img src="${profileImage}" 
+                     alt="${userName}'s profile" 
+                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; background: rgba(255,255,255,0.1);">
+                    <i class="bx bx-key" style="font-size: 32px; color: white;"></i>
+                </div>
+            `;
+        } else {
+            profileImageSection = `
+                <i class="bx bx-key" style="font-size: 36px; color: white;"></i>
+            `;
+        }
+
+        const htmlContent = PASSWORD_RESET_REQUEST_TEMPLATE
+            .replace(/{userName}/g, userName)
+            .replace(/{resetURL}/g, resetURL)
+            .replace(/{profileImageSection}/g, profileImageSection);
+
         const result = await resend.emails.send({
             from: `${sender.name} <${sender.email}>`,
             to: email,
             subject: "Reset Your FoodHub Password",
-            html: PASSWORD_RESET_REQUEST_TEMPLATE.replace("{resetURL}", resetURL),
+            html: htmlContent,
         });
         
         console.log("Password reset email sent:", result);
         return result;
     } catch (error) {
         console.error("Error sending password reset email:", error);
-        throw error;
+        throw new Error(`Error sending password reset email: ${error}`);
     }
 };
 
-export const sendResetSuccessEmail = async (email) => {
+export const sendResetSuccessEmail = async (email, userName, profileImage = null) => {
     try {
         if (!email) {
             throw new Error("Email is required");
         }
 
+        // Create profile image section  
+        let profileImageSection = '';
+        
+        if (profileImage) {
+            profileImageSection = `
+                <img src="${profileImage}" 
+                     alt="${userName}'s profile" 
+                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; background: rgba(255,255,255,0.1);">
+                    <i class="bx bx-shield-check" style="font-size: 32px; color: white;"></i>
+                </div>
+            `;
+        } else {
+            profileImageSection = `
+                <i class="bx bx-shield-check" style="font-size: 36px; color: white;"></i>
+            `;
+        }
+
+        const htmlContent = PASSWORD_RESET_SUCCESS_TEMPLATE
+            .replace(/{userName}/g, userName)
+            .replace(/{profileImageSection}/g, profileImageSection);
+
         const result = await resend.emails.send({
             from: `${sender.name} <${sender.email}>`,
             to: email,
             subject: "Password Reset Successful",
-            html: PASSWORD_RESET_SUCCESS_TEMPLATE,
+            html: htmlContent,
         });
         
         console.log("Reset success email sent:", result);
         return result;
     } catch (error) {
         console.error("Error sending reset success email:", error);
-        throw error;
+        throw new Error(`Error sending reset success email: ${error}`);
     }
 };
