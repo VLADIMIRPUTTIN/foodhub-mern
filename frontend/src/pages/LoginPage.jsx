@@ -21,11 +21,31 @@ const LoginPage = () => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        await login(email, password);
-        
-        // Check if there's account status data and show modal
-        if (accountStatus) {
-            setShowStatusModal(true);
+        try {
+            await login(email, password);
+            
+            // Check if there's account status data and show modal
+            if (accountStatus) {
+                setShowStatusModal(true);
+                return;
+            }
+
+            // Get the current user from auth store after login
+            const currentUser = useAuthStore.getState().user;
+            
+            // Check if user is admin and redirect accordingly
+            if (currentUser && currentUser.role === 'admin') {
+                console.log("Admin user detected, redirecting to admin dashboard");
+                navigate('/admin-dashboard');
+            } else if (currentUser && currentUser.isVerified) {
+                console.log("Regular user detected, redirecting to home");
+                navigate('/');
+            }
+            // If not verified, the login function should handle the redirect
+            
+        } catch (error) {
+            console.error("Login failed:", error);
+            // Error is already handled by the auth store
         }
     };
 
@@ -50,9 +70,14 @@ const LoginPage = () => {
                 // Set user in auth store
                 setUser(response.data.user);
                 
-                // Check if user is verified
-                if (response.data.user.isVerified) {
-                    console.log("User is verified, redirecting to home");
+                // Check user role and verification status
+                const user = response.data.user;
+                
+                if (user.role === 'admin') {
+                    console.log("Admin user logged in with Google, redirecting to admin dashboard");
+                    navigate('/admin-dashboard');
+                } else if (user.isVerified) {
+                    console.log("Regular verified user, redirecting to home");
                     navigate('/');
                 } else {
                     console.log("User needs verification, redirecting to verify-email");
@@ -69,9 +94,10 @@ const LoginPage = () => {
                 setShowStatusModal(true);
             } else if (error.response) {
                 console.error("Server response:", error.response.data);
-                toast.error(error.response.data.message || "Google login failed");
+                // Add toast import at the top if not already imported
+                console.error(error.response.data.message || "Google login failed");
             } else {
-                toast.error("Google login failed. Please try again.");
+                console.error("Google login failed. Please try again.");
             }
         }
     };

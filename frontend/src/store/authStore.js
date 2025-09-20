@@ -47,13 +47,19 @@ export const useAuthStore = create((set, get) => ({
         set({ isLoading: true, error: null, accountStatus: null });
         try {
             const res = await axios.post(`${API_URL}/login`, { email, password }, { withCredentials: true });
+            const user = res.data.user;
+            
             set({
-                user: res.data.user,
+                user: user,
                 isAuthenticated: true,
                 isLoading: false,
                 error: null,
                 accountStatus: null,
             });
+            
+            // Return user data so the component can handle routing
+            return user;
+            
         } catch (error) {
             const errorData = error.response?.data;
             
@@ -63,8 +69,8 @@ export const useAuthStore = create((set, get) => ({
                     error: errorData.message,
                     isLoading: false,
                     accountStatus: errorData.statusData,
-                    isAuthenticated: false, // Make sure to set this to false
-                    user: null, // Clear user data
+                    isAuthenticated: false,
+                    user: null,
                 });
             } else {
                 set({
@@ -75,7 +81,7 @@ export const useAuthStore = create((set, get) => ({
                     user: null,
                 });
             }
-            throw error; // Re-throw to handle in component
+            throw error;
         }
     },
 

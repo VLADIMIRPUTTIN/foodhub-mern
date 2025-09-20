@@ -261,9 +261,13 @@ export const login = async (req, res) => {
         user.lastLogin = new Date();
         await user.save();
 
+        const loginMessage = user.role === 'admin' 
+            ? "Admin logged in successfully" 
+            : "Logged in successfully";
+
         res.status(200).json({
             success: true,
-            message: "Logged in successfully",
+            message: loginMessage,
             user: {
                 ...user._doc,
                 password: undefined,
@@ -436,7 +440,7 @@ export const googleLogin = async (req, res) => {
         console.log("User exists in database:", !!user);
         
         if (user) {
-            console.log("Existing user - checking verification status:", user.isVerified);
+            console.log("Existing user - Role:", user.role, "Verification status:", user.isVerified);
             
             // Update profile image if not set
             if (!user.profileImage && googleProfileImage) {
@@ -480,8 +484,8 @@ export const googleLogin = async (req, res) => {
                 }
             }
 
-            // Handle unverified existing user
-            if (!user.isVerified) {
+            // Handle unverified existing user (except admin)
+            if (!user.isVerified && user.role !== 'admin') {
                 // Generate new verification code for existing unverified user
                 const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
                 user.verificationToken = verificationToken;
@@ -504,16 +508,20 @@ export const googleLogin = async (req, res) => {
                 });
             }
             
-            // User is verified - complete login
+            // User is verified or is admin - complete login
             user.lastLogin = new Date();
             await user.save();
             
             // Generate token and return user
             generateTokenAndSetCookie(res, user._id);
             
+            const loginMessage = user.role === 'admin' 
+                ? "Admin logged in successfully with Google" 
+                : "Logged in successfully with Google";
+            
             return res.status(200).json({
                 success: true,
-                message: "Logged in successfully with Google",
+                message: loginMessage,
                 user: {
                     ...user._doc,
                     password: undefined
@@ -523,7 +531,17 @@ export const googleLogin = async (req, res) => {
             // Create new user with Google data
             console.log("Creating new user with Google data");
             
-            const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+            // Check if this should be an admin account
+            let role = 'user';
+            let isVerified = false;
+            
+            // If the email is admin@foodhub.com, make it admin
+            if (payload.email === 'admin@foodhub.com') {
+                role = 'admin';
+                isVerified = true;
+            }
+            
+            const verificationToken = !isVerified ? Math.floor(100000 + Math.random() * 900000).toString() : undefined;
             
             // Create a random password for Google users
             const randomPassword = Math.random().toString(36).slice(-8);
@@ -533,24 +551,31 @@ export const googleLogin = async (req, res) => {
                 email: payload.email,
                 password: hashedPassword,
                 name: payload.name,
-                verificationToken,
-                verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
-                isVerified: false,
+                role: role,
+                verificationToken: verificationToken,
+                verificationTokenExpiresAt: !isVerified ? Date.now() + 15 * 60 * 1000 : undefined,
+                isVerified: isVerified,
                 profileImage: googleProfileImage
             });
             
             await user.save();
-            console.log("New Google user created:", user.email);
+            console.log("New Google user created:", user.email, "Role:", user.role);
             
-            // Send verification email
-            await sendVerificationEmail(user.email, user.name, verificationToken);
+            // Send verification email only if not admin
+            if (!isVerified) {
+                await sendVerificationEmail(user.email, user.name, verificationToken);
+            }
             
             // Generate token
             generateTokenAndSetCookie(res, user._id);
             
+            const successMessage = role === 'admin' 
+                ? "Admin account created and logged in successfully with Google"
+                : "Account created with Google. Please verify your email to continue.";
+            
             return res.status(201).json({
                 success: true,
-                message: "Account created with Google. Please verify your email to continue.",
+                message: successMessage,
                 user: {
                     ...user._doc,
                     password: undefined

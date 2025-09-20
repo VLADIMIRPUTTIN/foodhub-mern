@@ -77,11 +77,13 @@ const AdminRoute = ({ children }) => {
 const RedirectAuthenticatedUser = ({ children }) => {
     const { isAuthenticated, user } = useAuthStore();
 
-    if (isAuthenticated && user.isVerified) {
+    if (isAuthenticated && user?.isVerified) {
         // Redirect admin to admin dashboard, others to regular dashboard
         if (user.role === 'admin') {
+            console.log("Redirecting authenticated admin to admin dashboard");
             return <Navigate to='/admin-dashboard' replace />;
         }
+        console.log("Redirecting authenticated user to home");
         return <Navigate to='/' replace />;
     }
 
