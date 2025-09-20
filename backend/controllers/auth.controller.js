@@ -365,7 +365,6 @@ export const googleLogin = async (req, res) => {
         console.log("Google login attempt received");
         
         if (!credential) {
-            console.error("No Google credential provided");
             return res.status(400).json({ 
                 success: false, 
                 message: "No Google credential provided" 
@@ -388,25 +387,62 @@ export const googleLogin = async (req, res) => {
         console.log("User exists in database:", !!user);
         
         if (user) {
-            console.log("User verified status:", user.isVerified);
+            console.log("Existing user - checking verification status:", user.isVerified);
             
-            // If user exists but doesn't have a profile image, add the Google one
+            // Update profile image if not set
             if (!user.profileImage && googleProfileImage) {
                 user.profileImage = googleProfileImage;
-                console.log("Updated user profile with Google image");
+                await user.save();
+                console.log("Updated existing user with Google profile image");
             }
             
-            // If user exists but isn't verified, send a new verification code
+            // Check account status
+            if (user.status === "banned") {
+                return res.status(403).json({
+                    success: false,
+                    message: "Your account has been banned.",
+                    statusData: {
+                        status: 'banned',
+                        message: "Your account has been permanently banned from accessing FoodHub.",
+                        banReason: user.banReason,
+                        bannedAt: user.updatedAt
+                    }
+                });
+            }
+
+            if (user.status === "suspended") {
+                if (user.suspendedUntil && user.suspendedUntil > new Date()) {
+                    const timeRemaining = Math.ceil((user.suspendedUntil - new Date()) / 60000);
+                    return res.status(403).json({
+                        success: false,
+                        message: `Your account is suspended for ${timeRemaining} more minute(s).`,
+                        statusData: {
+                            status: 'suspended',
+                            message: `Your account is temporarily suspended.`,
+                            timeRemaining: timeRemaining,
+                            suspendedUntil: user.suspendedUntil
+                        }
+                    });
+                } else {
+                    // Suspension expired, reactivate
+                    user.status = "active";
+                    user.suspendedUntil = null;
+                    await user.save();
+                }
+            }
+
+            // Handle unverified existing user
             if (!user.isVerified) {
-                // Generate verification token
+                // Generate new verification code for existing unverified user
                 const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
                 user.verificationToken = verificationToken;
                 user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
                 await user.save();
                 
-                // FIX: Correct parameter order
+                // Send verification email
                 await sendVerificationEmail(user.email, user.name, verificationToken);
                 
+                // Generate token for the session
                 generateTokenAndSetCookie(res, user._id);
                 
                 return res.status(200).json({
@@ -419,8 +455,8 @@ export const googleLogin = async (req, res) => {
                 });
             }
             
-            // Update last login
-            user.lastLogin = Date.now();
+            // User is verified - complete login
+            user.lastLogin = new Date();
             await user.save();
             
             // Generate token and return user
@@ -428,7 +464,7 @@ export const googleLogin = async (req, res) => {
             
             return res.status(200).json({
                 success: true,
-                message: "Logged in successfully",
+                message: "Logged in successfully with Google",
                 user: {
                     ...user._doc,
                     password: undefined
@@ -436,6 +472,8 @@ export const googleLogin = async (req, res) => {
             });
         } else {
             // Create new user with Google data
+            console.log("Creating new user with Google data");
+            
             const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
             
             // Create a random password for Google users
@@ -449,10 +487,11 @@ export const googleLogin = async (req, res) => {
                 verificationToken,
                 verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
                 isVerified: false,
-                profileImage: googleProfileImage // Save the Google profile image URL
+                profileImage: googleProfileImage
             });
             
             await user.save();
+            console.log("New Google user created:", user.email);
             
             // Send verification email
             await sendVerificationEmail(user.email, user.name, verificationToken);

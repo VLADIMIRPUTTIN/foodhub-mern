@@ -76,13 +76,20 @@ app.use(cors({
             return callback(null, true);
         }
         
-        // For development, log the blocked origin
-        console.log("Blocked by CORS:", origin);
-        return callback(null, true); // Allow all origins in development
+        // For production, be more strict
+        if (process.env.NODE_ENV === "production") {
+            console.log("Blocked by CORS in production:", origin);
+            return callback(new Error('Not allowed by CORS'), false);
+        }
+        
+        // For development, allow all
+        console.log("Allowed in development:", origin);
+        return callback(null, true);
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    exposedHeaders: ['Set-Cookie']
 }));
 
 app.use(express.json({ limit: '10mb' }));

@@ -50,15 +50,20 @@ export const useAuthStore = create((set, get) => ({
                 set({
                     error: errorData.message,
                     isLoading: false,
-                    accountStatus: errorData.statusData, // Store the detailed status info
+                    accountStatus: errorData.statusData,
+                    isAuthenticated: false, // Make sure to set this to false
+                    user: null, // Clear user data
                 });
             } else {
                 set({
                     error: errorData?.message || "Login failed",
                     isLoading: false,
                     accountStatus: null,
+                    isAuthenticated: false,
+                    user: null,
                 });
             }
+            throw error; // Re-throw to handle in component
         }
     },
 

@@ -44,30 +44,30 @@ const LoginPage = () => {
             );
             
             console.log("Google login response received:", response.status);
+            console.log("Response data:", response.data);
             
             if (response.data.user) {
+                // Set user in auth store
                 setUser(response.data.user);
-                if (response.data.user.profileImage) {
-                    // Already set by backend, nothing to do
-                } else if (response.data.user.googleImage) {
-                    setUser(prev => ({
-                        ...prev,
-                        profileImage: response.data.user.googleImage
-                    }));
+                
+                // Check if user is verified
+                if (response.data.user.isVerified) {
+                    console.log("User is verified, redirecting to home");
+                    navigate('/');
+                } else {
+                    console.log("User needs verification, redirecting to verify-email");
+                    navigate('/verify-email');
                 }
+            } else {
+                throw new Error("No user data received from server");
             }
             
-            if (response.data.user && response.data.user.isVerified) {
-                // Use navigate instead of window.location for better state management
-                navigate('/');
-                // Force a reload only if needed
-                setTimeout(() => window.location.reload(), 100);
-            } else {
-                navigate('/verify-email');
-            }
         } catch (error) {
             console.error("Google login failed:", error);
-            if (error.response) {
+            if (error.response?.status === 403 && error.response?.data?.statusData) {
+                // Handle account status issues (banned/suspended)
+                setShowStatusModal(true);
+            } else if (error.response) {
                 console.error("Server response:", error.response.data);
                 toast.error(error.response.data.message || "Google login failed");
             } else {
