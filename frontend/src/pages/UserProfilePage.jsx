@@ -1,245 +1,242 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";-router-dom';
-import Navbar from "../pages/NavbarPage";thStore';
-import { useSocket } from '../context/SocketContext';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import CommunityRateRecipe from '../components/CommunityRateRecipe';
-import RatingModal from '../components/RatingModal';
-import "./SharedRecipePage.scss";cipessection/EditRecipePage';
+import Navbar from './NavbarPage';
+import { motion } from 'framer-motion';
+import axios from 'axios';
+import './UserProfilePage.scss';
+import EditRecipePage from '../recipessection/EditRecipePage';
 import { Share2, Trash2 } from "lucide-react";
-const SharedRecipePage = () => {-toast";
-    const [recipes, setRecipes] = useState([]);mDialog";
-    const [loading, setLoading] = useState(true);
-    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
-    const [selectedRecipeForRating, setSelectedRecipeForRating] = useState(null);
-    const navigate = useNavigate();s://i.ibb.co/WvG991xq/profile-default.png";
-    const { socket } = useSocket();
-    const { isAuthenticated } = useAuthStore();
+import { toast } from "react-hot-toast";
+import ConfirmDialog from "../components/ConfirmDialog";
+import Swal from 'sweetalert2';
+import { useSocket } from '../context/SocketContext';
+
+const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/WvG991xq/profile-default.png";
+
+const UserProfilePage = () => {
     const { user, logout, setUser, checkAuth, isCheckingAuth, isAuthenticated } = useAuthStore();
-    // Fetch shared recipes from the server
-    const fetchSharedRecipes = () => {
-        const baseURL = import.meta.env.MODE === "development"
-            ? "http://localhost:5000"teRecipes] = useState([]);
-            : "";teCount, setFavoriteCount] = useState(0);
-        t [isLoading, setIsLoading] = useState(true);
-        fetch(`${baseURL}/api/recipes/shared`)(false);
-            .then(res => res.json())= useState('recipes');
-            .then(data => {tForm] = useState({
-                if (Array.isArray(data.recipes)) {
-                    setRecipes(data.recipes);
-                } else if (Array.isArray(data.sharedRecipes)) {
-                    setRecipes(data.sharedRecipes);
-                } else { setImagePreview] = useState(null);
-                    setRecipes([]);itModal] = useState(false);
-                }cipeData, setEditRecipeData] = useState(null);
-                setLoading(false);Open] = useState(false);
-            })ipeToDelete, setRecipeToDelete] = useState(null);
-            .catch((error) => {g] = useState(false);
-                console.error('Error fetching shared recipes:', error);
-                setRecipes([]);
-                setLoading(false);c
-            });) => {
-    };  const initializeProfile = async () => {
-            try {
-    useEffect(() => { we're still checking auth, wait
-        fetchSharedRecipes();gAuth) {
-    }, []);         return;
-                }
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [userRecipes, setUserRecipes] = useState([]);
+    const [favoriteRecipes, setFavoriteRecipes] = useState([]);
+    const [favoriteCount, setFavoriteCount] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isEditing, setIsEditing] = useState(false);
+    const [activeTab, setActiveTab] = useState('recipes');
+    const [editForm, setEditForm] = useState({
+        email: user?.email || '',
+        bio: user?.bio || '',
+        profileImage: null
+    });
+    const [imagePreview, setImagePreview] = useState(null);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editRecipeData, setEditRecipeData] = useState(null);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [recipeToDelete, setRecipeToDelete] = useState(null);
+    const [deleting, setDeleting] = useState(false);
+    const { socket } = useSocket();
+
+    // Simplify the useEffect logic
     useEffect(() => {
-        if (socket) { not authenticated, redirect to login
-            const handleRecipeApproved = () => {
-                fetchSharedRecipes(););
-            };      return;
+        const initializeProfile = async () => {
+            try {
+                // If we're still checking auth, wait
+                if (isCheckingAuth) {
+                    return;
                 }
-            socket.on('recipeApproved', handleRecipeApproved);
+                
+                // If not authenticated, redirect to login
+                if (!isAuthenticated) {
+                    navigate('/login');
+                    return;
+                }
+                
                 // If authenticated but no user data, try to get it
-            return () => { {
-                socket.off('recipeApproved', handleRecipeApproved);
-            };      return;
-        }       }
-    }, [socket]);
+                if (!user) {
+                    await checkAuth();
+                    return;
+                }
+                
                 // If we have user data, fetch profile data
-    const getImageUrl = (recipe) => {;
-        // If no image URL provided, return placeholder
-        if (!recipe.imageUrl) {
-            return 'https://via.placeholder.com/300x200?text=No+Image';       if (location.state?.refreshRecipes) {
+                await fetchUserData();
+                
+                // Handle refresh flag from location state
+                if (location.state?.refreshRecipes) {
+                    setActiveTab('recipes');
+                }
+            } catch (error) {
+                console.error('Profile initialization error:', error);
+                // Only redirect on actual auth errors, not network errors
+                if (error.response?.status === 401) {
+                    navigate('/login');
+                }
+            }
+        };
+
+        initializeProfile();
+    }, [user, isAuthenticated, isCheckingAuth]); // Simplified dependencies
+
+    // Handle location state changes separately
+    useEffect(() => {
+        if (location.state?.refreshRecipes) {
+            setActiveTab('recipes');
         }
-        
-        // If it's already a complete URL (Cloudinary or other external), use it as is   } catch (error) {
-        if (recipe.imageUrl.startsWith('http://') || recipe.imageUrl.startsWith('https://')) {
-            return recipe.imageUrl;s, not network errors
+    }, [location.state]);
+
+    // Socket event handlers
+    useEffect(() => {
+        if (socket) {
+            const handleRecipeApproved = (data) => {
+                setUserRecipes(prev => 
+                    prev.map(recipe => 
+                        recipe._id === data.recipeId
+                            ? { ...recipe, shareStatus: 'approved', isShared: true }
+                            : recipe
+                    )
+                );
+            };
+
+            const handleRecipeRejected = (data) => {
+                setUserRecipes(prev => 
+                    prev.map(recipe => 
+                        recipe._id === data.recipeId
+                            ? { ...recipe, shareStatus: 'rejected', isShared: false, rejectionReason: data.reason }
+                            : recipe
+                    )
+                );
+            };
+
+            socket.on('recipeApproved', handleRecipeApproved);
+            socket.on('recipeRejected', handleRecipeRejected);
+
+            return () => {
+                socket.off('recipeApproved', handleRecipeApproved);
+                socket.off('recipeRejected', handleRecipeRejected);
+            };
         }
-                   navigate('/login');
-        // If it's a relative path (old local uploads), construct the full URL
-        const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "";      }
-        const cleanPath = recipe.imageUrl.startsWith('/') ? recipe.imageUrl : `/${recipe.imageUrl}`;        };
-        return `${baseURL}${cleanPath}`;
-    };
-isCheckingAuth]); // Simplified dependencies
-    const handleRateRecipe = (recipe, e) => {
-        e.stopPropagation();ion state changes separately
-        if (!isAuthenticated) {fect(() => {
-            navigate('/login'); {
-            return;;
-        }  }
-        setSelectedRecipeForRating(recipe);    }, [location.state]);
-        setIsRatingModalOpen(true);
-    };
+    }, [socket]);
 
-    const handleRatingModalClose = (updatedRecipe) => {if (socket) {
-        setIsRatingModalOpen(false);peApproved = (data) => {
-        setSelectedRecipeForRating(null);ev => 
-                   prev.map(recipe => 
-        if (updatedRecipe) {                  recipe._id === data.recipeId
-            fetchSharedRecipes();                            ? { ...recipe, shareStatus: 'approved', isShared: true }
+    const fetchUserData = async () => {
+        setIsLoading(true);
+        try {
+            await Promise.all([
+                fetchUserRecipes(),
+                fetchUserFavorites(),
+                fetchFavoriteCount()
+            ]);
+        } catch (error) {
+            console.error('Error fetching user data:', error);
+            // Don't logout on data fetch errors, just log them
+        } finally {
+            setIsLoading(false);
         }
     };
-          );
-    const handleCardClick = (recipeId) => {            };
-        navigate(`/recipe/${recipeId}`);
-    };  const handleRecipeRejected = (data) => {
-rRecipes(prev => 
-    return (
-        <>peId
-            <Navbar />: 'rejected', isShared: false, rejectionReason: data.reason }
-            <div className="shared-recipes-page">
-                <div className="page-container">
-                    <div className="community-header">
-                        <div className="header-badge">
-                            <i className="bx bx-group"></i>
-                            Community Showcase
-                        </div>Rejected', handleRecipeRejected);
-                        <h1>
-                            Discover <span className="highlight">Amazing</span> Recipes            return () => {
-                        </h1>peApproved', handleRecipeApproved);
-                    </div>jected);
 
-                    {loading ? (
-                        <div className="loading-container">
-                            <i className="bx bx-loader-alt loading-spinner"></i>
-                            Loading delicious recipes...
-                        </div>
-                    ) : recipes.length === 0 ? (
-                        <div className="no-recipes-enhanced">
-                            <div className="no-recipes-animation">
-                                <div className="chef-hat">
-                                    <i className="bx bx-restaurant"></i>
-                                </div>
-                                <div className="floating-ingredients">
-                                    <div className="ingredient-float ing-1">🥕</div>
-                                    <div className="ingredient-float ing-2">🍅</div>tch errors, just log them
-                                    <div className="ingredient-float ing-3">🧄</div>
-                                    <div className="ingredient-float ing-4">🌿</div>
-                                </div>
-                            </div>
-                            <div className="no-recipes-content">
-                                <h3 className="no-recipes-title">No Community Recipes Yet</h3>
-                                <p className="no-recipes-subtitle">
-                                    Be the first to share your culinary masterpiece with our community! .meta.env.MODE === "development" 
-                                    Create and share recipes to inspire fellow food enthusiasts.lhost:5000" 
-                                </p>
-                            </div>
-                        </div>
-                    ) : (pes/user`,
-                        <div className="recipes-grid">
-                            {recipes.map(recipe => (
-                                <div
-                                    key={recipe._id}
-                                    className="recipe-card"
-                                    onClick={() => handleCardClick(recipe._id)}
-                                    title="View full recipe"
-                                >
-                                    <div className="recipe-image">
-                                        <div className="community-badge">
-                                            <i className="bx bx-user"></i>
-                                            Community
-                                        </div>
-                                        <img
-                                            src={getImageUrl(recipe)}
-                                            alt={recipe.title || "Recipe"}
-                                            onError={e => {et(`${baseURL}/api/favorites`, {
-                                                e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
-                                            }}
-                                        />
-                                    </div>
-                                    <div className="recipe-content">nse.data.favorites);
-                                        <h3 className="recipe-title">{recipe.title}</h3>
-                                        <p className="recipe-desc">{recipe.description}</p>
-                                        
-                                        {/* Match RecipePage layout: category and rate button in same row */}
-                                        <div className="recipe-meta">
-                                            <div className="recipe-category">{recipe.category}</div>
-                                            <CommunityRateRecipe 
-                                                recipe={recipe}
-                                                onRateClick={handleRateRecipe}env.MODE === "development" 
-                                            />
-                                        </div>
-                                        
-                                        {/* Rating Display */}count`, {
-                                        {recipe.averageRating > 0 && (
-                                            <div className="recipe-rating-display">
-                                                <div className="stars">
-                                                    {[1, 2, 3, 4, 5].map(star => (
-                                                        <i 
-                                                            key={star}
-                                                            className={`bx ${star <= Math.round(recipe.averageRating) ? 'bxs-star' : 'bx-star'}`}
-                                                            style={{ color: '#CF996C' }}nt:', error);
-                                                        ></i>
-                                                    ))}
-                                                </div>
-                                                <span className="rating-text">
-                                                    {recipe.averageRating.toFixed(1)} ({recipe.ratings?.length || 0} {recipe.ratings?.length === 1 ? 'rating' : 'ratings'})
-                                                </span>
-                                            </div>
-                                        )}
-                                        
-                                        {/* Enhanced Author Info */}
-                                        <div className="recipe-meta author-meta">
-                                            <i className="bx bx-user-circle"></i>
-                                            <span>
-                                                {recipe.createdBy?.name
-                                                    ? recipe.createdBy.name
-                                                    : recipe.createdBy?.email
-                                                        ? recipe.createdBy.email.split('@')[0]
-                                                        : "Anonymous Chef"}
-                                            </span>
-                                        </div>
-                                        
-                                        {/* Additional Meta Information */}
-                                        <div className="recipe-meta-row">
-                                            {recipe.cookingTime && (
-                                                <div className="recipe-meta">
-                                                    <i className="bx bx-time"></i>
-                                                    <span>{recipe.cookingTime} mins</span>
-                                                </div>
-                                            )}
-                                            {recipe.createdAt && (
-                                                <div className="recipe-meta">
-                                                    <i className="bx bx-calendar"></i>
-                                                    <span>{new Date(recipe.createdAt).toLocaleDateString()}</span>
-                                                </div> {
-                                            )}
-                                        </div>
-                                    </div>null;
-                                </div>rm.profileImage) {
-                            ))}Image = await new Promise((resolve, reject) => {
-                        </div>  const reader = new FileReader();
-                    )}                    reader.onloadend = () => resolve(reader.result);
-                </div>or = reject;
-            </div>er.readAsDataURL(editForm.profileImage);
+    const fetchUserRecipes = async () => {
+        try {
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+                
+            const response = await axios.get(
+                `${baseURL}/api/recipes/user`,
+                { withCredentials: true }
+            );
+            
+            setUserRecipes(response.data.recipes || []);
+        } catch (error) {
+            console.error('Error fetching user recipes:', error);
+            setUserRecipes([]);
+        }
+    };
 
-            {/* Rating Modal */}
-            <RatingModal
-                isOpen={isRatingModalOpen}  bio: editForm.bio,
-                onClose={handleRatingModalClose}     profileImage: base64Image,
-                recipe={selectedRecipeForRating}      };
-            />          
-        </>            const baseURL = import.meta.env.MODE === "development" 
-    );ost:5000" 
+    const fetchUserFavorites = async () => {
+        try {
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+                
+            const response = await axios.get(`${baseURL}/api/favorites`, {
+                withCredentials: true
+            });
+            
+            if (response.data.success) {
+                setFavoriteRecipes(response.data.favorites);
+            }
+        } catch (error) {
+            console.error('Error fetching favorites:', error);
+        }
+    };
 
+    const fetchFavoriteCount = async () => {
+        try {
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+                
+            const response = await axios.get(`${baseURL}/api/favorites/count`, {
+                withCredentials: true
+            });
+            
+            if (response.data.success) {
+                setFavoriteCount(response.data.count);
+            }
+        } catch (error) {
+            console.error('Error fetching favorite count:', error);
+        }
+    };
 
+    const handleLogout = () => {
+        logout();
+        navigate('/');
+    };
 
-export default SharedRecipePage;};                : "";
+    const handleEditToggle = () => {
+        setIsEditing(!isEditing);
+        if (!isEditing) {
+            setEditForm({
+                email: user?.email || '',
+                bio: user?.bio || '',
+                profileImage: null
+            });
+            setImagePreview(null);
+        }
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setEditForm(prev => ({ ...prev, profileImage: file }));
+            
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSaveProfile = async (e) => {
+        e.preventDefault();
+        try {
+            let base64Image = null;
+            if (editForm.profileImage) {
+                base64Image = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(editForm.profileImage);
+                });
+            }
+            const payload = {
+                bio: editForm.bio,
+                profileImage: base64Image,
+            };
+            
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
                 
             const response = await axios.put(
                 `${baseURL}/api/users/profile`,
@@ -269,22 +266,13 @@ export default SharedRecipePage;};                : "";
         return user?.profileImage || DEFAULT_PROFILE_IMAGE;
     };
 
-    // FIXED: Updated function to properly handle Cloudinary URLs
     const getRecipeImageUrl = (imageUrl) => {
-        // If no image URL provided, return placeholder
-        if (!imageUrl) {
-            return 'https://via.placeholder.com/300x200?text=No+Image';
-        }
+        if (!imageUrl) return '/api/placeholder/200/150';
         
-        // If it's already a complete URL (Cloudinary or other external), use it as is
-        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-            return imageUrl;
-        }
+        if (imageUrl.startsWith('http')) return imageUrl;
         
-        // If it's a relative path (old local uploads), construct the full URL
         const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
-        const cleanPath = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
-        return `${baseURL}${cleanPath}`;
+        return `${baseURL}${imageUrl}`;
     };
 
     const formatDate = (date) => {
@@ -755,11 +743,20 @@ export default SharedRecipePage;};                : "";
                         {isEditing ? (
                             <form onSubmit={handleSaveProfile} className="edit-form">
                                 <div className="profile-image-section">
-                                            <i className="bx bx-camera"></i>lassName="profile-image-container">
-                                        </label>e" />
-                                        <input  <label htmlFor="profile-image-input" className="image-upload-btn">
-                                            id="profile-image-input"    </div>
-                                            type="file"nt">Click the camera icon to change your photo</p>
+                                    <div className="profile-image-container">
+                                        <img src={getProfileImageUrl()} alt="Profile" className="profile-image" />
+                                        <label htmlFor="profile-image-input" className="image-upload-btn">
+                                            <i className="bx bx-camera"></i>
+                                        </label>
+                                        <input
+                                            id="profile-image-input"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageChange}
+                                            style={{ display: 'none' }}
+                                        />
+                                    </div>
+                                    <p className="upload-hint">Click the camera icon to change your photo</p>
                                 </div>
                                 
                                 <div className="form-grid">
