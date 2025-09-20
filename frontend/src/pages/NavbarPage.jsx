@@ -24,9 +24,21 @@ const Navbar = () => {
     const handleLogout = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        console.log('Logout button clicked!');
+        
+        // Close menu first
         closeProfileMenu();
+        
+        // Disable button to prevent multiple clicks
+        e.target.disabled = true;
+        
+        // Show loading state
+        e.target.innerText = "Logging out...";
+        
+        // Call logout
         logout();
+        
+        // Use React Router navigation instead of page refresh
+        navigate('/login');
     };
 
     const handleViewProfile = (e) => {

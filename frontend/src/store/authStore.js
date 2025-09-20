@@ -93,33 +93,51 @@ export const useAuthStore = create((set, get) => ({
 
     logout: async () => {
         try {
-            await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
+            // Disconnect any active socket connections first
+            if (window.socket) {
+                window.socket.disconnect();
+            }
             
-            // Clear any localStorage items if they exist
+            // Call the logout endpoint
+            await axios.post(`${API_URL}/logout`, {}, { 
+                withCredentials: true 
+            });
+            
+            // Clear any localStorage items
             localStorage.removeItem('token');
+            localStorage.removeItem('authState');
             
-            // Clear the state
+            // Clear all auth state
             set({ 
                 user: null, 
                 isAuthenticated: false, 
                 error: null, 
                 isLoading: false,
-                accountStatus: null 
+                accountStatus: null,
+                message: null
             });
             
-            // Force a hard redirect to the login page to clear any cached state
-            window.location.href = '/login';
+            // Use navigate instead of window.location.href to prevent page refresh
+            // Import and use the navigate function from React Router
+            window.history.pushState({}, null, '/login');
+            
         } catch (error) {
             console.error("Logout error:", error);
-            // Still clear state and redirect even if the API call fails
+            
+            // Still clear state even if API call fails
+            localStorage.removeItem('token');
+            localStorage.removeItem('authState');
+            
             set({ 
                 user: null, 
                 isAuthenticated: false, 
                 error: null, 
                 isLoading: false,
-                accountStatus: null 
+                accountStatus: null,
+                message: null
             });
-            window.location.href = '/login';
+            
+            window.history.pushState({}, null, '/login');
         }
     },
 

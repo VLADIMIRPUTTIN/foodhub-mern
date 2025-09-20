@@ -1,11 +1,20 @@
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 
+// Add rate limiting for no-token logs
+let lastNoTokenLog = 0;
+const LOG_INTERVAL = 5000; // 5 seconds
+
 export const verifyToken = async (req, res, next) => {
     const token = req.cookies.token;
     
     if (!token) {
-        console.log("No token provided");
+        // Rate limit logging to prevent spam
+        const now = Date.now();
+        if (now - lastNoTokenLog > LOG_INTERVAL) {
+            console.log("No token provided");
+            lastNoTokenLog = now;
+        }
         return res.status(401).json({ 
             success: false, 
             message: "Unauthorized - no token provided" 

@@ -287,7 +287,17 @@ export const logout = async (req, res) => {
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         path: "/"
     });
-    res.status(200).json({ success: true, message: "Logged out successfully" });
+    
+    // Set cache control headers to prevent caching issues
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    res.status(200).json({ 
+        success: true, 
+        message: "Logged out successfully",
+        timestamp: new Date().getTime() // Add timestamp to prevent caching
+    });
 };
 
 export const forgotPassword = async (req, res) => {
