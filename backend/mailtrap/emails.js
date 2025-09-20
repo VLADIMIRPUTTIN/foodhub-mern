@@ -3,7 +3,7 @@ import { sender, resend } from "./resend.config.js";
 
 export const sendVerificationEmail = async (email, name, verificationCode) => {
     try {
-        console.log(`📧 Sending verification email to: ${email}`);
+        console.log(`📧 ATTEMPTING to send verification email to: ${email}`);
         console.log(`👤 Recipient name: ${name}`);
         console.log(`🔑 Verification code: ${verificationCode}`);
 
@@ -17,17 +17,23 @@ export const sendVerificationEmail = async (email, name, verificationCode) => {
             .replace(/{verificationCode}/g, verificationCode)
             .replace(/{profileImageSection}/g, profileImageSection);
 
-        const data = await resend.emails.send({
+        // Always use onboarding@resend.dev email
+        const response = await resend.emails.send({
             from: `${sender.name} <${sender.email}>`,
-            to: email, // Send to actual recipient
-            subject: `Verify Your FoodHub Account`,
+            to: email,
+            subject: `Your FoodHub Verification Code: ${verificationCode}`,
             html: htmlContent,
         });
 
-        console.log(`✅ Verification email sent to ${email}`);
-        return data;
+        if (response.error) {
+            console.error("❌ Resend API error:", response.error);
+            throw new Error(`Resend error: ${response.error.message}`);
+        }
+
+        console.log(`✅ Email accepted by Resend with ID: ${response.data?.id}`);
+        return response;
     } catch (error) {
-        console.error("❌ Error sending verification email:", error);
+        console.error("❌ ERROR SENDING EMAIL:", error);
         throw error;
     }
 };
