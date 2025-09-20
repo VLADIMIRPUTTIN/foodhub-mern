@@ -93,6 +93,9 @@ export const useAuthStore = create((set, get) => ({
 
     logout: async () => {
         try {
+            // Set logout flag BEFORE making the request
+            localStorage.setItem('loggedOut', 'true');
+            
             const baseURL = import.meta.env.MODE === "development" 
                 ? "http://localhost:5000" 
                 : "";
@@ -101,47 +104,36 @@ export const useAuthStore = create((set, get) => ({
                 withCredentials: true
             });
             
-            if (response.data.success) {
-                // Clear all auth state
-                set({ 
-                    user: null, 
-                    isAuthenticated: false, 
-                    isCheckingAuth: false 
-                });
-                
-                // Clear any local storage or session storage
-                localStorage.removeItem('auth-storage');
-                sessionStorage.clear();
-                
-                // Force reload to clear any cached data
-                window.location.reload();
-            }
-            localStorage.setItem('loggedOut', 'true');
-            
-            // Redirect to login page with regular navigate
-            window.location.href = '/login';
-        } catch (error) {
-            console.error("Logout error:", error);
-            
-            // Still clear state even if API call fails
-            localStorage.removeItem('token');
-            localStorage.removeItem('authState');
-            localStorage.removeItem('user');
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('authState');
-            sessionStorage.removeItem('user');
-            
+            // Clear all auth state
             set({ 
                 user: null, 
                 isAuthenticated: false, 
-                error: null, 
-                isLoading: false,
-                accountStatus: null,
-                message: null,
-                isCheckingAuth: false
+                isCheckingAuth: false,
+                error: null,
+                accountStatus: null
             });
             
-            window.location.href = '/login';
+            // Clear any storage
+            localStorage.removeItem('auth-storage');
+            sessionStorage.clear();
+            
+            // REMOVE the window.location.reload() - let React handle the state changes
+            console.log("Logout successful");
+            
+        } catch (error) {
+            console.error("Logout error:", error);
+            // Even if logout request fails, clear local state
+            localStorage.setItem('loggedOut', 'true');
+            set({ 
+                user: null, 
+                isAuthenticated: false, 
+                isCheckingAuth: false,
+                error: null,
+                accountStatus: null
+            });
+            localStorage.removeItem('auth-storage');
+            sessionStorage.clear();
+            // REMOVE the window.location.reload() here too
         }
     },
 

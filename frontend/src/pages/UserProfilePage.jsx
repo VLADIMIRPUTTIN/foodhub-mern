@@ -187,9 +187,23 @@ const UserProfilePage = () => {
         }
     };
 
-    const handleLogout = () => {
-        logout();
-        navigate('/');
+    const handleLogout = async () => {
+        try {
+            await logout();
+            
+            // Clear component state
+            setUserRecipes([]);
+            setFavoriteRecipes([]);
+            setFavoriteCount(0);
+            
+            // Navigate to home page - REMOVE the window.location.reload()
+            navigate('/', { replace: true });
+            
+        } catch (error) {
+            console.error("Logout error:", error);
+            // Even if logout fails, navigate away - REMOVE the window.location.reload()
+            navigate('/', { replace: true });
+        }
     };
 
     const handleEditToggle = () => {

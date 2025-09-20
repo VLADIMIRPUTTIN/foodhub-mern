@@ -101,7 +101,8 @@ function App() {
         if (loggedOut === 'true') {
             // If we just logged out, don't try to auto-authenticate
             localStorage.removeItem('loggedOut'); // Clear the flag
-            return; // Skip the checkAuth call
+            // Don't call checkAuth, just let the auth state remain false
+            return;
         }
         
         // Normal auth check for other cases
