@@ -38,29 +38,42 @@ const UserProfilePage = () => {
     const { socket } = useSocket();
 
     useEffect(() => {
-        // Check authentication first before fetching data
-        const verifyAndFetchData = async () => {
+        const initializeProfile = async () => {
             try {
-                // Verify authentication
-                await checkAuth();
+                // Don't check auth if we're already checking or if user is null but auth is loading
+                if (isCheckingAuth) return;
                 
-                // Only fetch data if user is authenticated
-                if (user) {
-                    await fetchUserData();
+                // If no user data, check authentication first
+                if (!user) {
+                    await checkAuth();
+                    return; // Let the next useEffect handle data fetching
                 }
+                
+                // If we have user data, fetch profile data
+                await fetchUserData();
                 
                 // Check if coming from recipe creation with refresh flag
                 if (location.state?.refreshRecipes) {
                     setActiveTab('recipes');
                 }
             } catch (error) {
-                console.error('Authentication failed:', error);
-                navigate('/login');
+                console.error('Profile initialization error:', error);
+                // Only redirect to login if it's actually an auth error
+                if (error.response?.status === 401 || error.response?.status === 403) {
+                    navigate('/login');
+                }
             }
         };
 
-        verifyAndFetchData();
-    }, [location.state, user, checkAuth, navigate]);
+        initializeProfile();
+    }, [user, isCheckingAuth]); // Remove checkAuth and navigate from dependencies
+
+    // Separate useEffect for handling location state changes
+    useEffect(() => {
+        if (location.state?.refreshRecipes) {
+            setActiveTab('recipes');
+        }
+    }, [location.state]);
 
     useEffect(() => {
         if (socket) {
@@ -597,7 +610,7 @@ const UserProfilePage = () => {
         setRecipeToDelete(null);
     };
 
-    // Add early return for authentication checking
+    // Replace the early return logic with this:
     if (isCheckingAuth) {
         return (
             <div className="user-profile-page">
@@ -606,7 +619,7 @@ const UserProfilePage = () => {
                     <div className="loading-spinner">
                         <i className="bx bx-loader-alt bx-spin"></i>
                     </div>
-                    <p>Verifying authentication...</p>
+                    <p>Loading your profile...</p>
                 </div>
             </div>
         );
@@ -619,8 +632,8 @@ const UserProfilePage = () => {
                 <div className="error-container">
                     <div className="error-message">
                         <i className="bx bx-error-circle"></i>
-                        <h2>Authentication Required</h2>
-                        <p>Please log in to view your profile.</p>
+                        <h2>Please Log In</h2>
+                        <p>You need to be logged in to view your profile.</p>
                         <button onClick={() => navigate('/login')} className="login-btn">
                             Go to Login
                         </button>

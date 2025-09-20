@@ -347,13 +347,62 @@ export const checkAuth = async (req, res) => {
     try {
         const user = await User.findById(req.userId).select("-password");
         if (!user) {
-            return res.status(400).json({ success: false, message: "User not found" });
+            return res.status(404).json({ 
+                success: false, 
+                message: "User not found" 
+            });
         }
 
-        res.status(200).json({ success: true, user });
+        // Check account status
+        if (user.status === "banned") {
+            res.clearCookie("token");
+            return res.status(403).json({
+                success: false,
+                message: "Your account has been banned.",
+                statusData: {
+                    status: 'banned',
+                    message: "Your account has been permanently banned from accessing FoodHub.",
+                    banReason: user.banReason,
+                    bannedAt: user.updatedAt
+                }
+            });
+        }
+
+        if (user.status === "suspended") {
+            if (user.suspendedUntil && user.suspendedUntil > new Date()) {
+                const timeRemaining = Math.ceil((user.suspendedUntil - new Date()) / 60000);
+                res.clearCookie("token");
+                return res.status(403).json({
+                    success: false,
+                    message: `Your account is suspended for ${timeRemaining} more minute(s).`,
+                    statusData: {
+                        status: 'suspended',
+                        message: `Your account is temporarily suspended.`,
+                        timeRemaining: timeRemaining,
+                        suspendedUntil: user.suspendedUntil
+                    }
+                });
+            } else {
+                // Suspension expired, reactivate
+                user.status = "active";
+                user.suspendedUntil = null;
+                await user.save();
+            }
+        }
+
+        res.status(200).json({ 
+            success: true, 
+            user: {
+                ...user._doc,
+                password: undefined
+            }
+        });
     } catch (error) {
         console.log("Error in checkAuth ", error);
-        res.status(400).json({ success: false, message: error.message });
+        res.status(500).json({ 
+            success: false, 
+            message: "Internal server error" 
+        });
     }
 };
 

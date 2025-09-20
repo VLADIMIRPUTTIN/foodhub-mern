@@ -128,23 +128,24 @@ export const useAuthStore = create((set, get) => ({
         }
     },
     checkAuth: async () => {
-        set({ isCheckingAuth: true, error: null });
+        set({ isCheckingAuth: true });
         try {
-            const res = await axios.get(`${API_URL}/check-auth`, { withCredentials: true });
-            set({
-                user: res.data.user,
-                isAuthenticated: true,
-                isCheckingAuth: false,
+            const response = await axios.get(`${API_URL}/check-auth`, {
+                withCredentials: true,
             });
-            return res.data.user;
-        } catch (error) {
             set({ 
-                error: null, 
-                isCheckingAuth: false, 
-                isAuthenticated: false, 
-                user: null 
+                user: response.data.user, 
+                isAuthenticated: true, 
+                isCheckingAuth: false 
             });
-            throw error;
+        } catch (error) {
+            console.log('Auth check failed:', error);
+            set({ 
+                user: null, 
+                isAuthenticated: false, 
+                isCheckingAuth: false 
+            });
+            throw error; // Re-throw so UserProfilePage can handle it
         }
     },
     forgotPassword: async (email) => {

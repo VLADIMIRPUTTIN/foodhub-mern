@@ -32,13 +32,13 @@ const Navbar = () => {
     const handleViewProfile = (e) => {
         e.stopPropagation();
         closeProfileMenu();
-        navigate('/profile');
+        navigate('/profile'); // Make sure this matches your route
     };
 
     // Handle profile image click
     const handleProfileImageClick = (e) => {
         e.stopPropagation();
-        navigate('/profile');
+        navigate('/profile'); // Make sure this matches your route
     };
 
     const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/WvG991xq/profile-default.png";
