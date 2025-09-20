@@ -10,7 +10,7 @@ import SideNavbar from '../components/SideNavbar';
 const Navbar = () => {
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
     const [isSideNavOpen, setIsSideNavOpen] = useState(false);
-    const { user, logout, isAuthenticated } = useAuthStore();
+    const { user, logout } = useAuthStore();
     const navigate = useNavigate();
 
     const toggleProfileMenu = () => {
@@ -32,22 +32,13 @@ const Navbar = () => {
     const handleViewProfile = (e) => {
         e.stopPropagation();
         closeProfileMenu();
-        // Only navigate if user is authenticated
-        if (isAuthenticated && user) {
-            navigate('/profile');
-        } else {
-            navigate('/login');
-        }
+        navigate('/profile'); // Make sure this matches your route
     };
 
+    // Handle profile image click
     const handleProfileImageClick = (e) => {
         e.stopPropagation();
-        // Only navigate if user is authenticated
-        if (isAuthenticated && user) {
-            navigate('/profile');
-        } else {
-            navigate('/login');
-        }
+        navigate('/profile'); // Make sure this matches your route
     };
 
     const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/WvG991xq/profile-default.png";
@@ -79,6 +70,7 @@ const Navbar = () => {
                         <i className="bx bx-book icon"></i>
                         <span className="text">Recipes</span>
                     </Link>
+                    {/* Show Shared Recipes to all users, not just authenticated ones */}
                     <Link to="/shared-recipes" className="nav-link">
                         <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}>
                             <Share2 size={20} style={{ verticalAlign: "middle" }} />
@@ -88,8 +80,9 @@ const Navbar = () => {
                 </div>
 
                 <div className="profile-section">
-                    {user && isAuthenticated ? (
+                    {user ? (
                         <>
+                            {/* Create Recipe button only visible on desktop */}
                             <div className="create-recipe desktop-only">
                                 <Link to="/create-recipe" className="create-link">
                                     <i className="bx bx-plus icon"></i>
@@ -151,20 +144,46 @@ const Navbar = () => {
                         </>
                     )}
                 </div>
-
-                {/* Mobile Menu Button */}
-                <div className="mobile-menu-btn" onClick={openSideNav}>
-                    <i className="bx bx-menu"></i>
-                </div>
             </div>
+
+            {/* Mobile SideNavbar Menu Button (top left) */}
+            {!isSideNavOpen && (
+                <button 
+                    className="side-nav-toggle mobile-only"
+                    onClick={openSideNav}
+                    aria-label="Open menu"
+                >
+                    <i 
+                        className="bx bx-menu icon"
+                    ></i>
+                </button>
+            )}
 
             {/* Mobile Side Navbar */}
             <SideNavbar 
-                isOpen={isSideNavOpen} 
+                open={isSideNavOpen}
                 onClose={closeSideNav}
-                handleProfileImageClick={handleProfileImageClick}
+                user={user}
                 getProfileImageUrl={getProfileImageUrl}
+                handleProfileImageClick={handleProfileImageClick}
             />
+
+            {/* Overlay for SideNavbar */}
+            {isSideNavOpen && (
+                <div 
+                    className="overlay-mobile" 
+                    onClick={closeSideNav}
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        background: "rgba(0,0,0,0.2)",
+                        zIndex: 1999
+                    }}
+                />
+            )}
         </>
     );
 };
