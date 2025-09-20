@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { GoogleLogin } from '@react-oauth/google';
 import axios from "axios";
-import AccountStatusModal from "../components/AccountStatusModal"; // Import the modal
+import AccountStatusModal from "../components/AccountStatusModal";
 import './LoginPage.scss';
 
 const LoginPage = () => {
@@ -22,7 +22,8 @@ const LoginPage = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            await login(email, password);
+            // Call login and get the returned user data
+            const userdata = await login(email, password);
             
             // Check if there's account status data and show modal
             if (accountStatus) {
@@ -30,18 +31,26 @@ const LoginPage = () => {
                 return;
             }
 
-            // Get the current user from auth store after login
-            const currentUser = useAuthStore.getState().user;
-            
-            // Check if user is admin and redirect accordingly
-            if (currentUser && currentUser.role === 'admin') {
-                console.log("Admin user detected, redirecting to admin dashboard");
-                navigate('/admin-dashboard');
-            } else if (currentUser && currentUser.isVerified) {
-                console.log("Regular user detected, redirecting to home");
-                navigate('/');
+            // Check if login was successful and user data is available
+            if (userdata) {
+                console.log("Login successful, user data:", userdata);
+                
+                // Check if user needs email verification
+                if (!userdata.isVerified) {
+                    console.log("User not verified, redirecting to verification");
+                    navigate('/verify-email');
+                    return;
+                }
+                
+                // Check user role and redirect accordingly
+                if (userdata.role === 'admin') {
+                    console.log("Admin user detected, redirecting to admin dashboard");
+                    navigate('/admin-dashboard');
+                } else {
+                    console.log("Regular user detected, redirecting to home");
+                    navigate('/');
+                }
             }
-            // If not verified, the login function should handle the redirect
             
         } catch (error) {
             console.error("Login failed:", error);
@@ -72,16 +81,22 @@ const LoginPage = () => {
                 
                 // Check user role and verification status
                 const user = response.data.user;
+                console.log("Google login - User role:", user.role, "Verified:", user.isVerified);
                 
+                // Check if user needs email verification first
+                if (!user.isVerified) {
+                    console.log("User needs verification, redirecting to verify-email");
+                    navigate('/verify-email');
+                    return;
+                }
+                
+                // User is verified, check role for redirect
                 if (user.role === 'admin') {
                     console.log("Admin user logged in with Google, redirecting to admin dashboard");
                     navigate('/admin-dashboard');
-                } else if (user.isVerified) {
+                } else {
                     console.log("Regular verified user, redirecting to home");
                     navigate('/');
-                } else {
-                    console.log("User needs verification, redirecting to verify-email");
-                    navigate('/verify-email');
                 }
             } else {
                 throw new Error("No user data received from server");
@@ -94,7 +109,6 @@ const LoginPage = () => {
                 setShowStatusModal(true);
             } else if (error.response) {
                 console.error("Server response:", error.response.data);
-                // Add toast import at the top if not already imported
                 console.error(error.response.data.message || "Google login failed");
             } else {
                 console.error("Google login failed. Please try again.");

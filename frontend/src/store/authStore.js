@@ -3,7 +3,7 @@ import axios from "axios";
 
 const API_URL = import.meta.env.MODE === "development" 
     ? "http://localhost:5000/api/auth" 
-    : "/api/auth"; // Use relative URL for production
+    : "/api/auth";
 
 axios.defaults.withCredentials = true;
 
@@ -26,7 +26,7 @@ export const useAuthStore = create((set, get) => ({
     isLoading: false,
     isCheckingAuth: true,
     message: null,
-    accountStatus: null, // Add this for account status
+    accountStatus: null,
 
     signup: async (email, password, name) => {
         set({ isLoading: true, error: null });
@@ -43,6 +43,7 @@ export const useAuthStore = create((set, get) => ({
             throw error;
         }
     },
+
     login: async (email, password) => {
         set({ isLoading: true, error: null, accountStatus: null });
         try {
@@ -57,6 +58,7 @@ export const useAuthStore = create((set, get) => ({
                 accountStatus: null,
             });
             
+            console.log("AuthStore - Login successful, returning user:", user);
             // Return user data so the component can handle routing
             return user;
             
@@ -103,6 +105,7 @@ export const useAuthStore = create((set, get) => ({
             });
         }
     },
+
     verifyEmail: async (code) => {
         console.log("🔍 VERIFY EMAIL - Frontend:");
         console.log(`📋 Code being sent: ${code}`);
@@ -133,6 +136,7 @@ export const useAuthStore = create((set, get) => ({
             throw error;
         }
     },
+
     checkAuth: async () => {
         set({ isCheckingAuth: true });
         try {
@@ -151,9 +155,10 @@ export const useAuthStore = create((set, get) => ({
                 isAuthenticated: false, 
                 isCheckingAuth: false 
             });
-            throw error; // Re-throw so UserProfilePage can handle it
+            throw error;
         }
     },
+
     forgotPassword: async (email) => {
         set({ isLoading: true, error: null });
         try {
@@ -167,6 +172,7 @@ export const useAuthStore = create((set, get) => ({
             throw error;
         }
     },
+
     resetPassword: async (token, password) => {
         set({ isLoading: true, error: null });
         try {
@@ -201,5 +207,6 @@ export const useAuthStore = create((set, get) => ({
             throw error;
         }
     },
+
     setUser: (user) => set({ user }),
 }));
