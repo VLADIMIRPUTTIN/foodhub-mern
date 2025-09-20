@@ -563,7 +563,7 @@ const UserProfilePage = () => {
                     });
                     
                     setUserRecipes(prev => 
-                        prev.map r => 
+                        prev.map(r => 
                             r._id === recipe._id 
                                 ? { ...r, shareStatus: 'not_shared', isShared: false } 
                                 : r
