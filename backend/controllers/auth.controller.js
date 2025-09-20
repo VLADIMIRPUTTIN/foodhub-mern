@@ -65,7 +65,8 @@ export const signup = async (req, res) => {
             console.log(`⏰ Token expires at: ${new Date(user.verificationTokenExpiresAt)}`);
             
             try {
-                await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
+                // FIX: Correct parameter order - email, name, verificationCode
+                await sendVerificationEmail(user.email, user.name, verificationToken);
                 console.log("✅ Verification email process completed");
             } catch (emailError) {
                 console.error("❌ Verification email process failed:", emailError.message);
@@ -387,7 +388,7 @@ export const googleLogin = async (req, res) => {
                 user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
                 await user.save();
                 
-                // Send verification email using Resend
+                // FIX: Correct parameter order
                 await sendVerificationEmail(user.email, user.name, verificationToken);
                 
                 generateTokenAndSetCookie(res, user._id);

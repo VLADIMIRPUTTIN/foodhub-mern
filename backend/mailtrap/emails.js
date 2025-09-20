@@ -1,5 +1,5 @@
-import { VERIFICATION_EMAIL_TEMPLATE } from "./emailTemplates.js";
-import { sender, resend } from "./resend.config.js";
+import { VERIFICATION_EMAIL_TEMPLATE, PASSWORD_RESET_REQUEST_TEMPLATE, PASSWORD_RESET_SUCCESS_TEMPLATE } from "./emailTemplates.js";
+import { transporter, sender } from "./gmail.config.js"; // Use Gmail instead of Resend
 
 export const sendVerificationEmail = async (email, name, verificationCode) => {
     try {
@@ -7,6 +7,7 @@ export const sendVerificationEmail = async (email, name, verificationCode) => {
         console.log("To:", email);
         console.log("From:", sender.email);
         console.log("Code:", verificationCode);
+        console.log("Name:", name);
 
         if (!email) {
             throw new Error("No email provided for verification");
@@ -21,15 +22,17 @@ export const sendVerificationEmail = async (email, name, verificationCode) => {
             .replace(/{verificationCode}/g, verificationCode)
             .replace(/{profileImageSection}/g, profileImageSection);
 
-        const data = await resend.emails.send({
+        // Use Gmail transporter instead of Resend
+        const mailOptions = {
             from: `${sender.name} <${sender.email}>`,
             to: email,
             subject: "Verify Your FoodHub Account",
             html: htmlContent,
-        });
+        };
 
-        console.log("Verification email sent successfully:", data);
-        return data;
+        const result = await transporter.sendMail(mailOptions);
+        console.log("Verification email sent successfully:", result);
+        return result;
     } catch (error) {
         console.error("Error sending verification email:", error);
         throw error;
@@ -42,59 +45,60 @@ export const sendWelcomeEmail = async (email, name) => {
             throw new Error("No email provided for welcome email");
         }
 
-        const data = await resend.emails.send({
+        const mailOptions = {
             from: `${sender.name} <${sender.email}>`,
             to: email,
             subject: "Welcome to FoodHub!",
             html: `<p>Hello ${name},</p><p>Thank you for joining FoodHub! We're excited to have you on board.</p>`,
-        });
+        };
 
-        console.log("Welcome email sent:", data);
-        return data;
+        const result = await transporter.sendMail(mailOptions);
+        console.log("Welcome email sent:", result);
+        return result;
     } catch (error) {
         console.error("Error sending welcome email:", error);
         throw error;
     }
 };
 
-export const sendPasswordResetEmail = async (email, name, resetToken) => {
+export const sendPasswordResetEmail = async (email, resetURL) => {
     try {
         if (!email) {
             throw new Error("No email provided for password reset");
         }
 
-        const resetUrl = `${process.env.CLIENT_URL || 'https://www.foodhubrecipe.shop'}/reset-password/${resetToken}`;
-        
-        const data = await resend.emails.send({
+        const mailOptions = {
             from: `${sender.name} <${sender.email}>`,
             to: email,
             subject: "Reset Your FoodHub Password",
-            html: `<p>Hello ${name},</p><p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`,
-        });
+            html: PASSWORD_RESET_REQUEST_TEMPLATE.replace("{resetURL}", resetURL),
+        };
 
-        console.log("Password reset email sent:", data);
-        return data;
+        const result = await transporter.sendMail(mailOptions);
+        console.log("Password reset email sent:", result);
+        return result;
     } catch (error) {
         console.error("Error sending password reset email:", error);
         throw error;
     }
 };
 
-export const sendResetSuccessEmail = async (email, name) => {
+export const sendResetSuccessEmail = async (email) => {
     try {
         if (!email) {
             throw new Error("No email provided for reset success email");
         }
 
-        const data = await resend.emails.send({
+        const mailOptions = {
             from: `${sender.name} <${sender.email}>`,
             to: email,
             subject: "Password Reset Successful",
-            html: `<p>Hello ${name},</p><p>Your password has been successfully reset. If you did not make this change, please contact our support team immediately.</p>`,
-        });
+            html: PASSWORD_RESET_SUCCESS_TEMPLATE,
+        };
 
-        console.log("Reset success email sent:", data);
-        return data;
+        const result = await transporter.sendMail(mailOptions);
+        console.log("Reset success email sent:", result);
+        return result;
     } catch (error) {
         console.error("Error sending reset success email:", error);
         throw error;
