@@ -280,62 +280,26 @@ export const login = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-    try {
-        // Clear cookie with all possible configurations
-        const cookieOptions = [
-            {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-                path: "/",
-                domain: process.env.NODE_ENV === "production" ? ".foodhubrecipe.shop" : undefined
-            },
-            {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-                path: "/"
-            },
-            // Additional fallback for local development
-            {
-                httpOnly: true,
-                secure: false,
-                sameSite: "lax",
-                path: "/"
-            }
-        ];
-
-        // Clear cookie with multiple configurations
-        cookieOptions.forEach(options => {
-            res.clearCookie("token", options);
-        });
-        
-        // Set comprehensive cache control headers
-        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-        res.setHeader('Surrogate-Control', 'no-store');
-        
-        // Clear site data (supported browsers only)
-        if (process.env.NODE_ENV === "production") {
-            res.setHeader('Clear-Site-Data', '"cache", "cookies", "storage"');
-        }
-        
-        // Return success response
-        res.status(200).json({ 
-            success: true, 
-            message: "Logged out successfully",
-            timestamp: new Date().getTime(),
-            loggedOut: true
-        });
-        
-    } catch (error) {
-        console.error("Logout error:", error);
-        res.status(500).json({ 
-            success: false, 
-            message: "Error during logout" 
-        });
-    }
+    // Clear the cookie with EXACTLY the same settings used when creating it
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        path: "/"
+    });
+    
+    // Add cache control headers to prevent browser caching
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+    
+    // Return success
+    res.status(200).json({ 
+        success: true, 
+        message: "Logged out successfully",
+        timestamp: new Date().getTime() // Add timestamp to prevent caching
+    });
 };
 
 export const forgotPassword = async (req, res) => {

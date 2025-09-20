@@ -93,9 +93,6 @@ export const useAuthStore = create((set, get) => ({
 
     logout: async () => {
         try {
-            // Set logout flag BEFORE making the request
-            localStorage.setItem('loggedOut', 'true');
-            
             const baseURL = import.meta.env.MODE === "development" 
                 ? "http://localhost:5000" 
                 : "";
@@ -104,35 +101,32 @@ export const useAuthStore = create((set, get) => ({
                 withCredentials: true
             });
             
-            // Clear all auth state
-            set({ 
-                user: null, 
-                isAuthenticated: false, 
-                isCheckingAuth: false,
-                error: null,
-                accountStatus: null
-            });
-            
-            // Clear any storage
-            localStorage.removeItem('auth-storage');
-            sessionStorage.clear();
-            
-            // Don't force reload, let the app handle the state change naturally
-            console.log("Logout successful");
-            
+            if (response.data.success) {
+                // Clear all auth state
+                set({ 
+                    user: null, 
+                    isAuthenticated: false, 
+                    isCheckingAuth: false 
+                });
+                
+                // Clear any local storage or session storage
+                localStorage.removeItem('auth-storage');
+                sessionStorage.clear();
+                
+                // Force reload to clear any cached data
+                window.location.reload();
+            }
         } catch (error) {
             console.error("Logout error:", error);
             // Even if logout request fails, clear local state
-            localStorage.setItem('loggedOut', 'true');
             set({ 
                 user: null, 
                 isAuthenticated: false, 
-                isCheckingAuth: false,
-                error: null,
-                accountStatus: null
+                isCheckingAuth: false 
             });
             localStorage.removeItem('auth-storage');
             sessionStorage.clear();
+            window.location.reload();
         }
     },
 
@@ -169,62 +163,51 @@ export const useAuthStore = create((set, get) => ({
 
     checkAuth: async () => {
         try {
-            set({ isCheckingAuth: true });
-            
-            // Check if user just logged out
+            // Check if we're in a "just logged out" state by checking localStorage
             const loggedOut = localStorage.getItem('loggedOut');
             
             if (loggedOut === 'true') {
-                // Clear the logout flag and don't authenticate
-                localStorage.removeItem('loggedOut');
+                // If we just logged out, don't try to auto-authenticate
+                localStorage.removeItem('loggedOut'); // Clear the flag
                 set({ 
                     user: null, 
                     isAuthenticated: false, 
                     isCheckingAuth: false,
-                    error: null,
-                    accountStatus: null
+                    error: null
                 });
                 return;
             }
             
-            // Try to authenticate with existing cookie
-            const response = await axios.get(`${API_URL}/check-auth`, {
+            set({ isCheckingAuth: true });
+            
+            // Continue with normal auth check
+            const { data } = await axios.get(`${API_URL}/check-auth`, {
                 withCredentials: true
             });
             
-            if (response.data.success) {
+            if (data.success) {
                 set({ 
-                    user: response.data.user, 
+                    user: data.user, 
                     isAuthenticated: true, 
                     isCheckingAuth: false,
-                    error: null,
-                    accountStatus: null
+                    error: null
                 });
             } else {
                 set({ 
                     user: null, 
                     isAuthenticated: false, 
                     isCheckingAuth: false,
-                    error: null,
-                    accountStatus: null
+                    error: null
                 });
             }
         } catch (error) {
-            console.log("Auth check failed:", error.response?.status);
-            
-            // Clear everything on auth failure
+            // If auth check fails, ensure user is logged out
             set({ 
                 user: null, 
                 isAuthenticated: false, 
                 isCheckingAuth: false,
-                error: null,
-                accountStatus: null
+                error: "Failed to verify authentication" 
             });
-            
-            // If it's a 401/403, user needs to login again
-            if (error.response?.status === 401 || error.response?.status === 403) {
-                localStorage.setItem('loggedOut', 'true');
-            }
         }
     },
 
