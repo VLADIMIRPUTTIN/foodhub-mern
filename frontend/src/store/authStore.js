@@ -116,17 +116,32 @@ export const useAuthStore = create((set, get) => ({
                 // Force reload to clear any cached data
                 window.location.reload();
             }
+            localStorage.setItem('loggedOut', 'true');
+            
+            // Redirect to login page with regular navigate
+            window.location.href = '/login';
         } catch (error) {
             console.error("Logout error:", error);
-            // Even if logout request fails, clear local state
+            
+            // Still clear state even if API call fails
+            localStorage.removeItem('token');
+            localStorage.removeItem('authState');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('authState');
+            sessionStorage.removeItem('user');
+            
             set({ 
                 user: null, 
                 isAuthenticated: false, 
-                isCheckingAuth: false 
+                error: null, 
+                isLoading: false,
+                accountStatus: null,
+                message: null,
+                isCheckingAuth: false
             });
-            localStorage.removeItem('auth-storage');
-            sessionStorage.clear();
-            window.location.reload();
+            
+            window.location.href = '/login';
         }
     },
 
