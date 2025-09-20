@@ -1,9 +1,9 @@
-import { motion } from "framer-motion";
-import { Loader } from "lucide-react";
 import { useState } from "react";
+import { motion } from "framer-motion";
+import Input from "../components/Input";
 import { Link, useNavigate } from "react-router-dom";
 import PasswordStrengthMeter from "../components/PasswordStrengthMeter";
-import { useAuthStore } from "../store/authStore";
+import { useAuthStore } from "../store/authStore"; // This should work now
 import { GoogleLogin } from '@react-oauth/google';
 import axios from "axios";
 import './SignUpPage.scss'; // Import the SCSS file for styling

@@ -1,25 +1,11 @@
 import { create } from "zustand";
 import axios from "axios";
 
-const API_URL = import.meta.env.MODE === "development" 
-    ? "http://localhost:5000/api/auth" 
-    : "/api/auth"; // Use relative URL for production
+const API_URL = import.meta.env.MODE === "development" ? "http://localhost:5000/api/auth" : "/api/auth";
 
 axios.defaults.withCredentials = true;
 
-// Add axios interceptor to handle 401 responses
-axios.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            // Clear auth state and redirect to login
-            useAuthStore.getState().logout();
-        }
-        return Promise.reject(error);
-    }
-);
-
-const useAuthStore = create((set, get) => ({
+export const useAuthStore = create((set, get) => ({
     user: null,
     isAuthenticated: false,
     error: null,
@@ -37,18 +23,18 @@ const useAuthStore = create((set, get) => ({
     signup: async (email, password, name) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await axios.post(`${API_URL}/signup`, { email, password, name });
-            set({ 
-                user: response.data.user, 
-                isAuthenticated: true, 
-                isLoading: false,
-                message: response.data.message 
+            const response = await axios.post(`${API_URL}/signup`, {
+                email,
+                password,
+                name,
             });
+            set({ user: response.data.user, isAuthenticated: true, isLoading: false });
         } catch (error) {
             set({ error: error.response.data.message || "Error signing up", isLoading: false });
             throw error;
         }
     },
+
     login: async (email, password) => {
         set({ isLoading: true, error: null, accountStatus: null });
         try {
@@ -91,8 +77,6 @@ const useAuthStore = create((set, get) => ({
         }
     },
 
-    clearAccountStatus: () => set({ accountStatus: null }),
-
     logout: async () => {
         try {
             await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
@@ -109,38 +93,21 @@ const useAuthStore = create((set, get) => ({
             });
         }
     },
+
     verifyEmail: async (code) => {
-        console.log("🔍 VERIFY EMAIL - Frontend:");
-        console.log(`📋 Code being sent: ${code}`);
-        console.log(`📋 Code length: ${code?.length}`);
-        
         set({ isLoading: true, error: null });
         try {
             const response = await axios.post(`${API_URL}/verify-email`, { code });
-            console.log("✅ Verification response:", response.data);
-            
-            set({ 
-                user: response.data.user, 
-                isAuthenticated: true, 
-                isLoading: false,
-                error: null 
-            });
+            set({ user: response.data.user, isAuthenticated: true, isLoading: false });
             return response.data;
         } catch (error) {
-            console.error("❌ Verification error:", error);
-            console.error("❌ Error response:", error.response?.data);
-            console.error("❌ Error status:", error.response?.status);
-            
-            const errorMessage = error.response?.data?.message || "Error verifying email";
-            set({ 
-                error: errorMessage, 
-                isLoading: false 
-            });
+            set({ error: error.response.data.message || "Error verifying email", isLoading: false });
             throw error;
         }
     },
+
     checkAuth: async () => {
-        set({ isCheckingAuth: true });
+        set({ isCheckingAuth: true, error: null });
         try {
             const response = await axios.get(`${API_URL}/check-auth`, {
                 withCredentials: true,
@@ -150,6 +117,7 @@ const useAuthStore = create((set, get) => ({
                 isAuthenticated: true, 
                 isCheckingAuth: false 
             });
+            return response.data.user;
         } catch (error) {
             console.log('Auth check failed:', error);
             set({ 
@@ -157,9 +125,10 @@ const useAuthStore = create((set, get) => ({
                 isAuthenticated: false, 
                 isCheckingAuth: false 
             });
-            throw error; // Re-throw so UserProfilePage can handle it
+            throw error;
         }
     },
+
     forgotPassword: async (email) => {
         set({ isLoading: true, error: null });
         try {
@@ -173,6 +142,7 @@ const useAuthStore = create((set, get) => ({
             throw error;
         }
     },
+
     resetPassword: async (token, password) => {
         set({ isLoading: true, error: null });
         try {
@@ -187,20 +157,18 @@ const useAuthStore = create((set, get) => ({
         }
     },
 
-    // Admin functions
-    createAdmin: async () => {
-        set({ isLoading: true, error: null });
-        try {
-            const response = await axios.post(`${API_URL}/create-admin`);
-            set({ message: response.data.message, isLoading: false });
-            return response.data;
-        } catch (error) {
-            set({
-                isLoading: false,
-                error: error.response.data.message || "Error creating admin",
-            });
-            throw error;
-        }
+    setUser: (user) => {
+        set({ user, isAuthenticated: !!user });
     },
-    setUser: (user) => set({ user }),
+
+    clearError: () => {
+        set({ error: null });
+    },
+
+    clearAccountStatus: () => {
+        set({ accountStatus: null });
+    },
 }));
+
+// Add default export as well for compatibility
+export default useAuthStore;
