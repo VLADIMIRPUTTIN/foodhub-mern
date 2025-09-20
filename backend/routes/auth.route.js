@@ -50,4 +50,18 @@ router.get("/test-email", async (req, res) => {
     }
 });
 
+router.get("/debug-session", (req, res) => {
+    try {
+        res.json({
+            cookies: req.cookies,
+            hasToken: !!req.cookies.token,
+            environment: process.env.NODE_ENV,
+            clientUrl: process.env.CLIENT_URL,
+            serverDomain: req.get('host')
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 export default router;

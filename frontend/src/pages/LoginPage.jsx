@@ -30,29 +30,33 @@ const LoginPage = () => {
 
     const handleGoogleLogin = async (credentialResponse) => {
         try {
+            const API_URL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000/api/auth" 
+                : "https://www.foodhubrecipe.shop/api/auth";
+                    
             const response = await axios.post(
-                `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/auth/google-login" : "/api/auth/google-login"}`,
+                `${API_URL}/google-login`,
                 { credential: credentialResponse.credential },
                 { withCredentials: true }
             );
+            
             if (response.data.user) {
                 setUser(response.data.user);
-                if (response.data.user.profileImage) {
-                    // Already set by backend, nothing to do
-                } else if (response.data.user.googleImage) {
-                    setUser(prev => ({
-                        ...prev,
-                        profileImage: response.data.user.googleImage
-                    }));
+                
+                if (response.data.user.isVerified) {
+                    // No need to call login again - the backend already set the cookie
+                    if (response.data.user.role === 'admin') {
+                        window.location.href = '/admin-dashboard';
+                    } else {
+                        window.location.href = '/';
+                    }
+                } else {
+                    window.location.href = "/verify-email";
                 }
             }
-            if (response.data.user && response.data.user.isVerified) {
-                window.location.reload();
-            } else {
-                window.location.href = "/verify-email";
-            }
         } catch (error) {
-            alert("Google login failed");
+            console.error("Google login error:", error);
+            alert("Google login failed: " + (error.response?.data?.message || error.message));
         }
     };
 
