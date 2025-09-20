@@ -3,7 +3,7 @@ import axios from "axios";
 
 const API_URL = import.meta.env.MODE === "development" 
     ? "http://localhost:5000/api/auth" 
-    : "https://foodhub-mern-production.up.railway.app/api/auth";
+    : "https://www.foodhubrecipe.shop/api/auth";  // Updated to use your domain
 
 axios.defaults.withCredentials = true;
 

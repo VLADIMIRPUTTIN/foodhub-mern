@@ -64,4 +64,24 @@ router.get("/debug-session", (req, res) => {
     }
 });
 
+// Add this new route for debugging auth issues
+router.get("/debug-auth", (req, res) => {
+    try {
+        const token = req.cookies.token;
+        res.json({
+            success: true,
+            hasToken: !!token,
+            tokenValue: token ? "Token exists" : "No token",
+            cookies: req.cookies,
+            headers: {
+                origin: req.headers.origin,
+                host: req.headers.host,
+                referer: req.headers.referer
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 export default router;

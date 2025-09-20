@@ -8,9 +8,9 @@ export const generateTokenAndSetCookie = (res, userId) => {
     res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "lax", // Change from "strict" to "lax" for better compatibility
+        sameSite: "lax", 
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        domain: process.env.NODE_ENV === "production" ? ".foodhubrecipe.shop" : undefined // Optional
+        domain: process.env.NODE_ENV === "production" ? "foodhubrecipe.shop" : undefined // Removed the leading dot
     });
 
     return token;
