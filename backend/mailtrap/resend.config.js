@@ -3,12 +3,13 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Create Resend instance with the API key from your environment variables
 const apiKey = process.env.RESEND_API_KEY;
 export const resend = new Resend(apiKey);
 
 export const sender = {
-    email: `onboarding@resend.dev`, // Use this for testing
+    email: process.env.VERIFIED_DOMAIN === 'true' 
+        ? `noreply@${process.env.EMAIL_DOMAIN}` 
+        : `onboarding@resend.dev`,
     name: "FoodHub",
 };
 
@@ -18,8 +19,8 @@ export const testResendConnection = async () => {
         const data = await resend.emails.send({
             from: `${sender.name} <${sender.email}>`,
             to: "yakabukosama@gmail.com", 
-            subject: "Test Email",
-            html: "<p>This is a test email to verify Resend is working.</p>",
+            subject: "Test Email from FoodHub Domain",
+            html: `<p>This is a test email from your verified domain: ${sender.email}</p>`,
         });
         console.log("Test email sent successfully:", data);
         return data;
