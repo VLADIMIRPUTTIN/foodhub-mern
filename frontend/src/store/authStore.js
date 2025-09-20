@@ -93,40 +93,43 @@ export const useAuthStore = create((set, get) => ({
 
     logout: async () => {
         try {
-            // Disconnect any active socket connections first
-            if (window.socket) {
-                window.socket.disconnect();
-            }
-            
             // Call the logout endpoint
-            await axios.post(`${API_URL}/logout`, {}, { 
-                withCredentials: true 
-            });
+            await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
             
-            // Clear any localStorage items
+            // Clear any localStorage items that might be persisting state
             localStorage.removeItem('token');
             localStorage.removeItem('authState');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('authState');
+            sessionStorage.removeItem('user');
             
-            // Clear all auth state
+            // Clear all auth state in the store
             set({ 
                 user: null, 
                 isAuthenticated: false, 
                 error: null, 
                 isLoading: false,
                 accountStatus: null,
-                message: null
+                message: null,
+                isCheckingAuth: false // Important: set this to false to prevent auto-login
             });
             
-            // Use navigate instead of window.location.href to prevent page refresh
-            // Import and use the navigate function from React Router
-            window.history.pushState({}, null, '/login');
+            // Set a flag that we just logged out
+            localStorage.setItem('loggedOut', 'true');
             
+            // Redirect to login page with regular navigate
+            window.location.href = '/login';
         } catch (error) {
             console.error("Logout error:", error);
             
             // Still clear state even if API call fails
             localStorage.removeItem('token');
             localStorage.removeItem('authState');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('authState');
+            sessionStorage.removeItem('user');
             
             set({ 
                 user: null, 
@@ -134,10 +137,11 @@ export const useAuthStore = create((set, get) => ({
                 error: null, 
                 isLoading: false,
                 accountStatus: null,
-                message: null
+                message: null,
+                isCheckingAuth: false
             });
             
-            window.history.pushState({}, null, '/login');
+            window.location.href = '/login';
         }
     },
 
@@ -173,25 +177,52 @@ export const useAuthStore = create((set, get) => ({
     },
 
     checkAuth: async () => {
-        set({ isCheckingAuth: true });
         try {
-            const response = await axios.get(`${API_URL}/check-auth`, {
-                withCredentials: true,
+            // Check if we're in a "just logged out" state by checking localStorage
+            const loggedOut = localStorage.getItem('loggedOut');
+            
+            if (loggedOut === 'true') {
+                // If we just logged out, don't try to auto-authenticate
+                localStorage.removeItem('loggedOut'); // Clear the flag
+                set({ 
+                    user: null, 
+                    isAuthenticated: false, 
+                    isCheckingAuth: false,
+                    error: null
+                });
+                return;
+            }
+            
+            set({ isCheckingAuth: true });
+            
+            // Continue with normal auth check
+            const { data } = await axios.get(`${API_URL}/check-auth`, {
+                withCredentials: true
             });
-            set({ 
-                user: response.data.user, 
-                isAuthenticated: true, 
-                isCheckingAuth: false 
-            });
-            return response.data.user;
+            
+            if (data.success) {
+                set({ 
+                    user: data.user, 
+                    isAuthenticated: true, 
+                    isCheckingAuth: false,
+                    error: null
+                });
+            } else {
+                set({ 
+                    user: null, 
+                    isAuthenticated: false, 
+                    isCheckingAuth: false,
+                    error: null
+                });
+            }
         } catch (error) {
-            console.log('Auth check failed:', error);
+            // If auth check fails, ensure user is logged out
             set({ 
                 user: null, 
                 isAuthenticated: false, 
-                isCheckingAuth: false 
+                isCheckingAuth: false,
+                error: "Failed to verify authentication" 
             });
-            throw error;
         }
     },
 

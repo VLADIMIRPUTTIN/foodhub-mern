@@ -280,7 +280,7 @@ export const login = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-    // Clear the cookie with the same settings used when creating it
+    // Clear the cookie with EXACTLY the same settings used when creating it
     res.clearCookie("token", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -288,11 +288,13 @@ export const logout = async (req, res) => {
         path: "/"
     });
     
-    // Set cache control headers to prevent caching issues
+    // Add cache control headers to prevent browser caching
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
     
+    // Return success
     res.status(200).json({ 
         success: true, 
         message: "Logged out successfully",

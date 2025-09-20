@@ -95,7 +95,20 @@ function App() {
     const [globalAccountStatus, setGlobalAccountStatus] = useState(null);
 
     useEffect(() => {
-        checkAuth();
+        // Check if we just logged out
+        const loggedOut = localStorage.getItem('loggedOut');
+        
+        if (loggedOut === 'true') {
+            // If we just logged out, don't try to auto-authenticate
+            localStorage.removeItem('loggedOut'); // Clear the flag
+            return; // Skip the checkAuth call
+        }
+        
+        // Normal auth check for other cases
+        checkAuth().catch(err => {
+            console.log('Initial auth check failed:', err);
+        });
+        
         setupAxiosInterceptors(setGlobalAccountStatus);
     }, [checkAuth]);
 
