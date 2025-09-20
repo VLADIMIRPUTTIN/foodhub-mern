@@ -93,37 +93,25 @@ export const useAuthStore = create((set, get) => ({
 
     logout: async () => {
         try {
-            // Set logout flag BEFORE making the request
+            // Set logout flag FIRST before any async operations
             localStorage.setItem('loggedOut', 'true');
             
             const baseURL = import.meta.env.MODE === "development" 
                 ? "http://localhost:5000" 
                 : "";
-                
-            const response = await axios.post(`${baseURL}/api/auth/logout`, {}, {
+            
+            // Call logout endpoint to clear server-side cookie    
+            await axios.post(`${baseURL}/api/auth/logout`, {}, {
                 withCredentials: true
             });
             
-            // Clear all auth state
-            set({ 
-                user: null, 
-                isAuthenticated: false, 
-                isCheckingAuth: false,
-                error: null,
-                accountStatus: null
-            });
-            
-            // Clear any storage
-            localStorage.removeItem('auth-storage');
-            sessionStorage.clear();
-            
-            // REMOVE the window.location.reload() - let React handle the state changes
-            console.log("Logout successful");
+            console.log("Server logout successful");
             
         } catch (error) {
-            console.error("Logout error:", error);
-            // Even if logout request fails, clear local state
-            localStorage.setItem('loggedOut', 'true');
+            console.error("Server logout failed:", error);
+            // Even if server logout fails, we still want to logout locally
+        } finally {
+            // Always clear local state regardless of server response
             set({ 
                 user: null, 
                 isAuthenticated: false, 
@@ -131,9 +119,15 @@ export const useAuthStore = create((set, get) => ({
                 error: null,
                 accountStatus: null
             });
+            
+            // Clear all possible storage
             localStorage.removeItem('auth-storage');
             sessionStorage.clear();
-            // REMOVE the window.location.reload() here too
+            
+            // Double-check the logout flag is set
+            localStorage.setItem('loggedOut', 'true');
+            
+            console.log("Local logout completed");
         }
     },
 
@@ -170,51 +164,60 @@ export const useAuthStore = create((set, get) => ({
 
     checkAuth: async () => {
         try {
-            // Check if we're in a "just logged out" state by checking localStorage
+            set({ isCheckingAuth: true });
+            
+            // Check if user intentionally logged out
             const loggedOut = localStorage.getItem('loggedOut');
             
             if (loggedOut === 'true') {
-                // If we just logged out, don't try to auto-authenticate
-                localStorage.removeItem('loggedOut'); // Clear the flag
+                // User logged out, don't try to authenticate
+                localStorage.removeItem('loggedOut');
                 set({ 
                     user: null, 
                     isAuthenticated: false, 
                     isCheckingAuth: false,
-                    error: null
+                    error: null,
+                    accountStatus: null
                 });
                 return;
             }
             
-            set({ isCheckingAuth: true });
-            
-            // Continue with normal auth check
-            const { data } = await axios.get(`${API_URL}/check-auth`, {
+            const response = await axios.get(`${API_URL}/check-auth`, {
                 withCredentials: true
             });
             
-            if (data.success) {
+            if (response.data.success) {
                 set({ 
-                    user: data.user, 
+                    user: response.data.user, 
                     isAuthenticated: true, 
                     isCheckingAuth: false,
-                    error: null
+                    error: null,
+                    accountStatus: null
                 });
             } else {
                 set({ 
                     user: null, 
                     isAuthenticated: false, 
                     isCheckingAuth: false,
-                    error: null
+                    error: null,
+                    accountStatus: null
                 });
             }
         } catch (error) {
-            // If auth check fails, ensure user is logged out
+            console.log("Auth check failed:", error.response?.status);
+            
             set({ 
                 user: null, 
                 isAuthenticated: false, 
                 isCheckingAuth: false,
-                error: "Failed to verify authentication" 
+                error: null,
+                accountStatus: null
             });
+            
+            // If server says unauthorized, user needs to login again
+            if (error.response?.status === 401 || error.response?.status === 403) {
+                localStorage.setItem('loggedOut', 'true');
+            }
         }
     },
 

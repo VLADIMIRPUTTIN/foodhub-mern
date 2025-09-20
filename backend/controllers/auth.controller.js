@@ -280,14 +280,58 @@ export const login = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-    // Clear the cookie with the same settings used when creating it
-    res.clearCookie("token", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        path: "/"
-    });
-    res.status(200).json({ success: true, message: "Logged out successfully" });
+    try {
+        console.log("Logout request received");
+        
+        // Clear cookie with multiple configurations to ensure removal
+        const cookieConfigs = [
+            {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+                path: "/",
+                domain: process.env.NODE_ENV === "production" ? ".foodhubrecipe.shop" : undefined
+            },
+            {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+                path: "/"
+            },
+            // Fallback for development
+            {
+                httpOnly: true,
+                secure: false,
+                sameSite: "lax",
+                path: "/"
+            }
+        ];
+
+        // Clear with all configurations
+        cookieConfigs.forEach(config => {
+            res.clearCookie("token", config);
+        });
+
+        // Set response headers to prevent caching
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+
+        console.log("Logout successful, cookies cleared");
+
+        res.status(200).json({ 
+            success: true, 
+            message: "Logged out successfully",
+            timestamp: Date.now()
+        });
+        
+    } catch (error) {
+        console.error("Logout error:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Error during logout" 
+        });
+    }
 };
 
 export const forgotPassword = async (req, res) => {

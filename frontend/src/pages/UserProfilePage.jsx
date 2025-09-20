@@ -189,19 +189,25 @@ const UserProfilePage = () => {
 
     const handleLogout = async () => {
         try {
+            console.log("UserProfilePage: Starting logout...");
+            
             await logout();
+            
+            console.log("UserProfilePage: Logout completed, clearing local state...");
             
             // Clear component state
             setUserRecipes([]);
             setFavoriteRecipes([]);
             setFavoriteCount(0);
             
-            // Navigate to home page - REMOVE the window.location.reload()
+            console.log("UserProfilePage: Navigating to home...");
+            
+            // Navigate to home page
             navigate('/', { replace: true });
             
         } catch (error) {
-            console.error("Logout error:", error);
-            // Even if logout fails, navigate away - REMOVE the window.location.reload()
+            console.error("UserProfilePage logout error:", error);
+            // Force navigate even on error
             navigate('/', { replace: true });
         }
     };
