@@ -165,7 +165,7 @@ const CreateRecipePage = () => {
         e.preventDefault();
         
         if (!recipe.title || !recipe.description || recipe.ingredients.length === 0 || recipe.instructions.length === 0) {
-            toast.error('Please fill in all required fields'); // Use toast for error
+            toast.error('Please fill in all required fields'); 
             return;
         }
 
@@ -183,8 +183,13 @@ const CreateRecipePage = () => {
                 formData.append('image', recipe.image);
             }
 
+            // Consistent API URL pattern for both environments
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+            
             const response = await axios.post(
-                `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/recipes" : "/api/recipes"}`,
+                `${baseURL}/api/recipes`,
                 formData,
                 {
                     headers: {
@@ -195,12 +200,12 @@ const CreateRecipePage = () => {
             );
 
             if (response.data.success) {
-                toast.success('Recipe created successfully!'); // Show toast notification
+                toast.success('Recipe created successfully!');
                 navigate('/recipes');
             }
         } catch (error) {
             console.error('Error creating recipe:', error);
-            toast.error('Failed to create recipe. Please try again.'); // Use toast for error
+            toast.error('Failed to create recipe. Please try again.');
         } finally {
             setIsLoading(false);
         }

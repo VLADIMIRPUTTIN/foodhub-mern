@@ -141,8 +141,13 @@ const EditRecipePage = ({ recipe, onClose }) => {
             formData.append('category', form.category);
             if (form.image) formData.append('image', form.image);
 
+            // Consistent API URL pattern
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+                
             await axios.patch(
-                `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/recipes" : "/api/recipes"}/${recipe._id}`,
+                `${baseURL}/api/recipes/${recipe._id}`,
                 formData,
                 { headers: { 'Content-Type': 'multipart/form-data' }, withCredentials: true }
             );
