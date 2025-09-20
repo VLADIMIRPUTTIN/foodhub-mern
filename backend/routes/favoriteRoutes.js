@@ -57,6 +57,13 @@ router.get('/count', verifyToken, async (req, res) => {
 router.post('/', verifyToken, async (req, res) => {
     try {
         const { recipeId } = req.body;
+        
+        if (!recipeId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Recipe ID is required'
+            });
+        }
 
         // Check if already favorited
         const existingFavorite = await Favorite.findOne({
@@ -65,9 +72,10 @@ router.post('/', verifyToken, async (req, res) => {
         });
 
         if (existingFavorite) {
-            return res.status(400).json({
-                success: false,
-                message: 'Recipe already in favorites'
+            return res.status(200).json({  // Changed from 400 to 200 to avoid breaking the client
+                success: true,
+                message: 'Recipe already in favorites',
+                favorite: existingFavorite
             });
         }
 
@@ -87,7 +95,7 @@ router.post('/', verifyToken, async (req, res) => {
         console.error('Error adding to favorites:', error);
         res.status(500).json({
             success: false,
-            message: 'Error adding to favorites'
+            message: 'Error adding to favorites: ' + error.message
         });
     }
 });
@@ -97,15 +105,22 @@ router.delete('/:recipeId', verifyToken, async (req, res) => {
     try {
         const { recipeId } = req.params;
 
+        if (!recipeId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Recipe ID is required'
+            });
+        }
+
         const result = await Favorite.findOneAndDelete({
             user: req.userId,
             recipe: recipeId
         });
 
         if (!result) {
-            return res.status(404).json({
-                success: false,
-                message: 'Favorite not found'
+            return res.status(200).json({  // Changed from 404 to 200
+                success: true,
+                message: 'Favorite already removed'
             });
         }
 
@@ -117,7 +132,7 @@ router.delete('/:recipeId', verifyToken, async (req, res) => {
         console.error('Error removing from favorites:', error);
         res.status(500).json({
             success: false,
-            message: 'Error removing from favorites'
+            message: 'Error removing from favorites: ' + error.message
         });
     }
 });

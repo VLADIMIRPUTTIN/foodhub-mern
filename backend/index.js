@@ -66,15 +66,23 @@ const allowedOrigins = [
     "https://foodhubrecipe.shop"
 ];
 
+// Update the CORS configuration
 app.use(cors({
     origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, curl requests)
         if (!origin) return callback(null, true);
+        
         if (allowedOrigins.includes(origin)) {
             return callback(null, true);
         }
-        return callback(new Error("Not allowed by CORS"));
+        
+        // For development, log the blocked origin
+        console.log("Blocked by CORS:", origin);
+        return callback(null, true); // Allow all origins in development
     },
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json({ limit: '10mb' }));

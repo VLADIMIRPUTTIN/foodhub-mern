@@ -293,75 +293,78 @@ const RecipePage = () => {
 
     // Update all axios requests for favorites to use relative URLs and always send the JWT token
     const fetchFavoriteRecipes = async () => {
+        if (!user) return;
+    
         try {
-            const response = await axios.get(
-                "/api/favorites",
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    },
-                    withCredentials: true
-                }
-            );
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+            
+            const response = await axios.get(`${baseURL}/api/favorites`, {
+                withCredentials: true
+            });
+            
             if (response.data.success) {
-                setFavoriteRecipes(response.data.favorites.map(fav => fav.recipe._id));
+                // Extract just the recipe IDs from the favorites data
+                const favoriteIds = response.data.favorites.map(fav => fav.recipe._id);
+                setFavoriteRecipes(favoriteIds);
             }
         } catch (error) {
-            console.error('Error fetching favorites:', error);
+            console.error("Error fetching favorites:", error);
         }
     };
 
     const handleFavoriteToggle = async (recipeId, event) => {
-        event.stopPropagation();
+        event.stopPropagation(); // Prevent opening recipe modal
+    
         if (!user) {
             setShowLoginPrompt(true);
             return;
         }
+    
         try {
-            const isFavorited = favoriteRecipes.includes(recipeId);
-            const recipe = recipes.find(r => r._id === recipeId);
-            const recipeName = recipe?.title || recipe?.name || 'Recipe';
-            if (isFavorited) {
-                await axios.delete(
-                    `/api/favorites/${recipeId}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem('token')}`
-                        },
-                        withCredentials: true
-                    }
-                );
-                setFavoriteRecipes(prev => prev.filter(id => id !== recipeId));
-                toast.info(
-                    'Removed from Favorites',
-                    `${recipeName} has been removed from your favorites`,
-                    3000
-                );
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+            
+            if (favoriteRecipes.includes(recipeId)) {
+                // Remove from favorites
+                const response = await axios.delete(`${baseURL}/api/favorites/${recipeId}`, {
+                    withCredentials: true
+                });
+                
+                if (response.data.success) {
+                    setFavoriteRecipes(prevFavorites => 
+                        prevFavorites.filter(id => id !== recipeId)
+                    );
+                    toast({
+                        title: "Recipe removed from favorites",
+                        variant: "default"
+                    });
+                }
             } else {
-                await axios.post(
-                    "/api/favorites",
-                    { recipeId },
-                    {
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem('token')}`
-                        },
-                        withCredentials: true
-                    }
-                );
-                setFavoriteRecipes(prev => [...prev, recipeId]);
-                toast.favorite(
-                    'Added to Favorites! ❤️',
-                    `${recipeName} has been saved to your collection`,
-                    4000
-                );
+                // Add to favorites
+                const response = await axios.post(`${baseURL}/api/favorites`, {
+                    recipeId
+                }, {
+                    withCredentials: true
+                });
+                
+                if (response.data.success) {
+                    setFavoriteRecipes(prevFavorites => [...prevFavorites, recipeId]);
+                    toast({
+                        title: "Recipe added to favorites",
+                        variant: "default"
+                    });
+                }
             }
         } catch (error) {
-            console.error('Error toggling favorite:', error);
-            toast.error(
-                'Something went wrong',
-                'Failed to update favorite. Please try again.',
-                4000
-            );
+            console.error("Error toggling favorite:", error);
+            toast({
+                title: "Error updating favorites",
+                description: "Please try again later",
+                variant: "destructive"
+            });
         }
     };
 

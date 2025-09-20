@@ -97,35 +97,37 @@ const UserProfilePage = () => {
 
     const fetchUserFavorites = async () => {
         try {
-            const response = await axios.get(
-                `/api/favorites`,
-                { withCredentials: true }
-            );
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+                
+            const response = await axios.get(`${baseURL}/api/favorites`, {
+                withCredentials: true
+            });
+            
             if (response.data.success) {
-                // Filter out favorites with null recipes and ensure recipe data exists
-                const validFavorites = (response.data.favorites || []).filter(
-                    favorite => favorite && favorite.recipe && favorite.recipe._id
-                );
-                setFavoriteRecipes(validFavorites);
+                setFavoriteRecipes(response.data.favorites);
             }
         } catch (error) {
             console.error('Error fetching favorites:', error);
-            setFavoriteRecipes([]);
         }
     };
 
     const fetchFavoriteCount = async () => {
         try {
-            const response = await axios.get(
-                `/api/favorites/count`,
-                { withCredentials: true }
-            );
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+                
+            const response = await axios.get(`${baseURL}/api/favorites/count`, {
+                withCredentials: true
+            });
+            
             if (response.data.success) {
-                setFavoriteCount(response.data.count || 0);
+                setFavoriteCount(response.data.count);
             }
         } catch (error) {
             console.error('Error fetching favorite count:', error);
-            setFavoriteCount(0);
         }
     };
 
@@ -221,21 +223,21 @@ const UserProfilePage = () => {
 
     const handleRemoveFromFavorites = async (recipeId, event) => {
         event.stopPropagation();
-
         try {
-            await axios.delete(
-                `/api/favorites/${recipeId}`,
-                {
-                    withCredentials: true
-                }
-            );
-
-            // Refresh favorites data
-            await fetchUserFavorites();
-            await fetchFavoriteCount();
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+                
+            const response = await axios.delete(`${baseURL}/api/favorites/${recipeId}`, {
+                withCredentials: true
+            });
+            
+            if (response.data.success) {
+                setFavoriteRecipes(prev => prev.filter(recipe => recipe._id !== recipeId));
+                setFavoriteCount(prev => Math.max(0, prev - 1));
+            }
         } catch (error) {
-            console.error('Error removing favorite:', error);
-            alert('Failed to remove from favorites. Please try again.');
+            console.error('Error removing from favorites:', error);
         }
     };
 
