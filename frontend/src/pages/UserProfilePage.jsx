@@ -109,12 +109,17 @@ const UserProfilePage = () => {
 
     const fetchUserData = async () => {
         setIsLoading(true);
-        await Promise.all([
-            fetchUserRecipes(),
-            fetchUserFavorites(),
-            fetchFavoriteCount()
-        ]);
-        setIsLoading(false);
+        try {
+            await Promise.all([
+                fetchUserRecipes(),
+                fetchUserFavorites(),
+                fetchFavoriteCount()
+            ]);
+        } catch (error) {
+            console.error('Error fetching user data:', error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const fetchUserRecipes = async () => {
@@ -269,6 +274,14 @@ const UserProfilePage = () => {
 
     const handleRemoveFromFavorites = async (recipeId, event) => {
         event.stopPropagation();
+        
+        // Optimistic update - remove immediately from UI
+        const previousFavorites = favoriteRecipes;
+        const previousCount = favoriteCount;
+        
+        setFavoriteRecipes(prev => prev.filter(favorite => favorite.recipe._id !== recipeId));
+        setFavoriteCount(prev => Math.max(0, prev - 1));
+        
         try {
             const baseURL = import.meta.env.MODE === "development" 
                 ? "http://localhost:5000" 
@@ -279,11 +292,45 @@ const UserProfilePage = () => {
             });
             
             if (response.data.success) {
-                setFavoriteRecipes(prev => prev.filter(recipe => recipe._id !== recipeId));
-                setFavoriteCount(prev => Math.max(0, prev - 1));
+                // Success toast
+                toast.success("Recipe removed from favorites!", {
+                    style: {
+                        borderRadius: "8px",
+                        background: "#fff",
+                        color: "#222",
+                        boxShadow: "0 4px 16px rgba(239,68,68,0.15)",
+                        fontWeight: 600,
+                    },
+                    iconTheme: {
+                        primary: "#ef4444",
+                        secondary: "#fff",
+                    },
+                });
+            } else {
+                // Revert on failure
+                setFavoriteRecipes(previousFavorites);
+                setFavoriteCount(previousCount);
+                throw new Error("Failed to remove from favorites");
             }
         } catch (error) {
+            // Revert optimistic update on error
+            setFavoriteRecipes(previousFavorites);
+            setFavoriteCount(previousCount);
+            
             console.error('Error removing from favorites:', error);
+            toast.error("Failed to remove from favorites. Please try again.", {
+                style: {
+                    borderRadius: "8px",
+                    background: "#fff",
+                    color: "#222",
+                    boxShadow: "0 4px 16px rgba(239,68,68,0.15)",
+                    fontWeight: 600,
+                },
+                iconTheme: {
+                    primary: "#ef4444",
+                    secondary: "#fff",
+                },
+            });
         }
     };
 
@@ -516,7 +563,7 @@ const UserProfilePage = () => {
                     });
                     
                     setUserRecipes(prev => 
-                        prev.map(r => 
+                        prev.map r => 
                             r._id === recipe._id 
                                 ? { ...r, shareStatus: 'not_shared', isShared: false } 
                                 : r
@@ -971,15 +1018,11 @@ const UserProfilePage = () => {
                                 {activeTab === 'favorites' && (
                                     favoriteRecipes.length > 0 ? (
                                         <div className="recipes-grid">
-                                            {favoriteRecipes.map((favorite, index) => {
-                                                // Safety check for favorite and recipe data
-                                                if (!favorite || !favorite.recipe || !favorite.recipe._id) {
-                                                    return null; // Skip this iteration if data is invalid
-                                                }
-                                                
-                                                return (
+                                            {favoriteRecipes
+                                                .filter(favorite => favorite && favorite.recipe && favorite.recipe._id) // Filter out invalid favorites
+                                                .map((favorite, index) => (
                                                     <motion.div 
-                                                        key={favorite._id} 
+                                                        key={`favorite-${favorite._id}-${favorite.recipe._id}`} // Better key
                                                         className="recipe-card favorite-card" 
                                                         onClick={() => navigate(`/recipe/${favorite.recipe._id}`)}
                                                         initial={{ opacity: 0, y: 20 }}
@@ -1028,8 +1071,7 @@ const UserProfilePage = () => {
                                                             )}
                                                         </div>
                                                     </motion.div>
-                                                );
-                                            })}
+                                                ))}
                                         </div>
                                     ) : (
                                         <div className="no-recipes">
