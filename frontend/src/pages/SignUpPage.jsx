@@ -40,14 +40,13 @@ const SignUpPage = () => {
         try {
             console.log("Starting Google signup process...");
             
-            // Send the credential to your backend for verification
+            // Use relative URL for production
             const response = await axios.post(
-                `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/auth/google-login" : "/api/auth/google-login"}`,
+                "/api/auth/google-login",
                 { credential: credentialResponse.credential },
                 { withCredentials: true }
             );
 
-            // Set user in auth store
             if (response.data.user) {
                 setUser(response.data.user);
             }
@@ -56,9 +55,7 @@ const SignUpPage = () => {
             if (response.data.requiresVerification || !response.data.user.isVerified) {
                 navigate("/verify-email");
             } else {
-                // User is already verified
                 navigate("/");
-                window.location.reload();
             }
         } catch (error) {
             console.error("❌ Google signup failed:", error);

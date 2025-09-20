@@ -6,8 +6,6 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import './EmailVerificationPage.scss';
 
-const API_URL = import.meta.env.MODE === "development" ? "http://localhost:5000/api/auth" : "/api/auth";
-
 const EmailVerificationPage = () => {
     const [code, setCode] = useState(["", "", "", "", "", ""]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,7 +14,7 @@ const EmailVerificationPage = () => {
     const inputRefs = useRef([]);
     const navigate = useNavigate();
 
-    const { error, isLoading, verifyEmail } = useAuthStore();
+    const { error, isLoading, verifyEmail, user } = useAuthStore();
 
     const handleChange = (index, value) => {
         // Only allow numbers (0-9) - filter out any non-numeric characters
@@ -115,32 +113,19 @@ const EmailVerificationPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        if (isSubmitting) return; // Prevent multiple submissions
-        
         const verificationCode = code.join("");
-        console.log("🔍 Submitting verification code:", verificationCode);
         
         if (verificationCode.length !== 6) {
-            toast.error("Please enter a 6-digit code");
+            alert("Please enter the complete 6-digit code");
             return;
         }
-        
-        // Validate that all characters are numbers
-        if (!/^\d{6}$/.test(verificationCode)) {
-            toast.error("Code must contain only numbers");
-            return;
-        }
-        
+
         setIsSubmitting(true);
-        
         try {
             await verifyEmail(verificationCode);
-            toast.success("Email verified successfully");
             navigate("/");
         } catch (error) {
             console.error("Verification failed:", error);
-            toast.error(error.response?.data?.message || "Verification failed");
         } finally {
             setIsSubmitting(false);
         }
@@ -149,18 +134,28 @@ const EmailVerificationPage = () => {
     const handleResendCode = async () => {
         setResendLoading(true);
         try {
-            // Use the email from the user object in authStore
-            const email = useAuthStore.getState().user?.email;
-            if (!email) {
-                toast.error("No email found for resend.");
-                setResendLoading(false);
-                return;
+            // Use relative URL for production
+            const response = await axios.post("/api/auth/resend-verification", {
+                email: user?.email
+            }, {
+                withCredentials: true
+            });
+            
+            if (response.data.success) {
+                setResendCooldown(60);
+                const timer = setInterval(() => {
+                    setResendCooldown((prev) => {
+                        if (prev <= 1) {
+                            clearInterval(timer);
+                            return 0;
+                        }
+                        return prev - 1;
+                    });
+                }, 1000);
             }
-            await axios.post(`${API_URL}/resend-verification`, { email });
-            toast.success("Verification code resent!");
-            setResendCooldown(30); // 30 seconds cooldown
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to resend code");
+            console.error("Resend failed:", error);
+            alert("Failed to resend code: " + (error.response?.data?.message || error.message));
         } finally {
             setResendLoading(false);
         }

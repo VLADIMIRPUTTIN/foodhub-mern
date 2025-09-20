@@ -8,13 +8,13 @@ export const generateTokenAndSetCookie = (res, userId) => {
     const cookieOptions = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Changed for production
+        sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000,
     };
 
-    // Only set domain in production
+    // Set domain for production
     if (process.env.NODE_ENV === "production") {
-        cookieOptions.domain = ".foodhubrecipe.shop";
+        cookieOptions.domain = "foodhubrecipe.shop";
     }
 
     res.cookie("token", token, cookieOptions);

@@ -294,31 +294,24 @@ const RecipePage = () => {
     // Update all axios requests for favorites to use relative URLs and always send the JWT token
     const fetchFavoriteRecipes = async () => {
         try {
-            // Use proper API URL based on environment
-            const baseURL = import.meta.env.MODE === "development"
-                ? "http://localhost:5000"
-                : "https://www.foodhubrecipe.shop";
-            
-            const response = await axios.get(`${baseURL}/api/favorites`, {
+            const response = await axios.get('/api/favorites', {
                 withCredentials: true,
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
             
-            console.log('Favorites response:', response.data); // Debug log
+            console.log('Favorites response:', response.data);
             
             if (response.data.success && response.data.favorites) {
                 const favoriteIds = response.data.favorites.map(fav => fav.recipe._id);
                 setFavoriteRecipes(favoriteIds);
-                console.log('Loaded favorites:', favoriteIds); // Debug log
+                console.log('Loaded favorites:', favoriteIds);
             }
         } catch (error) {
             console.error('Error fetching favorites:', error);
             
-            // Only show error for actual server errors, not auth issues
             if (error.response?.status === 403 && error.response?.data?.requiresVerification) {
-                // User needs to verify email - redirect to verification
                 window.location.href = '/verify-email';
             } else if (error.response?.status !== 401 && error.response?.status !== 403) {
                 toast?.error && toast.error('Failed to load favorites', 'Please try refreshing the page');
@@ -338,17 +331,11 @@ const RecipePage = () => {
             const isFavorited = favoriteRecipes.includes(recipeId);
             const recipe = recipes.find(r => r._id === recipeId);
             const recipeName = recipe?.title || recipe?.name || 'Recipe';
-            
-            // Use proper API URL based on environment
-            const baseURL = import.meta.env.MODE === "development"
-                ? "http://localhost:5000"
-                : "https://www.foodhubrecipe.shop";
 
             if (isFavorited) {
-                // Remove from favorites
-                console.log('Removing from favorites:', recipeId); // Debug log
+                console.log('Removing from favorites:', recipeId);
                 
-                const response = await axios.delete(`${baseURL}/api/favorites/${recipeId}`, {
+                const response = await axios.delete(`/api/favorites/${recipeId}`, {
                     withCredentials: true,
                     headers: {
                         'Content-Type': 'application/json'
@@ -364,10 +351,9 @@ const RecipePage = () => {
                     );
                 }
             } else {
-                // Add to favorites
-                console.log('Adding to favorites:', recipeId); // Debug log
+                console.log('Adding to favorites:', recipeId);
                 
-                const response = await axios.post(`${baseURL}/api/favorites`, 
+                const response = await axios.post('/api/favorites', 
                     { recipeId }, 
                     { 
                         withCredentials: true,

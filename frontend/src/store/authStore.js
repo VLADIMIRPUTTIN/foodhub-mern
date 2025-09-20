@@ -1,68 +1,52 @@
 import { create } from "zustand";
 import axios from "axios";
 
+// Use production URL for deployed site
 const API_URL = import.meta.env.MODE === "development" 
     ? "http://localhost:5000/api/auth" 
-    : "https://www.foodhubrecipe.shop/api/auth";  // Updated to use your domain
+    : "/api/auth";  // Use relative URL in production
 
 axios.defaults.withCredentials = true;
 
-export const useAuthStore = create((set, get) => ({
+export const useAuthStore = create((set) => ({
     user: null,
     isAuthenticated: false,
     error: null,
     isLoading: false,
     isCheckingAuth: true,
     message: null,
-    accountStatus: null, // Add this for account status
+    accountStatus: null,
 
     signup: async (email, password, name) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await axios.post(`${API_URL}/signup`, { email, password, name });
-            set({ 
-                user: response.data.user, 
-                isAuthenticated: true, 
-                isLoading: false,
-                message: response.data.message 
+            const response = await axios.post(`${API_URL}/signup`, {
+                email,
+                password,
+                name,
             });
+            set({ user: response.data.user, isAuthenticated: true, isLoading: false });
         } catch (error) {
             set({ error: error.response.data.message || "Error signing up", isLoading: false });
             throw error;
         }
     },
+
     login: async (email, password) => {
-        set({ isLoading: true, error: null, accountStatus: null });
+        set({ isLoading: true, error: null });
         try {
-            const res = await axios.post(`${API_URL}/login`, { email, password }, { withCredentials: true });
+            const response = await axios.post(`${API_URL}/login`, { email, password });
             set({
-                user: res.data.user,
                 isAuthenticated: true,
-                isLoading: false,
+                user: response.data.user,
                 error: null,
-                accountStatus: null,
+                isLoading: false,
             });
         } catch (error) {
-            const errorData = error.response?.data;
-            
-            // Check if it's an account status error (suspended/banned)
-            if (error.response?.status === 403 && errorData?.statusData) {
-                set({
-                    error: errorData.message,
-                    isLoading: false,
-                    accountStatus: errorData.statusData, // Store the detailed status info
-                });
-            } else {
-                set({
-                    error: errorData?.message || "Login failed",
-                    isLoading: false,
-                    accountStatus: null,
-                });
-            }
+            set({ error: error.response?.data?.message || "Error logging in", isLoading: false });
+            throw error;
         }
     },
-
-    clearAccountStatus: () => set({ accountStatus: null }),
 
     logout: async () => {
         set({ isLoading: true, error: null });
@@ -74,49 +58,29 @@ export const useAuthStore = create((set, get) => ({
             throw error;
         }
     },
+
     verifyEmail: async (code) => {
-        console.log("🔍 VERIFY EMAIL - Frontend:");
-        console.log(`📋 Code being sent: ${code}`);
-        console.log(`📋 Code length: ${code?.length}`);
-        
         set({ isLoading: true, error: null });
         try {
             const response = await axios.post(`${API_URL}/verify-email`, { code });
-            console.log("✅ Verification response:", response.data);
-            
-            set({ 
-                user: response.data.user, 
-                isAuthenticated: true, 
-                isLoading: false,
-                error: null 
-            });
+            set({ user: response.data.user, isAuthenticated: true, isLoading: false });
             return response.data;
         } catch (error) {
-            console.error("❌ Verification error:", error);
-            console.error("❌ Error response:", error.response?.data);
-            console.error("❌ Error status:", error.response?.status);
-            
-            const errorMessage = error.response?.data?.message || "Error verifying email";
-            set({ 
-                error: errorMessage, 
-                isLoading: false 
-            });
+            set({ error: error.response.data.message || "Error verifying email", isLoading: false });
             throw error;
         }
     },
+
     checkAuth: async () => {
         set({ isCheckingAuth: true, error: null });
         try {
             const response = await axios.get(`${API_URL}/check-auth`);
             set({ user: response.data.user, isAuthenticated: true, isCheckingAuth: false });
         } catch (error) {
-            // Only log errors that aren't authentication-related
-            if (error.response?.status !== 401) {
-                console.error('Unexpected auth check error:', error);
-            }
             set({ error: null, isCheckingAuth: false, isAuthenticated: false });
         }
     },
+
     forgotPassword: async (email) => {
         set({ isLoading: true, error: null });
         try {
@@ -130,6 +94,7 @@ export const useAuthStore = create((set, get) => ({
             throw error;
         }
     },
+
     resetPassword: async (token, password) => {
         set({ isLoading: true, error: null });
         try {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Loader } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { GoogleLogin } from '@react-oauth/google';
 import axios from "axios";
@@ -17,6 +17,7 @@ const LoginPage = () => {
     const [showStatusModal, setShowStatusModal] = useState(false);
 
     const { login, isLoading, error, setUser, forgotPassword, accountStatus, clearAccountStatus } = useAuthStore();
+    const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -30,9 +31,8 @@ const LoginPage = () => {
 
     const handleGoogleLogin = async (credentialResponse) => {
         try {
-            const API_URL = import.meta.env.MODE === "development" 
-                ? "http://localhost:5000/api/auth" 
-                : "https://www.foodhubrecipe.shop/api/auth";
+            // Use relative URL for production
+            const API_URL = "/api/auth";
                     
             const response = await axios.post(
                 `${API_URL}/google-login`,
@@ -45,17 +45,16 @@ const LoginPage = () => {
                 
                 // Check if verification is required
                 if (response.data.requiresVerification) {
-                    // Redirect to verification page
-                    window.location.href = "/verify-email";
+                    navigate("/verify-email");
                     return;
                 }
                 
                 // User is verified, proceed with login
                 if (response.data.user.isVerified) {
                     if (response.data.user.role === 'admin') {
-                        window.location.href = '/admin-dashboard';
+                        navigate('/admin-dashboard');
                     } else {
-                        window.location.href = '/';
+                        navigate('/');
                     }
                 }
             }
