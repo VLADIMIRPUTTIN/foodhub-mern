@@ -1005,11 +1005,15 @@ const UserProfilePage = () => {
                                 {activeTab === 'favorites' && (
                                     favoriteRecipes.length > 0 ? (
                                         <div className="recipes-grid">
-                                            {favoriteRecipes
-                                                .filter(favorite => favorite && favorite.recipe && favorite.recipe._id) // Filter out invalid favorites
-                                                .map((favorite, index) => (
+                                            {favoriteRecipes.map((favorite, index) => {
+                                                // Safety check for favorite and recipe data
+                                                if (!favorite || !favorite.recipe || !favorite.recipe._id) {
+                                                    return null; // Skip this iteration if data is invalid
+                                                }
+                                                
+                                                return (
                                                     <motion.div 
-                                                        key={`favorite-${favorite._id}-${favorite.recipe._id}`} // Better key
+                                                        key={favorite._id} 
                                                         className="recipe-card favorite-card" 
                                                         onClick={() => navigate(`/recipe/${favorite.recipe._id}`)}
                                                         initial={{ opacity: 0, y: 20 }}
@@ -1058,7 +1062,8 @@ const UserProfilePage = () => {
                                                             )}
                                                         </div>
                                                     </motion.div>
-                                                ))}
+                                                );
+                                            })}
                                         </div>
                                     ) : (
                                         <div className="no-recipes">
