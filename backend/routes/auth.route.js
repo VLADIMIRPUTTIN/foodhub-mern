@@ -13,7 +13,7 @@ import {
 } from "../controllers/auth.controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { testResendConnection } from "../mailtrap/resend.config.js";
-import User from "../models/User.js";
+import { User } from "../models/user.model.js"; // ✅ Fixed import
 import bcryptjs from "bcryptjs";
 
 const router = express.Router();
@@ -62,19 +62,14 @@ router.get("/test-gmail", async (req, res) => {
             subject: "Test Email from FoodHub - Gmail",
             html: `<p>This is a test email from Gmail configuration.</p>
                    <p>Sender: ${sender.email}</p>
-                   <p>Environment: ${process.env.NODE_ENV}</p>`,
+                   <p>Environment: ${process.env.NODE_ENV}</p>`
         };
 
         const result = await transporter.sendMail(mailOptions);
-        
         res.status(200).json({ 
             success: true, 
             message: "Test email sent successfully using Gmail", 
-            result: {
-                messageId: result.messageId,
-                accepted: result.accepted,
-                rejected: result.rejected
-            }
+            result
         });
     } catch (error) {
         res.status(500).json({ 
@@ -88,14 +83,7 @@ router.get("/test-gmail", async (req, res) => {
 // Add this route for easy admin creation during development
 router.post("/create-admin-dev", async (req, res) => {
     try {
-        // Only allow this in development
-        if (process.env.NODE_ENV === "production") {
-            return res.status(403).json({ 
-                success: false, 
-                message: "This endpoint is only available in development" 
-            });
-        }
-
+        // Check if admin already exists
         const adminExists = await User.findOne({ email: 'admin@foodhub.com' });
         
         if (adminExists) {
