@@ -5,13 +5,18 @@ export const generateTokenAndSetCookie = (res, userId) => {
         expiresIn: "7d",
     });
 
-    res.cookie("token", token, {
+    const cookieOptions = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "lax", 
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Changed for production
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        domain: process.env.NODE_ENV === "production" ? "foodhubrecipe.shop" : undefined // Removed the leading dot
-    });
+    };
 
+    // Only set domain in production
+    if (process.env.NODE_ENV === "production") {
+        cookieOptions.domain = ".foodhubrecipe.shop";
+    }
+
+    res.cookie("token", token, cookieOptions);
     return token;
 };

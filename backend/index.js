@@ -12,7 +12,7 @@ import authRoutes from "./routes/auth.route.js";
 import recipeRoutes from "./routes/recipe.route.js";
 import ingredientRoutes from "./routes/ingredient.route.js";
 import userRoutes from "./routes/user.route.js";
-import favoriteRoutes from './routes/favoriteRoutes.js';
+import favoriteRoutes from "./routes/favoriteRoutes.js";
 import visionRoutes from "./routes/vision.route.js";
 import youtubeRoutes from "./routes/youtube.route.js"; // Add this import
 

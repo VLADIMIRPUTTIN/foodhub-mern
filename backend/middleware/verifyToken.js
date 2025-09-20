@@ -13,6 +13,15 @@ export const verifyToken = async (req, res, next) => {
         const user = await User.findById(decoded.userId);
         if (!user) return res.status(401).json({ success: false, message: "User not found" });
 
+        // Add email verification check
+        if (!user.isVerified) {
+            return res.status(403).json({
+                success: false,
+                message: "Email verification required to access this resource.",
+                requiresVerification: true
+            });
+        }
+
         // Check if banned
         if (user.status === "banned") {
             return res.status(403).json({ 

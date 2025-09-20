@@ -294,74 +294,115 @@ const RecipePage = () => {
     // Update all axios requests for favorites to use relative URLs and always send the JWT token
     const fetchFavoriteRecipes = async () => {
         try {
-            const response = await axios.get(
-                "/api/favorites",
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    },
-                    withCredentials: true
+            // Use proper API URL based on environment
+            const baseURL = import.meta.env.MODE === "development"
+                ? "http://localhost:5000"
+                : "https://www.foodhubrecipe.shop";
+            
+            const response = await axios.get(`${baseURL}/api/favorites`, {
+                withCredentials: true,
+                headers: {
+                    'Content-Type': 'application/json'
                 }
-            );
-            if (response.data.success) {
-                setFavoriteRecipes(response.data.favorites.map(fav => fav.recipe._id));
+            });
+            
+            console.log('Favorites response:', response.data); // Debug log
+            
+            if (response.data.success && response.data.favorites) {
+                const favoriteIds = response.data.favorites.map(fav => fav.recipe._id);
+                setFavoriteRecipes(favoriteIds);
+                console.log('Loaded favorites:', favoriteIds); // Debug log
             }
         } catch (error) {
             console.error('Error fetching favorites:', error);
+            
+            // Only show error for actual server errors, not auth issues
+            if (error.response?.status === 403 && error.response?.data?.requiresVerification) {
+                // User needs to verify email - redirect to verification
+                window.location.href = '/verify-email';
+            } else if (error.response?.status !== 401 && error.response?.status !== 403) {
+                toast?.error && toast.error('Failed to load favorites', 'Please try refreshing the page');
+            }
         }
     };
 
     const handleFavoriteToggle = async (recipeId, event) => {
         event.stopPropagation();
+        
         if (!user) {
             setShowLoginPrompt(true);
             return;
         }
+
         try {
             const isFavorited = favoriteRecipes.includes(recipeId);
             const recipe = recipes.find(r => r._id === recipeId);
             const recipeName = recipe?.title || recipe?.name || 'Recipe';
+            
+            // Use proper API URL based on environment
+            const baseURL = import.meta.env.MODE === "development"
+                ? "http://localhost:5000"
+                : "https://www.foodhubrecipe.shop";
+
             if (isFavorited) {
-                await axios.delete(
-                    `/api/favorites/${recipeId}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem('token')}`
-                        },
-                        withCredentials: true
+                // Remove from favorites
+                console.log('Removing from favorites:', recipeId); // Debug log
+                
+                const response = await axios.delete(`${baseURL}/api/favorites/${recipeId}`, {
+                    withCredentials: true,
+                    headers: {
+                        'Content-Type': 'application/json'
                     }
-                );
-                setFavoriteRecipes(prev => prev.filter(id => id !== recipeId));
-                toast.info(
-                    'Removed from Favorites',
-                    `${recipeName} has been removed from your favorites`,
-                    3000
-                );
+                });
+                
+                if (response.data.success) {
+                    setFavoriteRecipes(prev => prev.filter(id => id !== recipeId));
+                    toast?.info && toast.info(
+                        'Removed from Favorites',
+                        `${recipeName} has been removed from your favorites`,
+                        3000
+                    );
+                }
             } else {
-                await axios.post(
-                    "/api/favorites",
-                    { recipeId },
-                    {
+                // Add to favorites
+                console.log('Adding to favorites:', recipeId); // Debug log
+                
+                const response = await axios.post(`${baseURL}/api/favorites`, 
+                    { recipeId }, 
+                    { 
+                        withCredentials: true,
                         headers: {
-                            Authorization: `Bearer ${localStorage.getItem('token')}`
-                        },
-                        withCredentials: true
+                            'Content-Type': 'application/json'
+                        }
                     }
                 );
-                setFavoriteRecipes(prev => [...prev, recipeId]);
-                toast.favorite(
-                    'Added to Favorites! ❤️',
-                    `${recipeName} has been saved to your collection`,
-                    4000
-                );
+                
+                if (response.data.success) {
+                    setFavoriteRecipes(prev => [...prev, recipeId]);
+                    toast?.favorite && toast.favorite(
+                        'Added to Favorites! ❤️',
+                        `${recipeName} has been saved to your collection`,
+                        4000
+                    );
+                }
             }
         } catch (error) {
             console.error('Error toggling favorite:', error);
-            toast.error(
-                'Something went wrong',
-                'Failed to update favorite. Please try again.',
-                4000
-            );
+            
+            // Handle specific error cases
+            if (error.response?.status === 401) {
+                setShowLoginPrompt(true);
+            } else if (error.response?.status === 403 && error.response?.data?.requiresVerification) {
+                // User needs to verify email
+                window.location.href = '/verify-email';
+            } else {
+                const errorMessage = error.response?.data?.message || 'Failed to update favorite. Please try again.';
+                toast?.error && toast.error(
+                    'Something went wrong',
+                    errorMessage,
+                    4000
+                );
+            }
         }
     };
 
