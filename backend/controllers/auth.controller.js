@@ -280,26 +280,45 @@ export const login = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-    // Clear the cookie with EXACTLY the same settings used when creating it
-    res.clearCookie("token", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        path: "/"
-    });
-    
-    // Add cache control headers to prevent browser caching
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.setHeader('Surrogate-Control', 'no-store');
-    
-    // Return success
-    res.status(200).json({ 
-        success: true, 
-        message: "Logged out successfully",
-        timestamp: new Date().getTime() // Add timestamp to prevent caching
-    });
+    try {
+        // Clear the cookie with multiple configurations to ensure it's removed
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            path: "/",
+            domain: process.env.NODE_ENV === "production" ? ".foodhubrecipe.shop" : undefined
+        });
+        
+        // Also clear without domain to be safe
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            path: "/"
+        });
+        
+        // Add comprehensive cache control headers
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.setHeader('Surrogate-Control', 'no-store');
+        res.setHeader('Clear-Site-Data', '"cache", "cookies", "storage"');
+        
+        // Return success with timestamp to prevent caching
+        res.status(200).json({ 
+            success: true, 
+            message: "Logged out successfully",
+            timestamp: new Date().getTime(),
+            loggedOut: true // Add this flag for frontend
+        });
+    } catch (error) {
+        console.error("Logout error:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Error during logout" 
+        });
+    }
 };
 
 export const forgotPassword = async (req, res) => {

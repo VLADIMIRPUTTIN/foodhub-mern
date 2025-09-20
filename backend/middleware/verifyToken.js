@@ -9,6 +9,15 @@ export const verifyToken = async (req, res, next) => {
     const token = req.cookies.token;
     
     if (!token) {
+        // Clear any potential stale cookies
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            path: "/",
+            domain: process.env.NODE_ENV === "production" ? ".foodhubrecipe.shop" : undefined
+        });
+        
         // Rate limit logging to prevent spam
         const now = Date.now();
         if (now - lastNoTokenLog > LOG_INTERVAL) {
@@ -17,7 +26,8 @@ export const verifyToken = async (req, res, next) => {
         }
         return res.status(401).json({ 
             success: false, 
-            message: "Unauthorized - no token provided" 
+            message: "Unauthorized - no token provided",
+            requiresLogin: true
         });
     }
     
@@ -25,9 +35,18 @@ export const verifyToken = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         if (!decoded) {
             console.log("Invalid token");
+            // Clear invalid token
+            res.clearCookie("token", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+                path: "/",
+                domain: process.env.NODE_ENV === "production" ? ".foodhubrecipe.shop" : undefined
+            });
             return res.status(401).json({ 
                 success: false, 
-                message: "Unauthorized - invalid token" 
+                message: "Unauthorized - invalid token",
+                requiresLogin: true
             });
         }
 
@@ -36,10 +55,17 @@ export const verifyToken = async (req, res, next) => {
         if (!user) {
             console.log("User not found:", decoded.userId);
             // Clear the invalid cookie
-            res.clearCookie("token");
+            res.clearCookie("token", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+                path: "/",
+                domain: process.env.NODE_ENV === "production" ? ".foodhubrecipe.shop" : undefined
+            });
             return res.status(401).json({ 
                 success: false, 
-                message: "User not found" 
+                message: "User not found",
+                requiresLogin: true
             });
         }
 
@@ -92,19 +118,34 @@ export const verifyToken = async (req, res, next) => {
     } catch (error) {
         console.log("Error in verifyToken:", error);
         
-        // Clear invalid cookie
-        res.clearCookie("token");
+        // Clear invalid cookie with both domain configurations
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            path: "/",
+            domain: process.env.NODE_ENV === "production" ? ".foodhubrecipe.shop" : undefined
+        });
+        
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            path: "/"
+        });
         
         if (error.name === 'TokenExpiredError') {
             return res.status(401).json({ 
                 success: false, 
-                message: "Token expired" 
+                message: "Token expired",
+                requiresLogin: true
             });
         }
         
         return res.status(401).json({ 
             success: false, 
-            message: "Invalid token" 
+            message: "Invalid token",
+            requiresLogin: true
         });
     }
 };

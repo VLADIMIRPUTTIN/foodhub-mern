@@ -93,55 +93,40 @@ export const useAuthStore = create((set, get) => ({
 
     logout: async () => {
         try {
-            // Call the logout endpoint
-            await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
-            
-            // Clear any localStorage items that might be persisting state
-            localStorage.removeItem('token');
-            localStorage.removeItem('authState');
-            localStorage.removeItem('user');
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('authState');
-            sessionStorage.removeItem('user');
-            
-            // Clear all auth state in the store
-            set({ 
-                user: null, 
-                isAuthenticated: false, 
-                error: null, 
-                isLoading: false,
-                accountStatus: null,
-                message: null,
-                isCheckingAuth: false // Important: set this to false to prevent auto-login
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+                
+            const response = await axios.post(`${baseURL}/api/auth/logout`, {}, {
+                withCredentials: true
             });
             
-            // Set a flag that we just logged out
-            localStorage.setItem('loggedOut', 'true');
-            
-            // Redirect to login page with regular navigate
-            window.location.href = '/login';
+            if (response.data.success) {
+                // Clear all auth state
+                set({ 
+                    user: null, 
+                    isAuthenticated: false, 
+                    isCheckingAuth: false 
+                });
+                
+                // Clear any local storage or session storage
+                localStorage.removeItem('auth-storage');
+                sessionStorage.clear();
+                
+                // Force reload to clear any cached data
+                window.location.reload();
+            }
         } catch (error) {
             console.error("Logout error:", error);
-            
-            // Still clear state even if API call fails
-            localStorage.removeItem('token');
-            localStorage.removeItem('authState');
-            localStorage.removeItem('user');
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('authState');
-            sessionStorage.removeItem('user');
-            
+            // Even if logout request fails, clear local state
             set({ 
                 user: null, 
                 isAuthenticated: false, 
-                error: null, 
-                isLoading: false,
-                accountStatus: null,
-                message: null,
-                isCheckingAuth: false
+                isCheckingAuth: false 
             });
-            
-            window.location.href = '/login';
+            localStorage.removeItem('auth-storage');
+            sessionStorage.clear();
+            window.location.reload();
         }
     },
 
