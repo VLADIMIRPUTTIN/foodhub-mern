@@ -6,7 +6,9 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import './EmailVerificationPage.scss';
 
-const API_URL = import.meta.env.MODE === "development" ? "http://localhost:5000/api/auth" : "/api/auth";
+const API_URL = import.meta.env.MODE === "development" 
+    ? "http://localhost:5000/api/auth" 
+    : "/api/auth"; // Changed from absolute URL to relative
 
 const EmailVerificationPage = () => {
     const [code, setCode] = useState(["", "", "", "", "", ""]);

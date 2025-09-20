@@ -460,25 +460,51 @@ export const googleLogin = async (req, res) => {
 
 export const resendVerification = async (req, res) => {
     const { email } = req.body;
+    
+    console.log("Resend verification request for email:", email);
+    
     try {
         if (!email) {
-            return res.status(400).json({ success: false, message: "Email is required" });
+            return res.status(400).json({ 
+                success: false, 
+                message: "Email is required for resending verification code" 
+            });
         }
+
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(404).json({ success: false, message: "User not found" });
+            return res.status(400).json({ 
+                success: false, 
+                message: "User not found" 
+            });
         }
+
         if (user.isVerified) {
-            return res.status(400).json({ success: false, message: "Email already verified" });
+            return res.status(400).json({ 
+                success: false, 
+                message: "Email is already verified" 
+            });
         }
-        // Generate new code and expiry
-        const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
-        user.verificationToken = verificationToken;
-        user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+        // Generate new verification code
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        user.verificationToken = verificationCode;
+        user.verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+        
         await user.save();
-        await sendVerificationEmail(user.email, user.name, verificationToken);
-        res.status(200).json({ success: true, message: "Verification code resent" });
+
+        // Send verification email
+        await sendVerificationEmail(user.email, user.name, verificationCode);
+
+        res.status(200).json({
+            success: true,
+            message: "Verification code sent successfully",
+        });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        console.error("Error in resendVerification:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Server error" 
+        });
     }
 };

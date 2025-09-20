@@ -85,7 +85,7 @@ const UserProfilePage = () => {
     const fetchUserRecipes = async () => {
         try {
             const response = await axios.get(
-                `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/recipes/user" : "/api/recipes/user"}`,
+                `/api/recipes/user`,
                 { withCredentials: true }
             );
             setUserRecipes(response.data.recipes || []);
@@ -98,7 +98,7 @@ const UserProfilePage = () => {
     const fetchUserFavorites = async () => {
         try {
             const response = await axios.get(
-                `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/favorites" : "/api/favorites"}`,
+                `/api/favorites`,
                 { withCredentials: true }
             );
             if (response.data.success) {
@@ -117,7 +117,7 @@ const UserProfilePage = () => {
     const fetchFavoriteCount = async () => {
         try {
             const response = await axios.get(
-                `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/favorites/count" : "/api/favorites/count"}`,
+                `/api/favorites/count`,
                 { withCredentials: true }
             );
             if (response.data.success) {
@@ -176,7 +176,7 @@ const UserProfilePage = () => {
                 profileImage: base64Image,
             };
             const response = await axios.put(
-                `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/users/profile" : "/api/users/profile"}`,
+                `/api/users/profile`,
                 payload,
                 {
                     headers: {
@@ -224,7 +224,7 @@ const UserProfilePage = () => {
 
         try {
             await axios.delete(
-                `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/favorites/" : "/api/favorites/"}${recipeId}`,
+                `/api/favorites/${recipeId}`,
                 {
                     withCredentials: true
                 }
