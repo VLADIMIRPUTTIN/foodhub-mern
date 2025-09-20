@@ -7,12 +7,14 @@ const API_URL = import.meta.env.MODE === "development"
 
 axios.defaults.withCredentials = true;
 
-// Add axios interceptor to handle 401 responses
+// Remove the problematic axios interceptor that auto-logs out
+// Add axios interceptor to handle 401 responses more carefully
 axios.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
-            // Clear auth state and redirect to login
+        // Only logout on 401 if it's from auth endpoints, not profile/user data endpoints
+        if (error.response?.status === 401 && error.config?.url?.includes('/api/auth/')) {
+            console.log("Auth endpoint returned 401, logging out");
             useAuthStore.getState().logout();
         }
         return Promise.reject(error);
@@ -148,6 +150,7 @@ export const useAuthStore = create((set, get) => ({
                 isAuthenticated: true, 
                 isCheckingAuth: false 
             });
+            return response.data.user;
         } catch (error) {
             console.log('Auth check failed:', error);
             set({ 
@@ -208,5 +211,5 @@ export const useAuthStore = create((set, get) => ({
         }
     },
 
-    setUser: (user) => set({ user }),
+    setUser: (user) => set({ user, isAuthenticated: !!user }),
 }));

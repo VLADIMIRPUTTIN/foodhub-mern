@@ -15,7 +15,7 @@ import { useSocket } from '../context/SocketContext';
 const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/WvG991xq/profile-default.png";
 
 const UserProfilePage = () => {
-    const { user, logout, setUser, checkAuth, isCheckingAuth } = useAuthStore();
+    const { user, logout, setUser, checkAuth, isCheckingAuth, isAuthenticated } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();
     const [userRecipes, setUserRecipes] = useState([]);
@@ -37,44 +37,54 @@ const UserProfilePage = () => {
     const [deleting, setDeleting] = useState(false);
     const { socket } = useSocket();
 
+    // Simplify the useEffect logic
     useEffect(() => {
         const initializeProfile = async () => {
             try {
-                // Don't check auth if we're already checking or if user is null but auth is loading
-                if (isCheckingAuth) return;
+                // If we're still checking auth, wait
+                if (isCheckingAuth) {
+                    return;
+                }
                 
-                // If no user data, check authentication first
+                // If not authenticated, redirect to login
+                if (!isAuthenticated) {
+                    navigate('/login');
+                    return;
+                }
+                
+                // If authenticated but no user data, try to get it
                 if (!user) {
                     await checkAuth();
-                    return; // Let the next useEffect handle data fetching
+                    return;
                 }
                 
                 // If we have user data, fetch profile data
                 await fetchUserData();
                 
-                // Check if coming from recipe creation with refresh flag
+                // Handle refresh flag from location state
                 if (location.state?.refreshRecipes) {
                     setActiveTab('recipes');
                 }
             } catch (error) {
                 console.error('Profile initialization error:', error);
-                // Only redirect to login if it's actually an auth error
-                if (error.response?.status === 401 || error.response?.status === 403) {
+                // Only redirect on actual auth errors, not network errors
+                if (error.response?.status === 401) {
                     navigate('/login');
                 }
             }
         };
 
         initializeProfile();
-    }, [user, isCheckingAuth]); // Remove checkAuth and navigate from dependencies
+    }, [user, isAuthenticated, isCheckingAuth]); // Simplified dependencies
 
-    // Separate useEffect for handling location state changes
+    // Handle location state changes separately
     useEffect(() => {
         if (location.state?.refreshRecipes) {
             setActiveTab('recipes');
         }
     }, [location.state]);
 
+    // Socket event handlers
     useEffect(() => {
         if (socket) {
             const handleRecipeApproved = (data) => {
@@ -117,6 +127,7 @@ const UserProfilePage = () => {
             ]);
         } catch (error) {
             console.error('Error fetching user data:', error);
+            // Don't logout on data fetch errors, just log them
         } finally {
             setIsLoading(false);
         }
@@ -275,7 +286,7 @@ const UserProfilePage = () => {
     const handleRemoveFromFavorites = async (recipeId, event) => {
         event.stopPropagation();
         
-        // Optimistic update - remove immediately from UI
+        // Optimistic update
         const previousFavorites = favoriteRecipes;
         const previousCount = favoriteCount;
         
@@ -292,7 +303,6 @@ const UserProfilePage = () => {
             });
             
             if (response.data.success) {
-                // Success toast
                 toast.success("Recipe removed from favorites!", {
                     style: {
                         borderRadius: "8px",
@@ -337,23 +347,13 @@ const UserProfilePage = () => {
     const handleEditRecipe = (recipe) => {
         if (recipe.shareStatus === 'approved' && recipe.isShared) {
             Swal.fire({
-                title: 'Cannot Edit Shared Recipe',
-                html: `
-                    <div style="text-align: left; margin: 1rem 0;">
-                        <p style="margin-bottom: 1rem; color: #666;">This recipe is currently shared in the community and cannot be edited.</p>
-                        <p style="margin-bottom: 0.5rem; font-weight: 600; color: #333;">To edit this recipe:</p>
-                        <ol style="margin: 0.5rem 0; padding-left: 1.5rem; color: #666;">
-                            <li>Remove it from community first</li>
-                            <li>Edit the recipe</li>
-                            <li>Share it again for review</li>
-                        </ol>
-                    </div>
-                `,
+                title: 'Recipe is Shared',
+                text: 'This recipe is currently shared in the community. You need to remove it from community first before editing.',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
                 cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Remove from Community',
+                confirmButtonText: 'Remove & Edit',
                 cancelButtonText: 'Cancel',
                 customClass: {
                     popup: 'swal-wide'
@@ -419,30 +419,10 @@ const UserProfilePage = () => {
                     }
                 }
             });
-            return;
+        } else {
+            setEditRecipeData(recipe);
+            setShowEditModal(true);
         }
-        
-        if (recipe.shareStatus === 'pending') {
-            Swal.fire({
-                title: 'Recipe Under Review',
-                text: 'This recipe is currently under admin review. You can still edit it, but it will reset the review status.',
-                icon: 'info',
-                showCancelButton: true,
-                confirmButtonColor: '#10b981',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Edit Anyway',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    setEditRecipeData(recipe);
-                    setShowEditModal(true);
-                }
-            });
-            return;
-        }
-        
-        setEditRecipeData(recipe);
-        setShowEditModal(true);
     };
 
     const handleEditModalClose = (updated) => {
@@ -491,20 +471,13 @@ const UserProfilePage = () => {
                             secondary: "#fff",
                         },
                     });
-                    
-                    setUserRecipes(prev => 
-                        prev.map(r => 
-                            r._id === recipe._id 
-                                ? { ...r, shareStatus: 'pending' } 
-                                : r
-                        )
-                    );
+                    fetchUserRecipes(); // Refresh to show pending status
                 } else {
-                    throw new Error(data.message || 'Failed to submit recipe');
+                    throw new Error(data.message || 'Failed to share recipe');
                 }
             } catch (error) {
                 console.error('Error sharing recipe:', error);
-                toast.error("Failed to submit recipe for review. Please try again.", {
+                toast.error("Failed to share recipe. Please try again.", {
                     style: {
                         borderRadius: "8px",
                         background: "#fff",
@@ -599,11 +572,13 @@ const UserProfilePage = () => {
 
     const confirmDelete = async () => {
         if (!recipeToDelete) return;
+        
         setDeleting(true);
         try {
             const baseURL = import.meta.env.MODE === "development"
                 ? "http://localhost:5000"
                 : "";
+                
             const res = await fetch(`${baseURL}/api/recipes/${recipeToDelete._id}`, {
                 method: "DELETE",
                 credentials: "include",
@@ -657,7 +632,7 @@ const UserProfilePage = () => {
         setRecipeToDelete(null);
     };
 
-    // Replace the early return logic with this:
+    // Show loading state while checking auth
     if (isCheckingAuth) {
         return (
             <div className="user-profile-page">
@@ -672,7 +647,8 @@ const UserProfilePage = () => {
         );
     }
 
-    if (!user) {
+    // Show login prompt if not authenticated
+    if (!isAuthenticated || !user) {
         return (
             <div className="user-profile-page">
                 <Navbar />
@@ -695,7 +671,7 @@ const UserProfilePage = () => {
             <Navbar />
             
             <div className="profile-container">
-                {/* Enhanced Profile Header */}
+                {/* Profile Hero Section */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -748,7 +724,7 @@ const UserProfilePage = () => {
                 </motion.div>
 
                 <div className="profile-content">
-                    {/* Enhanced Profile Details Section */}
+                    {/* Profile Details Section */}
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -857,7 +833,7 @@ const UserProfilePage = () => {
                         )}
                     </motion.div>
 
-                    {/* Enhanced My Recipes/Favorites Section */}
+                    {/* My Recipes/Favorites Section */}
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -943,7 +919,10 @@ const UserProfilePage = () => {
                                                             <button
                                                                 className="edit-recipe-btn-mini"
                                                                 title="Edit Recipe"
-                                                                onClick={e => { e.stopPropagation(); handleEditRecipe(recipe); }}
+                                                                onClick={e => {
+                                                                    e.stopPropagation();
+                                                                    handleEditRecipe(recipe);
+                                                                }}
                                                             >
                                                                 <i className="bx bx-edit"></i>
                                                             </button>
@@ -1019,10 +998,10 @@ const UserProfilePage = () => {
                                     favoriteRecipes.length > 0 ? (
                                         <div className="recipes-grid">
                                             {favoriteRecipes
-                                                .filter(favorite => favorite && favorite.recipe && favorite.recipe._id) // Filter out invalid favorites
+                                                .filter(favorite => favorite && favorite.recipe && favorite.recipe._id)
                                                 .map((favorite, index) => (
                                                     <motion.div 
-                                                        key={`favorite-${favorite._id}-${favorite.recipe._id}`} // Better key
+                                                        key={`favorite-${favorite._id}-${favorite.recipe._id}`}
                                                         className="recipe-card favorite-card" 
                                                         onClick={() => navigate(`/recipe/${favorite.recipe._id}`)}
                                                         initial={{ opacity: 0, y: 20 }}
@@ -1117,7 +1096,10 @@ const UserProfilePage = () => {
                 confirmText="Delete"
                 cancelText="Cancel"
                 onConfirm={confirmDelete}
-                onCancel={() => { setConfirmOpen(false); setRecipeToDelete(null); }}
+                onCancel={() => {
+                    setConfirmOpen(false);
+                    setRecipeToDelete(null);
+                }}
                 loading={deleting}
             />
         </div>
