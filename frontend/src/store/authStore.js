@@ -204,3 +204,6 @@ const useAuthStore = create((set, get) => ({
     },
     setUser: (user) => set({ user }),
 }));
+
+// Add this export statement at the end
+export { useAuthStore };
