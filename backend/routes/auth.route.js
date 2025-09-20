@@ -7,7 +7,7 @@ import {
 	forgotPassword,
 	resetPassword,
 	checkAuth,
-	createAdmin, // <-- import mo ito
+	createAdmin,
 	googleLogin,
 	resendVerification,
 } from "../controllers/auth.controller.js";
@@ -27,13 +27,30 @@ router.post("/forgot-password", forgotPassword);
 
 router.post("/reset-password/:token", resetPassword);
 
-// ADD THIS ROUTE for admin creation
 router.post("/create-admin", createAdmin);
 router.post("/google-login", googleLogin);
 router.post("/resend-verification", resendVerification);
 
-// Update the test route to use Gmail
-router.get("/test-email", async (req, res) => {
+// Test route for Resend
+router.get("/test-resend", async (req, res) => {
+    try {
+        const result = await testResendConnection();
+        res.status(200).json({ 
+            success: true, 
+            message: "Test email sent successfully using Resend", 
+            result
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false, 
+            message: "Failed to send test email with Resend", 
+            error: error.message 
+        });
+    }
+});
+
+// Keep Gmail test route for comparison
+router.get("/test-gmail", async (req, res) => {
     try {
         const { transporter, sender } = await import("../mailtrap/gmail.config.js");
         
@@ -60,7 +77,7 @@ router.get("/test-email", async (req, res) => {
     } catch (error) {
         res.status(500).json({ 
             success: false, 
-            message: "Failed to send test email", 
+            message: "Failed to send test email with Gmail", 
             error: error.message 
         });
     }
