@@ -6,23 +6,26 @@ dotenv.config();
 const apiKey = process.env.RESEND_API_KEY;
 export const resend = new Resend(apiKey);
 
-// Updated sender configuration
+// Fixed sender configuration to prevent the double noreply@ issue
 export const sender = {
     email: process.env.NODE_ENV === 'production' && process.env.VERIFIED_DOMAIN === 'true'
-        ? `noreply@${process.env.EMAIL_DOMAIN}`
+        ? `${process.env.EMAIL_DOMAIN}` // Removed the noreply@ prefix - domain should already include it
         : 'onboarding@resend.dev',
     name: "FoodHub",
 };
 
+// Updated test function to debug sender address
 export const testResendConnection = async () => {
     try {
-        console.log("Testing email with sender:", sender);
+        const senderAddress = `${sender.name} <${sender.email}>`;
+        console.log("Testing email with sender address:", senderAddress);
         console.log("API Key exists:", !!apiKey);
         console.log("Environment:", process.env.NODE_ENV);
         console.log("Verified Domain:", process.env.VERIFIED_DOMAIN);
+        console.log("Email Domain:", process.env.EMAIL_DOMAIN);
         
         const data = await resend.emails.send({
-            from: `${sender.name} <${sender.email}>`,
+            from: senderAddress,
             to: "yakabukosama@gmail.com", 
             subject: "Test Email from FoodHub",
             html: `<p>Test email from: ${sender.email}</p><p>Environment: ${process.env.NODE_ENV}</p>`,
