@@ -8,9 +8,7 @@ export const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Use your verified domain for the sender email
 export const sender = {
-    email: process.env.VERIFIED_DOMAIN === 'true' 
-        ? `noreply@${process.env.EMAIL_DOMAIN}` 
-        : 'onboarding@resend.dev',
+    email: `noreply@foodhubrecipe.shop`, 
     name: "FoodHub",
 };
 

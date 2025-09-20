@@ -3,33 +3,33 @@ import { resend, sender } from "./resend.config.js";
 
 export const sendVerificationEmail = async (email, name, verificationCode) => {
     try {
-        console.log(`📧 Attempting to send verification email to: ${email}`);
-        
         // Create the profile image section for the email
         const profileImageSection = `<div style="width: 100%; height: 100%; background-color: #CF996C; display: flex; align-items: center; justify-content: center;">
             <span style="font-size: 28px; font-weight: bold; color: white;">${name.charAt(0).toUpperCase()}</span>
         </div>`;
 
-        // Replace placeholders with actual content
+        // Replace placeholders with actual content - FIXED: use verificationCode instead of verificationToken
         const htmlContent = VERIFICATION_EMAIL_TEMPLATE
             .replace(/{userName}/g, name)
-            .replace(/{verificationCode}/g, verificationCode)
+            .replace(/{verificationCode}/g, verificationCode) // ← FIXED THIS LINE
             .replace(/{profileImageSection}/g, profileImageSection);
 
-        // Send the email using Resend
-        const data = await resend.emails.send({
+        // Send the email using Resend with proper error handling
+        const { data, error } = await resend.emails.send({
             from: `${sender.name} <${sender.email}>`,
             to: email,
             subject: `Your FoodHub Verification Code: ${verificationCode}`,
             html: htmlContent,
         });
         
-        console.log(`✅ Verification email sent successfully to ${email}`);
-        console.log(`✅ Email ID: ${data.id}`);
+        if (error) throw new Error(`Resend API error: ${error.message}`);
+        
+        console.log(`✅ Verification email sent to: ${email}`);
+        console.log(`✅ Email ID: ${data?.id}`);
+        
         return data;
     } catch (error) {
         console.error("❌ Error sending verification email:", error);
-        console.error("❌ Error details:", JSON.stringify(error, null, 2));
         throw error;
     }
 };

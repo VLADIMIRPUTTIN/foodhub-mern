@@ -43,15 +43,20 @@ const LoginPage = () => {
             if (response.data.user) {
                 setUser(response.data.user);
                 
+                // Check if verification is required
+                if (response.data.requiresVerification) {
+                    // Redirect to verification page
+                    window.location.href = "/verify-email";
+                    return;
+                }
+                
+                // User is verified, proceed with login
                 if (response.data.user.isVerified) {
-                    // No need to call login again - the backend already set the cookie
                     if (response.data.user.role === 'admin') {
                         window.location.href = '/admin-dashboard';
                     } else {
                         window.location.href = '/';
                     }
-                } else {
-                    window.location.href = "/verify-email";
                 }
             }
         } catch (error) {

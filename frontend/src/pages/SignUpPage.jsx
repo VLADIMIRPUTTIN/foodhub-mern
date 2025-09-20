@@ -47,16 +47,18 @@ const SignUpPage = () => {
                 { withCredentials: true }
             );
 
-            // Set user in auth store so verification page knows the email
+            // Set user in auth store
             if (response.data.user) {
                 setUser(response.data.user);
             }
 
-            if (response.data.user && response.data.user.isVerified) {
+            // Check if verification is required (for new Google users)
+            if (response.data.requiresVerification || !response.data.user.isVerified) {
+                navigate("/verify-email");
+            } else {
+                // User is already verified
                 navigate("/");
                 window.location.reload();
-            } else {
-                navigate("/verify-email");
             }
         } catch (error) {
             console.error("❌ Google signup failed:", error);

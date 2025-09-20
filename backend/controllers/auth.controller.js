@@ -26,7 +26,7 @@ export const signup = async (req, res) => {
 
         const hashedPassword = await bcryptjs.hash(password, 10);
 
-        // Generate verification token
+        // Generate verification token - 6 digits
         const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
 
         // Check if this is the admin account
@@ -35,7 +35,7 @@ export const signup = async (req, res) => {
         
         if (email === 'admin@foodhub.com') {
             role = 'admin';
-            isVerified = true; // Admin is auto-verified
+            isVerified = true;
         }
 
         const user = new User({
@@ -45,7 +45,7 @@ export const signup = async (req, res) => {
             role: role,
             isVerified: isVerified,
             verificationToken: isVerified ? undefined : verificationToken,
-            verificationTokenExpiresAt: isVerified ? undefined : Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+            verificationTokenExpiresAt: isVerified ? undefined : Date.now() + 24 * 60 * 60 * 1000,
         });
 
         await user.save();
@@ -53,32 +53,9 @@ export const signup = async (req, res) => {
         // Generate JWT token and set cookie
         generateTokenAndSetCookie(res, user._id);
 
-        console.log("User created:", user.email);
-        console.log("Is verified:", user.isVerified);
-        console.log("Verification token:", user.verificationToken);
-
         // Send verification email for regular users
         if (!isVerified) {
-            console.log("🚀 STARTING VERIFICATION EMAIL PROCESS");
-            console.log(`📧 User email: ${user.email}`);
-            console.log(`🔑 Generated token: ${verificationToken}`);
-            console.log(`⏰ Token expires at: ${new Date(user.verificationTokenExpiresAt)}`);
-            
-            try {
-                await sendVerificationEmail(user.email, user.name, verificationToken);
-                console.log("✅ Verification email process completed");
-            } catch (emailError) {
-                console.error("❌ Verification email process failed:", emailError.message);
-                console.error("📋 Full error:", emailError);
-            }
-        } else {
-            // Send welcome email for admin
-            try {
-                await sendWelcomeEmail(user.email, user.name);
-                console.log("✅ Welcome email sent successfully");
-            } catch (emailError) {
-                console.error("❌ Welcome email failed:", emailError.message);
-            }
+            await sendVerificationEmail(email, name, verificationToken);
         }
 
         res.status(201).json({
@@ -211,6 +188,19 @@ export const login = async (req, res) => {
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ success: false, message: "Invalid credentials" });
+        }
+
+        // Check if email is verified
+        if (!user.isVerified) {
+            return res.status(403).json({ 
+                success: false, 
+                message: "Please verify your email before logging in.",
+                requiresVerification: true,
+                user: {
+                    ...user._doc,
+                    password: undefined
+                }
+            });
         }
 
         // Check if banned
@@ -360,101 +350,139 @@ export const checkAuth = async (req, res) => {
 
 export const googleLogin = async (req, res) => {
     const { credential } = req.body;
+    
+    if (!credential) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "Google credential is required" 
+        });
+    }
+    
     try {
+        // Verify the Google token
         const ticket = await client.verifyIdToken({
             idToken: credential,
-            audience: "209979773198-fl8bvitq2b48gfj6mhnomgiqr1tkbb0f.apps.googleusercontent.com"
+            audience: "209979773198-fl8bvitq2b48gfj6mhnomgiqr1tkbb0f.apps.googleusercontent.com",
         });
+        
         const payload = ticket.getPayload();
         
-        // Extract profile image from Google payload
-        const googleProfileImage = payload.picture;
-
+        if (!payload) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Invalid Google credential" 
+            });
+        }
+        
+        const { email, name, picture } = payload;
+        
         // Check if user exists
-        let user = await User.findOne({ email: payload.email });
+        let user = await User.findOne({ email });
         
         if (user) {
-            // If user exists but doesn't have a profile image, add the Google one
-            if (!user.profileImage && googleProfileImage) {
-                user.profileImage = googleProfileImage;
-            }
-            
-            // If user exists but isn't verified, send a new verification code
+            // Existing user - check verification status
             if (!user.isVerified) {
-                // Generate verification token
-                const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
-                user.verificationToken = verificationToken;
-                user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
-                await user.save();
-                
-                // Send verification email using Resend
-                await sendVerificationEmail(user.email, user.name, verificationToken);
-                
-                generateTokenAndSetCookie(res, user._id);
-                
                 return res.status(200).json({
                     success: true,
-                    message: "Please verify your email to continue. A verification code has been sent.",
+                    message: "Please verify your email before logging in",
                     user: {
                         ...user._doc,
                         password: undefined
+                    },
+                    requiresVerification: true
+                });
+            }
+
+            // Check if account is banned or suspended
+            if (user.status === "banned") {
+                return res.status(403).json({
+                    success: false,
+                    message: "Your account has been banned",
+                    statusData: {
+                        status: 'banned',
+                        message: "Your account has been permanently banned.",
+                        banReason: user.banReason,
+                        bannedAt: user.updatedAt
                     }
                 });
             }
             
-            // Update last login
-            user.lastLogin = Date.now();
+            if (user.status === "suspended" && user.suspendedUntil && user.suspendedUntil > new Date()) {
+                const timeRemaining = Math.ceil((user.suspendedUntil - new Date()) / 60000);
+                return res.status(403).json({
+                    success: false,
+                    message: "Your account is suspended",
+                    statusData: {
+                        status: 'suspended',
+                        message: `Your account is temporarily suspended.`,
+                        suspendedUntil: user.suspendedUntil,
+                        timeRemaining
+                    }
+                });
+            }
+
+            // Update last login time
+            user.lastLogin = new Date();
             await user.save();
-            
-            // Generate token and return user
-            generateTokenAndSetCookie(res, user._id);
-            
-            return res.status(200).json({
-                success: true,
-                message: "Logged in successfully",
-                user: {
-                    ...user._doc,
-                    password: undefined
-                }
-            });
         } else {
-            // Create new user with Google data
-            const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
-            
-            // Create a random password for Google users
-            const randomPassword = Math.random().toString(36).slice(-8);
+            // Create new user - NOT VERIFIED
+            const randomPassword = Math.random().toString(36).slice(-10);
             const hashedPassword = await bcryptjs.hash(randomPassword, 10);
             
+            // Generate verification token
+            const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+            
             user = new User({
-                email: payload.email,
+                email,
                 password: hashedPassword,
-                name: payload.name,
-                verificationToken,
-                verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
-                isVerified: false,
-                profileImage: googleProfileImage // Save the Google profile image URL
+                name,
+                profileImage: picture,
+                isVerified: false, // ← CHANGED: Google users also need verification
+                verificationToken: verificationToken,
+                verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
             });
             
             await user.save();
-            
-            // Send verification email
-            await sendVerificationEmail(user.email, user.name, verificationToken);
-            
-            // Generate token
-            generateTokenAndSetCookie(res, user._id);
-            
-            return res.status(201).json({
+
+            // Send verification email for Google signup users
+            try {
+                await sendVerificationEmail(email, name, verificationToken);
+                console.log(`✅ Verification email sent to Google user: ${email}`);
+            } catch (emailError) {
+                console.error("❌ Failed to send verification email:", emailError);
+                // Don't fail the signup if email fails
+            }
+
+            return res.status(200).json({
                 success: true,
-                message: "Account created with Google. Please verify your email to continue.",
+                message: "Account created with Google. Please verify your email address.",
                 user: {
                     ...user._doc,
                     password: undefined
-                }
+                },
+                requiresVerification: true
             });
         }
+        
+        // Generate token and set cookie (only for verified users)
+        generateTokenAndSetCookie(res, user._id);
+        
+        // Return user information
+        return res.status(200).json({
+            success: true,
+            message: "Google login successful",
+            user: {
+                ...user._doc,
+                password: undefined
+            }
+        });
     } catch (error) {
         console.error("Google login error:", error);
-        res.status(500).json({ success: false, message: "Error logging in with Google" });
+        return res.status(500).json({ 
+            success: false, 
+            message: "Server error during Google login",
+            error: error.message
+        });
     }
 };
 
