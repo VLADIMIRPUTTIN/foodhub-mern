@@ -386,105 +386,290 @@
         }
     }
 
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 0.625rem 1rem;
-        border: none;
-        border-radius: 10px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        white-space: nowrap;
-        font-family: 'Inter', sans-serif;
-
-        &:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        i {
-            font-size: 0.9rem;
-            flex-shrink: 0;
-        }
-
-        span {
-            font-weight: 600;
-        }
-
-        &--primary {
-            background: linear-gradient(135deg, #CF996C, #BB8860);
-            color: white;
-            box-shadow: 0 4px 12px rgba(207, 153, 108, 0.3);
-
-            &:hover:not(:disabled) {
-                background: linear-gradient(135deg, #BB8860, #A67C52);
-                transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(207, 153, 108, 0.4);
-            }
-        }
-
-        &--secondary {
-            background: #f1f5f9;
-            color: #475569;
-            border: 1px solid #cbd5e1;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-            &:hover:not(:disabled) {
-                background: #e2e8f0;
-                color: #334155;
-                transform: translateY(-1px);
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            }
-        }
-
-        &--destructive {
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
-            color: white;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-
-            &:hover:not(:disabled) {
-                background: linear-gradient(135deg, #b91c1c, #991b1b);
-                transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
-            }
-        }
-
-        &--sm {
-            padding: 0.5rem 0.75rem;
-            font-size: 0.8rem;
-
-            i {
-                font-size: 0.85rem;
-            }
-        }
-    }
-
-    // Modal Styles
-    .modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.6);
+    // Enhanced recipe item styles
+    .list-item.recipe-item {
         display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        padding: 1rem;
-        backdrop-filter: blur(10px);
+        align-items: flex-start;
+        gap: 2rem; // Increased from 1.25rem
+        padding: 2rem; // Increased from 1.5rem
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px; // Increased from 16px
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); // Enhanced shadow
+        position: relative;
+        overflow: hidden;
+        min-height: 180px; // Added minimum height
+
+        &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px; // Increased from 4px
+            background: linear-gradient(90deg, #CF996C, #BB8860, #A67C52);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        &:hover {
+            background: linear-gradient(135deg, #fefefe, #f8fafc);
+            transform: translateY(-6px); // Increased from -4px
+            box-shadow: 
+                0 20px 60px rgba(207, 153, 108, 0.2), // Enhanced shadows
+                0 8px 30px rgba(0, 0, 0, 0.12);
+            border-color: rgba(207, 153, 108, 0.4);
+
+            &::before {
+                transform: scaleX(1);
+            }
+        }
+
+        .item-image {
+            width: 180px; // Increased from 120px
+            height: 140px; // Increased from 80px
+            border-radius: 16px; // Increased from 12px
+            overflow: hidden;
+            flex-shrink: 0;
+            position: relative;
+            background: linear-gradient(135deg, #CF996C, #BB8860);
+            box-shadow: 0 8px 25px rgba(207, 153, 108, 0.3); // Added shadow
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 0.4s ease; // Slower transition
+            }
+
+            .placeholder-image {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(135deg, rgba(207, 153, 108, 0.15), rgba(187, 136, 96, 0.15));
+                color: #CF996C;
+
+                i {
+                    font-size: 3rem; // Increased from 2rem
+                    opacity: 0.7;
+                }
+            }
+
+            &:hover img {
+                transform: scale(1.08); // Increased from 1.05
+            }
+        }
+
+        .item-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem; // Increased from 1rem
+
+            .item-header {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 1.5rem; // Increased from 1rem
+                margin-bottom: 0;
+
+                .item-title {
+                    font-size: 1.4rem; // Increased from 1.2rem
+                    font-weight: 800; // Increased from 700
+                    color: #1e293b;
+                    margin: 0;
+                    line-height: 1.3;
+                    flex: 1;
+                    min-width: 0;
+                }
+
+                .item-category {
+                    background: linear-gradient(135deg, #CF996C, #BB8860);
+                    color: white;
+                    padding: 0.5rem 1rem; // Increased from 0.35rem 0.8rem
+                    border-radius: 25px; // Increased from 20px
+                    font-size: 0.85rem; // Increased from 0.75rem
+                    font-weight: 700; // Increased from 600
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem; // Increased from 0.375rem
+                    white-space: nowrap;
+                    box-shadow: 0 4px 12px rgba(207, 153, 108, 0.4); // Enhanced shadow
+                    flex-shrink: 0;
+
+                    i {
+                        font-size: 0.9rem; // Increased from 0.8rem
+                    }
+                }
+            }
+
+            .item-meta {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 1.25rem 2rem; // Increased gaps
+                margin-bottom: 0.75rem; // Increased from 0.5rem
+
+                .creator,
+                .date,
+                .ingredients-count {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.6rem; // Increased from 0.5rem
+                    color: #64748b;
+                    font-size: 0.95rem; // Increased from 0.85rem
+                    font-weight: 600; // Increased from 500
+
+                    i {
+                        color: #94a3b8;
+                        font-size: 1rem; // Increased from 0.9rem
+                        flex-shrink: 0;
+                    }
+                }
+            }
+
+            .item-description {
+                margin-bottom: 0.75rem; // Increased from 0.5rem
+
+                p {
+                    color: #64748b;
+                    font-size: 1rem; // Increased from 0.9rem
+                    line-height: 1.6; // Increased from 1.5
+                    margin: 0;
+                }
+            }
+
+            .recipe-preview {
+                background: linear-gradient(135deg, #f8fafc, #f1f5f9); // Enhanced background
+                border: 1px solid #e2e8f0;
+                border-radius: 16px; // Increased from 12px
+                padding: 1.5rem; // Increased from 1rem
+                display: flex;
+                flex-direction: column;
+                gap: 1.25rem; // Increased from 1rem
+                box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05); // Added inset shadow
+
+                .preview-section {
+                    h5 {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.75rem; // Increased from 0.5rem
+                        font-size: 1rem; // Increased from 0.9rem
+                        font-weight: 700; // Increased from 600
+                        color: #475569;
+                        margin: 0 0 1rem 0; // Increased from 0.75rem
+
+                        i {
+                            color: #CF996C;
+                            font-size: 1.1rem; // Increased from 0.95rem
+                        }
+                    }
+
+                    .ingredients-preview {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 0.75rem; // Increased from 0.5rem
+
+                        .ingredient-tag {
+                            background: white;
+                            border: 1px solid #e2e8f0;
+                            color: #475569;
+                            padding: 0.4rem 0.8rem; // Increased from 0.25rem 0.6rem
+                            border-radius: 10px; // Increased from 8px
+                            font-size: 0.85rem; // Increased from 0.8rem
+                            font-weight: 600; // Increased from 500
+                            transition: all 0.3s ease;
+                            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); // Added shadow
+
+                            &:hover {
+                                background: #CF996C;
+                                color: white;
+                                border-color: #CF996C;
+                                transform: translateY(-2px);
+                                box-shadow: 0 4px 12px rgba(207, 153, 108, 0.3);
+                            }
+                        }
+
+                        .more-ingredients {
+                            background: linear-gradient(135deg, #CF996C, #BB8860);
+                            color: white;
+                            padding: 0.4rem 0.8rem; // Increased
+                            border-radius: 10px; // Increased
+                            font-size: 0.85rem; // Increased
+                            font-weight: 700; // Increased
+                            box-shadow: 0 3px 10px rgba(207, 153, 108, 0.4);
+                        }
+                    }
+
+                    .instructions-preview {
+                        p {
+                            color: #64748b;
+                            font-size: 0.9rem; // Increased from 0.85rem
+                            line-height: 1.6; // Increased from 1.5
+                            margin: 0;
+                            font-style: italic;
+                            background: rgba(207, 153, 108, 0.05);
+                            padding: 0.75rem 1rem;
+                            border-radius: 8px;
+                            border-left: 3px solid #CF996C;
+                        }
+                    }
+                }
+            }
+        }
+
+        .item-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem; // Increased from 0.5rem
+            flex-shrink: 0;
+            align-self: flex-start;
+
+            .btn {
+                min-width: 100px; // Added minimum width
+                padding: 0.75rem 1rem; // Increased padding
+                font-size: 0.9rem; // Increased font size
+                font-weight: 600;
+            }
+        }
     }
 
-    .modal-content {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-        width: 100%;
-        max-width: 800px;
-        max-height: 90vh;
-        overflow: hidden;
+    // Enhanced scrolling for items list
+    .column-content {
+        .items-list {
+            max-height: calc(80vh - 200px);
+            overflow-y: auto;
+            padding: 2rem; // Increased from 1.5rem
+            display: flex;
+            flex-direction: column;
+            gap: 2rem; // Increased from 1.25rem - MORE SPACE BETWEEN CARDS
+
+            // Custom scrollbar
+            &::-webkit-scrollbar {
+                width: 12px; // Increased from 10px
+            }
+
+            &::-webkit-scrollbar-track {
+                background: #f1f5f9;
+                border-radius: 12px; // Increased
+            }
+
+            &::-webkit-scrollbar-thumb {
+                background: linear-gradient(135deg, #CF996C, #BB8860);
+                border-radius: 12px; // Increased
+                border: 3px solid #f1f5f9; // Increased border
+
+                &:hover {
+                    background: linear-gradient(135deg, #BB8860, #A67C52);
+                }
+            }
+
+            // Smooth scrolling
+            scroll-behavior: smooth;
+        }
     }
 
     // Mobile Responsive Design
@@ -678,6 +863,144 @@
                 }
             }
         }
+    }
+
+    // Enhanced mobile responsiveness
+    @media (max-width: 768px) {
+        .list-item.recipe-item {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+            padding: 1.25rem;
+
+            .item-image {
+                width: 100%;
+                height: 200px;
+                align-self: stretch;
+            }
+
+            .item-content {
+                .item-header {
+                    flex-direction: column;
+                    align-items: stretch;
+                    gap: 0.75rem;
+
+                    .item-category {
+                        align-self: flex-start;
+                    }
+                }
+
+                .item-meta {
+                    gap: 0.75rem 1rem;
+                }
+
+                .recipe-preview {
+                    padding: 0.875rem;
+
+                    .preview-section {
+                        .ingredients-preview {
+                            gap: 0.375rem;
+
+                            .ingredient-tag,
+                            .more-ingredients {
+                                font-size: 0.75rem;
+                                padding: 0.2rem 0.5rem;
+                            }
+                        }
+                    }
+                }
+            }
+
+            .item-actions {
+                flex-direction: row;
+                align-self: stretch;
+
+                .btn {
+                    flex: 1;
+                    justify-content: center;
+                }
+            }
+        }
+
+        .column-content .items-list {
+            max-height: calc(65vh - 180px);
+            padding: 1.25rem;
+            gap: 1rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .list-item.recipe-item {
+            padding: 1rem;
+
+            .item-image {
+                height: 160px;
+            }
+
+            .item-content {
+                .item-header .item-title {
+                    font-size: 1.1rem;
+                }
+
+                .recipe-preview {
+                    padding: 0.75rem;
+                    gap: 0.75rem;
+
+                    .preview-section h5 {
+                        font-size: 0.85rem;
+                    }
+                }
+            }
+
+            .item-actions .btn {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8rem;
+
+                span {
+                    display: none;
+                }
+            }
+        }
+
+        .column-content .items-list {
+            max-height: calc(60vh - 160px);
+            padding: 1rem;
+            gap: 0.875rem;
+        }
+    }
+
+    // Enhanced empty state
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #64748b;
+
+        .empty-icon {
+            font-size: 4rem;
+            color: #CF996C;
+            margin-bottom: 1.5rem;
+            opacity: 0.7;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0 0 1rem 0;
+        }
+
+        p {
+            font-size: 1rem;
+            color: #64748b;
+            margin: 0 0 2rem 0;
+            line-height: 1.6;
+        }
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
     }
 }
 

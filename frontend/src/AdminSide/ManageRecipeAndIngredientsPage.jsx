@@ -48,11 +48,6 @@ const ManageRecipeAndIngredientsPage = ({
 
     return (
         <div className="manage-recipes-ingredients">
-            {/* Page Header */}
-            <div className="page-header">
-                
-            </div>
-
             {/* Mobile Tab Navigation */}
             <div className="mobile-tabs">
                 <button 
@@ -140,7 +135,28 @@ const ManageRecipeAndIngredientsPage = ({
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: index * 0.05 }}
                                         className="list-item recipe-item"
+                                        whileHover={{ y: -4, scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
                                     >
+                                        <div className="item-image">
+                                            {recipe.imageUrl ? (
+                                                <img 
+                                                    src={recipe.imageUrl.startsWith('http') 
+                                                        ? recipe.imageUrl 
+                                                        : `${import.meta.env.MODE === "development" ? "http://localhost:5000" : ""}/${recipe.imageUrl.startsWith('/') ? recipe.imageUrl.slice(1) : recipe.imageUrl}`
+                                                    }
+                                                    alt={recipe.title || recipe.name}
+                                                    onError={(e) => {
+                                                        e.target.src = 'https://via.placeholder.com/120x80/CF996C/ffffff?text=Recipe';
+                                                    }}
+                                                />
+                                            ) : (
+                                                <div className="placeholder-image">
+                                                    <i className="bx bx-bowl-hot"></i>
+                                                </div>
+                                            )}
+                                        </div>
+                                        
                                         <div className="item-content">
                                             <div className="item-header">
                                                 <h4 className="item-title">
@@ -151,6 +167,7 @@ const ManageRecipeAndIngredientsPage = ({
                                                     {recipe.category}
                                                 </span>
                                             </div>
+                                            
                                             <div className="item-meta">
                                                 <span className="creator">
                                                     <i className="bx bx-user"></i>
@@ -162,25 +179,87 @@ const ManageRecipeAndIngredientsPage = ({
                                                         {new Date(recipe.createdAt).toLocaleDateString()}
                                                     </span>
                                                 )}
+                                                {recipe.ingredients && (
+                                                    <span className="ingredients-count">
+                                                        <i className="bx bx-list-ul"></i>
+                                                        {recipe.ingredients.length} ingredient{recipe.ingredients.length !== 1 ? 's' : ''}
+                                                    </span>
+                                                )}
                                             </div>
+                                            
+                                            {recipe.description && (
+                                                <div className="item-description">
+                                                    <p>{recipe.description.length > 100 
+                                                        ? `${recipe.description.substring(0, 100)}...` 
+                                                        : recipe.description}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            
+                                            {recipe.ingredients && recipe.ingredients.length > 0 && (
+                                                <div className="recipe-preview">
+                                                    <div className="preview-section">
+                                                        <h5>
+                                                            <i className="bx bx-list-ul"></i>
+                                                            Ingredients
+                                                        </h5>
+                                                        <div className="ingredients-preview">
+                                                            {recipe.ingredients.slice(0, 3).map((ing, idx) => (
+                                                                <span key={idx} className="ingredient-tag">
+                                                                    {ing.amount && `${ing.amount} `}
+                                                                    {ing.unit && `${ing.unit} `}
+                                                                    {ing.name}
+                                                                </span>
+                                                            ))}
+                                                            {recipe.ingredients.length > 3 && (
+                                                                <span className="more-ingredients">
+                                                                    +{recipe.ingredients.length - 3} more
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {(recipe.instructions || recipe.steps) && (
+                                                        <div className="preview-section">
+                                                            <h5>
+                                                                <i className="bx bx-list-ol"></i>
+                                                                Instructions ({(recipe.instructions || recipe.steps).length} steps)
+                                                            </h5>
+                                                            <div className="instructions-preview">
+                                                                <p>
+                                                                    {typeof (recipe.instructions || recipe.steps)[0] === 'string' 
+                                                                        ? (recipe.instructions || recipe.steps)[0].substring(0, 80) + '...'
+                                                                        : (recipe.instructions || recipe.steps)[0].instruction?.substring(0, 80) + '...'
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
+                                        
                                         <div className="item-actions">
-                                            <button 
+                                            <motion.button 
                                                 className="btn btn--secondary btn--sm"
                                                 onClick={() => setEditingRecipe(recipe)}
                                                 title="Edit Recipe"
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
                                             >
                                                 <i className="bx bx-edit"></i>
                                                 <span>Edit</span>
-                                            </button>
-                                            <button 
+                                            </motion.button>
+                                            <motion.button 
                                                 className="btn btn--destructive btn--sm"
                                                 onClick={() => handleDeleteRecipe(recipe._id)}
                                                 title="Delete Recipe"
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
                                             >
                                                 <i className="bx bx-trash"></i>
                                                 <span>Delete</span>
-                                            </button>
+                                            </motion.button>
                                         </div>
                                     </motion.div>
                                 ))

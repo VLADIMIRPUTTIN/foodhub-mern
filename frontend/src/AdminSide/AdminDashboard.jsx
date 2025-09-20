@@ -36,7 +36,6 @@ const AdminDashboard = () => {
 
     // Modal state
     const [modalState, setModalState] = useState({
-        overview: false,
         users: false,
         recipes: false,
         pending: false,
@@ -421,7 +420,6 @@ const AdminDashboard = () => {
 
     const closeAllModals = () => {
         setModalState({
-            overview: false,
             users: false,
             recipes: false,
             pending: false,
@@ -449,166 +447,163 @@ const AdminDashboard = () => {
 
     return (
         <div className="admin-dashboard">
-            <div className="admin-header">
+            <motion.div 
+                className="admin-header"
+                initial={{ opacity: 0, y: -50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+            >
                 <div className="header-content">
-                    <div className="header-info">
+                    <motion.div 
+                        className="header-info"
+                        initial={{ opacity: 0, x: -30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3, duration: 0.6 }}
+                    >
                         <h1>
-                            <i className="bx bx-user-check"></i>
+                            <motion.i 
+                                className="bx bx-user-check"
+                                animate={{ 
+                                    rotate: [0, 10, -10, 0],
+                                    scale: [1, 1.1, 1]
+                                }}
+                                transition={{ 
+                                    duration: 2,
+                                    repeat: Infinity,
+                                    repeatDelay: 3
+                                }}
+                            ></motion.i>
                             FoodHub Admin Panel
                         </h1>
-                        <p>Welcome back, {user?.name}!</p>
-                    </div>
-                    <button className="logout-btn" onClick={handleLogout}>
-                        <i className="bx bx-log-out"></i>
+                        <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.5, duration: 0.5 }}
+                        >
+                            Welcome back, {user?.name}!
+                        </motion.p>
+                    </motion.div>
+                    <motion.button 
+                        className="logout-btn" 
+                        onClick={handleLogout}
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4, duration: 0.6 }}
+                        whileHover={{ 
+                            scale: 1.05,
+                            boxShadow: "0 10px 30px rgba(0,0,0,0.3)"
+                        }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        <motion.i 
+                            className="bx bx-log-out"
+                            whileHover={{ rotate: -10 }}
+                            transition={{ duration: 0.2 }}
+                        ></motion.i>
                         Logout
-                    </button>
+                    </motion.button>
                 </div>
-            </div>
+            </motion.div>
 
             <div className="admin-container">
                 {/* Real-time Stats Cards */}
                 <div className="stats-grid">
-                    <motion.div 
-                        className="stat-card"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        key="total-users"
-                    >
-                        <div className="stat-icon users">
-                            <i className="bx bx-group"></i>
-                        </div>
-                        <div className="stat-info">
-                            <motion.h3
-                                initial={{ scale: 1 }}
-                                animate={{ scale: [1, 1.1, 1] }}
-                                transition={{ duration: 0.3 }}
-                                key={`users-${stats.totalUsers}`}
+                    {[
+                        { key: 'total-users', icon: 'bx-group', value: stats.totalUsers, label: 'Total Users', type: 'users' },
+                        { key: 'total-recipes', icon: 'bx-book-open', value: stats.totalRecipes, label: 'Total Recipes', type: 'recipes' },
+                        { key: 'pending-recipes', icon: 'bx-time-five', value: stats.pendingRecipes, label: 'Pending Recipes', type: 'pending' },
+                        { key: 'today-logins', icon: 'bx-trending-up', value: stats.todayLogins, label: "Today's Logins", type: 'logins' }
+                    ].map((stat, index) => (
+                        <motion.div 
+                            className="stat-card"
+                            key={stat.key}
+                            initial={{ opacity: 0, y: 50, scale: 0.8 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{ 
+                                delay: index * 0.1,
+                                duration: 0.6,
+                                type: "spring",
+                                stiffness: 100
+                            }}
+                            whileHover={{ 
+                                y: -12, 
+                                scale: 1.05,
+                                boxShadow: "0 25px 80px rgba(0, 0, 0, 0.25)"
+                            }}
+                            whileTap={{ scale: 0.98 }}
+                        >
+                            <motion.div 
+                                className={`stat-icon ${stat.type}`}
+                                whileHover={{ 
+                                    rotate: 10,
+                                    scale: 1.1
+                                }}
+                                transition={{ type: "spring", stiffness: 300 }}
                             >
-                                {stats.totalUsers}
-                            </motion.h3>
-                            <p>Total Users</p>
-                        </div>
-                    </motion.div>
-
-                    <motion.div 
-                        className="stat-card"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        key="total-recipes"
-                    >
-                        <div className="stat-icon recipes">
-                            <i className="bx bx-book-open"></i>
-                        </div>
-                        <div className="stat-info">
-                            <motion.h3
-                                initial={{ scale: 1 }}
-                                animate={{ scale: [1, 1.1, 1] }}
-                                transition={{ duration: 0.3 }}
-                                key={`recipes-${stats.totalRecipes}`}
-                            >
-                                {stats.totalRecipes}
-                            </motion.h3>
-                            <p>Total Recipes</p>
-                        </div>
-                    </motion.div>
-
-                    <motion.div 
-                        className="stat-card"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        key="pending-recipes"
-                    >
-                        <div className="stat-icon pending">
-                            <i className="bx bx-time-five"></i>
-                        </div>
-                        <div className="stat-info">
-                            <motion.h3
-                                initial={{ scale: 1 }}
-                                animate={{ scale: [1, 1.1, 1] }}
-                                transition={{ duration: 0.3 }}
-                                key={`pending-${stats.pendingRecipes}`}
-                            >
-                                {stats.pendingRecipes}
-                            </motion.h3>
-                            <p>Pending Recipes</p>
-                        </div>
-                    </motion.div>
-
-                    <motion.div 
-                        className="stat-card"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        key="today-logins"
-                    >
-                        <div className="stat-icon logins">
-                            <i className="bx bx-trending-up"></i>
-                        </div>
-                        <div className="stat-info">
-                            <motion.h3
-                                initial={{ scale: 1 }}
-                                animate={{ scale: [1, 1.1, 1] }}
-                                transition={{ duration: 0.3 }}
-                                key={`logins-${stats.todayLogins}`}
-                            >
-                                {stats.todayLogins}
-                            </motion.h3>
-                            <p>Today's Logins</p>
-                        </div>
-                    </motion.div>
+                                <i className={stat.icon}></i>
+                            </motion.div>
+                            <div className="stat-info">
+                                <motion.h3
+                                    key={`${stat.key}-${stat.value}`}
+                                    initial={{ scale: 1 }}
+                                    animate={{ scale: [1, 1.2, 1] }}
+                                    transition={{ duration: 0.5, ease: "easeOut" }}
+                                >
+                                    {stat.value}
+                                </motion.h3>
+                                <p>{stat.label}</p>
+                            </div>
+                        </motion.div>
+                    ))}
                 </div>
 
                 {/* Navigation Tabs */}
-                <div className="admin-tabs">
-                    <button 
-                        className={`tab-btn`}
-                        onClick={() => openModal('overview')}
-                    >
-                        <i className="bx bx-bar-chart-alt-2"></i>
-                        <span className="tab-text">Overview</span>
-                    </button>
-                    <button 
-                        className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
-                        onClick={() => openModal('users')}
-                    >
-                        <i className="bx bx-group"></i>
-                        <span className="tab-text">Users</span>
-                    </button>
-                    <button 
-                        className={`tab-btn ${activeTab === 'recipes' ? 'active' : ''}`}
-                        onClick={() => openModal('recipes')}
-                    >
-                        <i className="bx bx-book-open"></i>
-                        <span className="tab-text">Recipes</span>
-                    </button>
-                    <button 
-                        className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
-                        onClick={() => openModal('pending')}
-                    >
-                        <i className="bx bx-time-five"></i>
-                        <span className="tab-text">Pending</span>
-                        {stats.pendingRecipes > 0 && (
-                            <span className="notification-badge">{stats.pendingRecipes}</span>
-                        )}
-                    </button>
-                    <button 
-                        className={`tab-btn ${modalState.createRecipe ? 'active' : ''}`}
-                        onClick={() => openModal('createRecipe')}
-                    >
-                        <i className="bx bx-plus-circle"></i>
-                        <span className="tab-text">Create Recipe</span>
-                    </button>
-                    <button 
-                        className={`tab-btn ${modalState.createIngredient ? 'active' : ''}`}
-                        onClick={() => openModal('createIngredient')}
-                    >
-                        <i className="bx bx-leaf"></i>
-                        <span className="tab-text">Create Ingredient</span>
-                    </button>
-                </div>
+                <motion.div 
+                    className="admin-tabs"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5, duration: 0.6 }}
+                >
+                    {[
+                        { key: 'users', icon: 'bx-group', text: 'Users', action: () => openModal('users') },
+                        { key: 'recipes', icon: 'bx-book-open', text: 'Recipes', action: () => openModal('recipes') },
+                        { key: 'pending', icon: 'bx-time-five', text: 'Pending', action: () => openModal('pending'), badge: stats.pendingRecipes },
+                        { key: 'createRecipe', icon: 'bx-plus-circle', text: 'Create Recipe', action: () => openModal('createRecipe') },
+                        { key: 'createIngredient', icon: 'bx-leaf', text: 'Create Ingredient', action: () => openModal('createIngredient') }
+                    ].map((tab, index) => (
+                        <motion.button 
+                            key={tab.key}
+                            className={`tab-btn ${modalState[tab.key] ? 'active' : ''}`}
+                            onClick={tab.action}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.6 + (index * 0.1), duration: 0.4 }}
+                            whileHover={{ 
+                                scale: 1.05,
+                                y: -3
+                            }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <motion.i 
+                                className={tab.icon}
+                                whileHover={{ rotate: 8, scale: 1.1 }}
+                                transition={{ type: "spring", stiffness: 300 }}
+                            ></motion.i>
+                            <span className="tab-text">{tab.text}</span>
+                            {tab.badge > 0 && (
+                                <motion.span 
+                                    className="notification-badge"
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    whileHover={{ scale: 1.2 }}
+                                    transition={{ type: "spring", stiffness: 400 }}
+                                >
+                                    {tab.badge}
+                                </motion.span>
+                            )}
+                        </motion.button>
+                    ))}
+                </motion.div>
 
                 {/* Content Area */}
                 <motion.div>
@@ -675,7 +670,7 @@ const AdminDashboard = () => {
                 />
             </QuickActionModal>
 
-            {/* Recipes Modal - Enhanced with create options */}
+            {/* Recipes Modal - Clean Version Without Quick Actions */}
             <QuickActionModal
                 isOpen={modalState.recipes}
                 onClose={() => closeModal('recipes')}
@@ -683,38 +678,6 @@ const AdminDashboard = () => {
                 type="recipes"
                 isFullContent={true}
             >
-                <div style={{ padding: '1rem', borderBottom: '1px solid #e9ecef', background: '#f8f9fa' }}>
-                    <div className="modal-quick-actions" style={{ flexDirection: 'row', gap: '0.5rem', marginBottom: '0' }}>
-                        <button 
-                            className="modal-action-btn recipes"
-                            style={{ flex: 1, minHeight: '48px', padding: '0.5rem 1rem' }}
-                            onClick={() => {
-                                closeModal('recipes');
-                                openModal('createRecipe');
-                            }}
-                        >
-                            <i className="bx bx-plus-circle"></i>
-                            <div className="btn-content">
-                                <div className="btn-title" style={{ fontSize: '0.85rem' }}>Create Recipe</div>
-                            </div>
-                        </button>
-                        
-                        <button 
-                            className="modal-action-btn pending"
-                            style={{ flex: 1, minHeight: '48px', padding: '0.5rem 1rem' }}
-                            onClick={() => {
-                                closeModal('recipes');
-                                openModal('createIngredient');
-                            }}
-                        >
-                            <i className="bx bx-leaf"></i>
-                            <div className="btn-content">
-                                <div className="btn-title" style={{ fontSize: '0.85rem' }}>Create Ingredient</div>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-                
                 <ManageRecipeAndIngredientsPage
                     recipes={recipes}
                     ingredients={ingredients}

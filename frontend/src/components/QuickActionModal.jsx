@@ -99,7 +99,6 @@ const QuickActionModal = ({ isOpen, onClose, title, children, type = 'default', 
                                 </div>
                                 <div className="modal__title-content">
                                     <h3 className="modal__title">{title}</h3>
-                                    <div className="modal__subtitle">Quick Actions & Management</div>
                                 </div>
                             </div>
                             

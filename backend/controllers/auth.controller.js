@@ -356,103 +356,105 @@ export const checkAuth = async (req, res) => {
     }
 };
 
+// Update the googleLogin function to use verification with Resend
+
 export const googleLogin = async (req, res) => {
     const { credential } = req.body;
     try {
         const ticket = await client.verifyIdToken({
             idToken: credential,
-            audience: "209979773198-fl8bvitq2b48gfj6mhnomgiqr1tkbb0f.apps.googleusercontent.com", // Same as frontend
+            audience: "209979773198-fl8bvitq2b48gfj6mhnomgiqr1tkbb0f.apps.googleusercontent.com"
         });
         const payload = ticket.getPayload();
-        const { email, name, sub, picture } = payload;
-
-        let profileImageUrl = null;
         
-        // Only upload to Cloudinary if picture exists
-        if (picture) {
-            try {
-                const cloudinaryRes = await cloudinary.uploader.upload(picture, {
-                    folder: "foodhub-profile-images",
-                    public_id: `google_${sub}`,
-                    overwrite: true,
-                    resource_type: "image"
-                });
-                profileImageUrl = cloudinaryRes.secure_url;
-            } catch (cloudinaryError) {
-                console.error("Cloudinary upload failed:", cloudinaryError);
-                // Fall back to original Google image URL
-                profileImageUrl = picture;
-            }
-        }
+        // Extract profile image from Google payload
+        const googleProfileImage = payload.picture;
 
-        let user = await User.findOne({ email });
-        if (!user) {
-            user = new User({
-                email,
-                name,
-                password: "google-oauth",
-                isVerified: false,
-                profileImage: profileImageUrl,
-            });
-            await user.save();
-        } else {
-            // Update profile image if not set or if it's a broken Cloudinary URL
-            if (!user.profileImage || user.profileImage.includes('cloudinary') && profileImageUrl) {
-                user.profileImage = profileImageUrl;
+        // Check if user exists
+        let user = await User.findOne({ email: payload.email });
+        
+        if (user) {
+            // If user exists but doesn't have a profile image, add the Google one
+            if (!user.profileImage && googleProfileImage) {
+                user.profileImage = googleProfileImage;
+            }
+            
+            // If user exists but isn't verified, send a new verification code
+            if (!user.isVerified) {
+                // Generate verification token
+                const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+                user.verificationToken = verificationToken;
+                user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
                 await user.save();
+                
+                // Send verification email using Resend
+                await sendVerificationEmail(user.email, user.name, verificationToken);
+                
+                generateTokenAndSetCookie(res, user._id);
+                
+                return res.status(200).json({
+                    success: true,
+                    message: "Please verify your email to continue. A verification code has been sent.",
+                    user: {
+                        ...user._doc,
+                        password: undefined
+                    }
+                });
             }
-        }
-
-        let isNewUser = false;
-        let verificationToken;
-
-        if (!user) {
-            // New user via Google
-            verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
-            user = new User({
-                email,
-                name,
-                password: "google-oauth", // or any placeholder
-                isVerified: false,
-                verificationToken,
-                verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000,
+            
+            // Update last login
+            user.lastLogin = Date.now();
+            await user.save();
+            
+            // Generate token and return user
+            generateTokenAndSetCookie(res, user._id);
+            
+            return res.status(200).json({
+                success: true,
+                message: "Logged in successfully",
+                user: {
+                    ...user._doc,
+                    password: undefined
+                }
             });
+        } else {
+            // Create new user with Google data
+            const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+            
+            // Create a random password for Google users
+            const randomPassword = Math.random().toString(36).slice(-8);
+            const hashedPassword = await bcryptjs.hash(randomPassword, 10);
+            
+            user = new User({
+                email: payload.email,
+                password: hashedPassword,
+                name: payload.name,
+                verificationToken,
+                verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
+                isVerified: false,
+                profileImage: googleProfileImage // Save the Google profile image URL
+            });
+            
             await user.save();
-            isNewUser = true;
-        } else if (!user.isVerified) {
-            // Existing user but not verified
-            verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
-            user.verificationToken = verificationToken;
-            user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000;
-            await user.save();
+            
+            // Send verification email
+            await sendVerificationEmail(user.email, user.name, verificationToken);
+            
+            // Generate token
+            generateTokenAndSetCookie(res, user._id);
+            
+            return res.status(201).json({
+                success: true,
+                message: "Account created with Google. Please verify your email to continue.",
+                user: {
+                    ...user._doc,
+                    password: undefined
+                }
+            });
         }
-
-        // Send verification email if not verified
-        if (!user.isVerified) {
-            await sendVerificationEmail(user.email, user.verificationToken, user.name, user.profileImage);
-        }
-
-        // Set JWT cookie, etc.
-        generateTokenAndSetCookie(res, user._id);
-
-        res.status(200).json({
-            success: true,
-            message: isNewUser
-                ? "Account created successfully with Google"
-                : "Logged in successfully with Google",
-            isNewUser,
-            user: {
-                ...user._doc,
-                password: undefined,
-            },
-        });
     } catch (error) {
-        console.error("❌ Google authentication failed:", error);
-        res.status(400).json({
-            success: false,
-            message: "Google authentication failed",
-            error: error.message,
-        });
+        console.error("Google login error:", error);
+        res.status(500).json({ success: false, message: "Error logging in with Google" });
     }
 };
 
@@ -474,7 +476,7 @@ export const resendVerification = async (req, res) => {
         user.verificationToken = verificationToken;
         user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
         await user.save();
-        await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
+        await sendVerificationEmail(user.email, user.name, verificationToken);
         res.status(200).json({ success: true, message: "Verification code resent" });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

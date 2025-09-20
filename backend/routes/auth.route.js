@@ -12,6 +12,7 @@ import {
 	resendVerification,
 } from "../controllers/auth.controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
+import { testResendConnection } from "../mailtrap/resend.config.js";
 
 const router = express.Router();
 
@@ -30,5 +31,23 @@ router.post("/reset-password/:token", resetPassword);
 router.post("/create-admin", createAdmin);
 router.post("/google-login", googleLogin);
 router.post("/resend-verification", resendVerification);
+
+// Add this new route
+router.get("/test-email", async (req, res) => {
+    try {
+        const result = await testResendConnection();
+        res.status(200).json({ 
+            success: true, 
+            message: "Test email sent successfully", 
+            result 
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false, 
+            message: "Failed to send test email", 
+            error: error.message 
+        });
+    }
+});
 
 export default router;
