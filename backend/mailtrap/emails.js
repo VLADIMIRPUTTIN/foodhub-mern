@@ -3,11 +3,19 @@ import { sender, resend } from "./resend.config.js";
 
 export const sendVerificationEmail = async (email, name, verificationCode) => {
     try {
+        console.log("Attempting to send verification email:");
+        console.log("To:", email);
+        console.log("From:", sender.email);
+        console.log("Code:", verificationCode);
+
+        if (!email) {
+            throw new Error("No email provided for verification");
+        }
+
         const profileImageSection = `<div style="width: 100%; height: 100%; background-color: #CF996C; display: flex; align-items: center; justify-content: center;">
             <span style="font-size: 28px; font-weight: bold; color: white;">${name.charAt(0).toUpperCase()}</span>
         </div>`;
 
-        // Replace placeholders with actual content
         const htmlContent = VERIFICATION_EMAIL_TEMPLATE
             .replace(/{userName}/g, name)
             .replace(/{verificationCode}/g, verificationCode)
@@ -20,7 +28,7 @@ export const sendVerificationEmail = async (email, name, verificationCode) => {
             html: htmlContent,
         });
 
-        console.log("Verification email sent:", data);
+        console.log("Verification email sent successfully:", data);
         return data;
     } catch (error) {
         console.error("Error sending verification email:", error);
@@ -30,6 +38,10 @@ export const sendVerificationEmail = async (email, name, verificationCode) => {
 
 export const sendWelcomeEmail = async (email, name) => {
     try {
+        if (!email) {
+            throw new Error("No email provided for welcome email");
+        }
+
         const data = await resend.emails.send({
             from: `${sender.name} <${sender.email}>`,
             to: email,
@@ -47,11 +59,17 @@ export const sendWelcomeEmail = async (email, name) => {
 
 export const sendPasswordResetEmail = async (email, name, resetToken) => {
     try {
+        if (!email) {
+            throw new Error("No email provided for password reset");
+        }
+
+        const resetUrl = `${process.env.CLIENT_URL || 'https://www.foodhubrecipe.shop'}/reset-password/${resetToken}`;
+        
         const data = await resend.emails.send({
             from: `${sender.name} <${sender.email}>`,
             to: email,
             subject: "Reset Your FoodHub Password",
-            html: `<p>Hello ${name},</p><p>Click <a href="${process.env.CLIENT_URL}/reset-password/${resetToken}">here</a> to reset your password.</p>`,
+            html: `<p>Hello ${name},</p><p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`,
         });
 
         console.log("Password reset email sent:", data);
@@ -62,9 +80,12 @@ export const sendPasswordResetEmail = async (email, name, resetToken) => {
     }
 };
 
-// Add the missing sendResetSuccessEmail function
 export const sendResetSuccessEmail = async (email, name) => {
     try {
+        if (!email) {
+            throw new Error("No email provided for reset success email");
+        }
+
         const data = await resend.emails.send({
             from: `${sender.name} <${sender.email}>`,
             to: email,

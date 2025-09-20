@@ -13,8 +13,8 @@ import recipeRoutes from "./routes/recipe.route.js";
 import ingredientRoutes from "./routes/ingredient.route.js";
 import userRoutes from "./routes/user.route.js";
 import favoriteRoutes from './routes/favoriteRoutes.js';
-import visionRoutes from "./routes/vision.route.js";
-import youtubeRoutes from "./routes/youtube.route.js"; // Add this import
+import visionRoutes from './routes/vision.route.js';
+import youtubeRoutes from './routes/youtube.route.js';
 
 dotenv.config();
 
@@ -89,7 +89,7 @@ app.use("/api/ingredients", ingredientRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/vision", visionRoutes);
-app.use("/api/youtube", youtubeRoutes); // Add this route
+app.use("/api/youtube", youtubeRoutes);
 
 if (process.env.NODE_ENV === "production") {
     app.use(express.static(path.join(__dirname, "/frontend/dist")));
