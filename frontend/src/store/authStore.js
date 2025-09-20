@@ -7,6 +7,18 @@ const API_URL = import.meta.env.MODE === "development"
 
 axios.defaults.withCredentials = true;
 
+// Add axios interceptor to handle 401 responses
+axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // Clear auth state and redirect to login
+            useAuthStore.getState().logout();
+        }
+        return Promise.reject(error);
+    }
+);
+
 export const useAuthStore = create((set, get) => ({
     user: null,
     isAuthenticated: false,
@@ -70,13 +82,19 @@ export const useAuthStore = create((set, get) => ({
     clearAccountStatus: () => set({ accountStatus: null }),
 
     logout: async () => {
-        set({ isLoading: true, error: null });
         try {
-            await axios.post(`${API_URL}/logout`);
-            set({ user: null, isAuthenticated: false, error: null, isLoading: false });
+            await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
         } catch (error) {
-            set({ error: "Error logging out", isLoading: false });
-            throw error;
+            console.error("Logout error:", error);
+        } finally {
+            // Always clear local state regardless of server response
+            set({ 
+                user: null, 
+                isAuthenticated: false, 
+                error: null, 
+                isLoading: false,
+                accountStatus: null 
+            });
         }
     },
     verifyEmail: async (code) => {
@@ -112,14 +130,21 @@ export const useAuthStore = create((set, get) => ({
     checkAuth: async () => {
         set({ isCheckingAuth: true, error: null });
         try {
-            const response = await axios.get(`${API_URL}/check-auth`);
-            set({ user: response.data.user, isAuthenticated: true, isCheckingAuth: false });
+            const res = await axios.get(`${API_URL}/check-auth`, { withCredentials: true });
+            set({
+                user: res.data.user,
+                isAuthenticated: true,
+                isCheckingAuth: false,
+            });
+            return res.data.user;
         } catch (error) {
-            // Only log errors that aren't authentication-related
-            if (error.response?.status !== 401) {
-                console.error('Unexpected auth check error:', error);
-            }
-            set({ error: null, isCheckingAuth: false, isAuthenticated: false });
+            set({ 
+                error: null, 
+                isCheckingAuth: false, 
+                isAuthenticated: false, 
+                user: null 
+            });
+            throw error;
         }
     },
     forgotPassword: async (email) => {

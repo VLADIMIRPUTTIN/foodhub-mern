@@ -6,26 +6,39 @@ export const verifyToken = async (req, res, next) => {
     
     if (!token) {
         console.log("No token provided");
-        return res.status(401).json({ success: false, message: "Unauthorized - no token provided" });
+        return res.status(401).json({ 
+            success: false, 
+            message: "Unauthorized - no token provided" 
+        });
     }
     
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         if (!decoded) {
             console.log("Invalid token");
-            return res.status(401).json({ success: false, message: "Unauthorized - invalid token" });
+            return res.status(401).json({ 
+                success: false, 
+                message: "Unauthorized - invalid token" 
+            });
         }
 
         // Get user and check status
         const user = await User.findById(decoded.userId);
         if (!user) {
             console.log("User not found:", decoded.userId);
-            return res.status(401).json({ success: false, message: "User not found" });
+            // Clear the invalid cookie
+            res.clearCookie("token");
+            return res.status(401).json({ 
+                success: false, 
+                message: "User not found" 
+            });
         }
 
         // Check if banned
         if (user.status === "banned") {
             console.log("User is banned:", user._id);
+            // Clear cookie for banned user
+            res.clearCookie("token");
             return res.status(403).json({ 
                 success: false, 
                 message: "Your account has been banned.",
@@ -43,6 +56,8 @@ export const verifyToken = async (req, res, next) => {
             if (user.suspendedUntil && user.suspendedUntil > new Date()) {
                 const timeRemaining = Math.ceil((user.suspendedUntil - new Date()) / 60000);
                 console.log("User is suspended:", user._id, "for", timeRemaining, "minutes");
+                // Clear cookie for suspended user
+                res.clearCookie("token");
                 return res.status(403).json({ 
                     success: false, 
                     message: `Your account is suspended for ${timeRemaining} more minute(s).`,
@@ -67,6 +82,20 @@ export const verifyToken = async (req, res, next) => {
         next();
     } catch (error) {
         console.log("Error in verifyToken:", error);
-        return res.status(500).json({ success: false, message: "Server error" });
+        
+        // Clear invalid cookie
+        res.clearCookie("token");
+        
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ 
+                success: false, 
+                message: "Token expired" 
+            });
+        }
+        
+        return res.status(401).json({ 
+            success: false, 
+            message: "Invalid token" 
+        });
     }
 };

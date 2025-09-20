@@ -15,7 +15,7 @@ import { useSocket } from '../context/SocketContext';
 const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/WvG991xq/profile-default.png";
 
 const UserProfilePage = () => {
-    const { user, logout, setUser } = useAuthStore();
+    const { user, logout, setUser, checkAuth, isCheckingAuth } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();
     const [userRecipes, setUserRecipes] = useState([]);
@@ -38,13 +38,29 @@ const UserProfilePage = () => {
     const { socket } = useSocket();
 
     useEffect(() => {
-        fetchUserData();
-        
-        // Check if coming from recipe creation with refresh flag
-        if (location.state?.refreshRecipes) {
-            setActiveTab('recipes');
-        }
-    }, [location.state]);
+        // Check authentication first before fetching data
+        const verifyAndFetchData = async () => {
+            try {
+                // Verify authentication
+                await checkAuth();
+                
+                // Only fetch data if user is authenticated
+                if (user) {
+                    await fetchUserData();
+                }
+                
+                // Check if coming from recipe creation with refresh flag
+                if (location.state?.refreshRecipes) {
+                    setActiveTab('recipes');
+                }
+            } catch (error) {
+                console.error('Authentication failed:', error);
+                navigate('/login');
+            }
+        };
+
+        verifyAndFetchData();
+    }, [location.state, user, checkAuth, navigate]);
 
     useEffect(() => {
         if (socket) {
@@ -581,6 +597,21 @@ const UserProfilePage = () => {
         setRecipeToDelete(null);
     };
 
+    // Add early return for authentication checking
+    if (isCheckingAuth) {
+        return (
+            <div className="user-profile-page">
+                <Navbar />
+                <div className="loading">
+                    <div className="loading-spinner">
+                        <i className="bx bx-loader-alt bx-spin"></i>
+                    </div>
+                    <p>Verifying authentication...</p>
+                </div>
+            </div>
+        );
+    }
+
     if (!user) {
         return (
             <div className="user-profile-page">
@@ -588,7 +619,7 @@ const UserProfilePage = () => {
                 <div className="error-container">
                     <div className="error-message">
                         <i className="bx bx-error-circle"></i>
-                        <h2>Invalid user ID</h2>
+                        <h2>Authentication Required</h2>
                         <p>Please log in to view your profile.</p>
                         <button onClick={() => navigate('/login')} className="login-btn">
                             Go to Login
