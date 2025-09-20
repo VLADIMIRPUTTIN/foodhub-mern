@@ -760,225 +760,218 @@ export default SharedRecipePage;};                : "";
                                         <input  <label htmlFor="profile-image-input" className="image-upload-btn">
                                             id="profile-image-input"    </div>
                                             type="file"nt">Click the camera icon to change your photo</p>
-                                            accept="image/*"
-                                            onChange={handleImageChange}
-                                            style={{ display: 'none' }}="form-grid">
-                                        />-group">
-                                    </div>-envelope"></i> Email:</label>
-                                    <p className="upload-hint">Click the camera icon to change your photo</p>
                                 </div>
-                                  value={editForm.email}
+                                
                                 <div className="form-grid">
-                                    <div className="form-group">  className="disabled-input"
-                                        <label><i className="bx bx-envelope"></i> Email:</label>    />
-                                        <inputcle"></i> Email cannot be changed</small>
+                                    <div className="form-group">
+                                        <label><i className="bx bx-envelope"></i> Email:</label>
+                                        <input
                                             type="email"
                                             value={editForm.email}
-                                            disabledull-width">
+                                            disabled
                                             className="disabled-input"
                                         />
-                                        <small><i className="bx bx-info-circle"></i> Email cannot be changed</small>ditForm.bio}
-                                    </div>  onChange={(e) => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
-                                      placeholder="Tell us about yourself..."
-                                    <div className="form-group full-width">      rows={4}
-                                        <label><i className="bx bx-message-square-detail"></i> Bio:</label>        />
+                                        <small><i className="bx bx-info-circle"></i> Email cannot be changed</small>
+                                    </div>
+                                    
+                                    <div className="form-group full-width">
+                                        <label><i className="bx bx-message-square-detail"></i> Bio:</label>
                                         <textarea
                                             value={editForm.bio}
                                             onChange={(e) => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
-                                            placeholder="Tell us about yourself..."="form-actions">
-                                            rows={4}ype="button" onClick={handleEditToggle} className="cancel-btn">
+                                            placeholder="Tell us about yourself..."
+                                            rows={4}
                                         />
                                     </div>
                                 </div>
-                                ype="submit" className="save-btn">
-                                <div className="form-actions">  <i className="bx bx-check"></i>
-                                    <button type="button" onClick={handleEditToggle} className="cancel-btn">     Save Changes
-                                        <i className="bx bx-x"></i>       </button>
+                                
+                                <div className="form-actions">
+                                    <button type="button" onClick={handleEditToggle} className="cancel-btn">
+                                        <i className="bx bx-x"></i>
                                         Cancel
                                     </button>
                                     <button type="submit" className="save-btn">
                                         <i className="bx bx-check"></i>
                                         Save Changes
-                                    </button>Name="info-item">
+                                    </button>
                                 </div>
-                            </form>envelope"></i>
+                            </form>
                         ) : (
-                            <div className="profile-info">lassName="info-content">
-                                <div className="info-grid">  <label>Email</label>
-                                    <div className="info-item">        <span>{user.email || 'Loading...'}</span>
+                            <div className="profile-info">
+                                <div className="info-grid">
+                                    <div className="info-item">
                                         <div className="info-icon">
                                             <i className="bx bx-envelope"></i>
                                         </div>
-                                        <div className="info-content">Name="info-item full-width">
+                                        <div className="info-content">
                                             <label>Email</label>
-                                            <span>{user.email || 'Loading...'}</span>x-message-square-detail"></i>
+                                            <span>{user.email || 'Loading...'}</span>
                                         </div>
-                                    </div>lassName="info-content">
-                                      <label>Bio</label>
-                                    <div className="info-item full-width">        <span>{user.bio || 'No bio available'}</span>
+                                    </div>
+                                    
+                                    <div className="info-item full-width">
                                         <div className="info-icon">
                                             <i className="bx bx-message-square-detail"></i>
                                         </div>
-                                        <div className="info-content">Name="info-item">
+                                        <div className="info-content">
                                             <label>Bio</label>
-                                            <span>{user.bio || 'No bio available'}</span>eck"></i>
+                                            <span>{user.bio || 'No bio available'}</span>
                                         </div>
                                     </div>
-                                    nt Status</label>
-                                    <div className="info-item">lassName="status-verified">
-                                        <div className="info-icon">  <i className="bx bx-check-circle"></i>
-                                            <i className="bx bx-shield-check"></i>      Verified
-                                        </div>      </span>
-                                        <div className="info-content">      </div>
-                                            <label>Account Status</label>          </div>
-                                            <span className="status-verified">/div>
-                                                <i className="bx bx-check-circle"></i>                            </div>
-                                                Verified
-                                            </span>v>
+                                    
+                                    <div className="info-item">
+                                        <div className="info-icon">
+                                            <i className="bx bx-shield-check"></i>
                                         </div>
-                                    </div>/}
+                                        <div className="info-content">
+                                            <label>Account Status</label>
+                                            <span className="status-verified">
+                                                <i className="bx bx-check-circle"></i>
+                                                Verified
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div> x: 20 }}
-                        )}   animate={{ opacity: 1, x: 0 }}
-                    </motion.div>ay: 0.4 }}
+                            </div>
+                        )}
+                    </motion.div>
 
                     {/* My Recipes/Favorites Section */}
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}button 
-                        transition={{ duration: 0.6, delay: 0.4 }} 'recipes' ? 'active' : ''}`}
-                        className="my-recipes"pes')}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.6, delay: 0.4 }}
+                        className="my-recipes"
                     >
-                        <div className="section-header">lassName="bx bx-book-alt"></i> 
+                        <div className="section-header">
                             <div className="tab-header">
                                 <button 
-                                    className={`tab-btn ${activeTab === 'recipes' ? 'active' : ''}`}button 
-                                    onClick={() => setActiveTab('recipes')}=== 'favorites' ? 'active' : ''}`}
-                                >avorites')}
+                                    className={`tab-btn ${activeTab === 'recipes' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('recipes')}
+                                >
                                     <i className="bx bx-book-alt"></i> 
-                                    My Recipes ({userRecipes.length})  <i className="bx bx-heart"></i> 
-                                </button>      My Favorites ({favoriteCount})
-                                <button         </button>
+                                    My Recipes ({userRecipes.length})
+                                </button>
+                                <button 
                                     className={`tab-btn ${activeTab === 'favorites' ? 'active' : ''}`}
                                     onClick={() => setActiveTab('favorites')}
                                 >
                                     <i className="bx bx-heart"></i> 
-                                    My Favorites ({favoriteCount})Name="loading">
+                                    My Favorites ({favoriteCount})
                                 </button>
-                            </div>  <i className="bx bx-loader-alt bx-spin"></i>
-                        </div>   </div>
-                          <p>Loading your delicious {activeTab === 'recipes' ? 'recipes' : 'favorites'}...</p>
+                            </div>
+                        </div>
+                        
                         {isLoading ? (
                             <div className="loading">
                                 <div className="loading-spinner">
                                     <i className="bx bx-loader-alt bx-spin"></i>
                                 </div>
-                                <p>Loading your delicious {activeTab === 'recipes' ? 'recipes' : 'favorites'}...</p> (
-                            </div>>
-                        ) : ( => (
+                                <p>Loading your delicious {activeTab === 'recipes' ? 'recipes' : 'favorites'}...</p>
+                            </div>
+                        ) : (
                             <>
                                 {/* My Recipes Tab */}
                                 {activeTab === 'recipes' && (
                                     userRecipes.length > 0 ? (
-                                        <div className="recipes-grid"> }}
-                                            {userRecipes.map((recipe, index) => (0 }}
-                                                <motion.div ay: index * 0.1 }}
-                                                    key={recipe._id}    whileHover={{ scale: 1.02 }}
+                                        <div className="recipes-grid">
+                                            {userRecipes.map((recipe, index) => (
+                                                <motion.div 
+                                                    key={recipe._id} 
                                                     className="recipe-card" 
-                                                    onClick={() => navigate(`/recipe/${recipe._id}`)}position: 'relative' }}
+                                                    onClick={() => navigate(`/recipe/${recipe._id}`)}
                                                     initial={{ opacity: 0, y: 20 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ duration: 0.4, delay: index * 0.1 }}
                                                     whileHover={{ scale: 1.02 }}
-                                                    whileTap={{ scale: 0.98 }}t={recipe.title || recipe.name} 
-                                                    style={{ position: 'relative' }}  onError={(e) => {
-                                                >ceholder/200/150';
+                                                    whileTap={{ scale: 0.98 }}
+                                                    style={{ position: 'relative' }}
+                                                >
                                                     <div className="recipe-image">
                                                         <img 
-                                                            src={getRecipeImageUrl(recipe.imageUrl)} iv className="recipe-overlay">
-                                                            alt={recipe.title || recipe.name} ight-arrow-alt"></i>
+                                                            src={getRecipeImageUrl(recipe.imageUrl)} 
+                                                            alt={recipe.title || recipe.name} 
                                                             onError={(e) => {
-                                                                console.log('Image failed to load:', recipe.imageUrl);
-                                                                e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
-                                                            }}e}</h3>
+                                                                e.target.src = '/api/placeholder/200/150';
+                                                            }}
                                                         />
                                                         <div className="recipe-overlay">
-                                                            <i className="bx bx-right-arrow-alt"></i>lassName="meta-item">
-                                                        </div>egory"></i>
-                                                    </div>cipe.category}</span>
+                                                            <i className="bx bx-right-arrow-alt"></i>
+                                                        </div>
+                                                    </div>
                                                     <div className="recipe-info">
-                                                        <h3>{recipe.title || recipe.name}</h3>lassName="meta-item">
-                                                        <p>{recipe.description}</p>  <i className="bx bx-time"></i>
-                                                        <div className="recipe-meta">"date">{formatDate(recipe.createdAt)}</span>
+                                                        <h3>{recipe.title || recipe.name}</h3>
+                                                        <p>{recipe.description}</p>
+                                                        <div className="recipe-meta">
                                                             <div className="meta-item">
                                                                 <i className="bx bx-category"></i>
                                                                 <span className="category">{recipe.category}</span>
-                                                            </div>lassName="cooking-time">
-                                                            <div className="meta-item">      <i className="bx bx-timer"></i>
+                                                            </div>
+                                                            <div className="meta-item">
                                                                 <i className="bx bx-time"></i>
                                                                 <span className="date">{formatDate(recipe.createdAt)}</span>
                                                             </div>
-                                                        </div>x", gap: "8px", marginTop: "8px" }}>
+                                                        </div>
                                                         {recipe.cookingTime && (
-                                                            <div className="cooking-time">tn-mini"
+                                                            <div className="cooking-time">
                                                                 <i className="bx bx-timer"></i>
-                                                                <span>{recipe.cookingTime} mins</span>Click={e => {
-                                                            </div>       e.stopPropagation();
+                                                                <span>{recipe.cookingTime} mins</span>
+                                                            </div>
                                                         )}
                                                         <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-                                                            <button>
+                                                            <button
                                                                 className="edit-recipe-btn-mini"
                                                                 title="Edit Recipe"
                                                                 onClick={e => {
-                                                                    e.stopPropagation(); recipe.isShared ? (
+                                                                    e.stopPropagation();
                                                                     handleEditRecipe(recipe);
                                                                 }}
-                                                            >   title="Remove from Community"
-                                                                <i className="bx bx-edit"></i>ecipe, e)}
-                                                            </button>={{ background: "#f59e0b" }}
+                                                            >
+                                                                <i className="bx bx-edit"></i>
+                                                            </button>
                                                             
-                                                            {recipe.shareStatus === 'approved' && recipe.isShared ? (className="bx bx-share-alt"></i>
+                                                            {recipe.shareStatus === 'approved' && recipe.isShared ? (
                                                                 <button
-                                                                    className="edit-recipe-btn-mini"nding' ? (
+                                                                    className="edit-recipe-btn-mini"
                                                                     title="Remove from Community"
                                                                     onClick={e => handleUnshareRecipe(recipe, e)}
-                                                                    style={{ background: "#f59e0b" }}   title="Pending Review"
+                                                                    style={{ background: "#f59e0b" }}
                                                                 >
-                                                                    <i className="bx bx-share-alt"></i>={{ background: "#6b7280", cursor: "not-allowed" }}
+                                                                    <i className="bx bx-share-alt"></i>
                                                                 </button>
-                                                            ) : recipe.shareStatus === 'pending' ? (className="bx bx-time"></i>
+                                                            ) : recipe.shareStatus === 'pending' ? (
                                                                 <button
                                                                     className="edit-recipe-btn-mini"
                                                                     title="Pending Review"
                                                                     disabled
-                                                                    style={{ background: "#6b7280", cursor: "not-allowed" }}   title={`Rejected: ${recipe.rejectionReason || 'No reason provided'}`}
-                                                                >cipe(recipe, e)}
-                                                                    <i className="bx bx-time"></i>={{ background: "#ef4444" }}
+                                                                    style={{ background: "#6b7280", cursor: "not-allowed" }}
+                                                                >
+                                                                    <i className="bx bx-time"></i>
                                                                 </button>
-                                                            ) : recipe.shareStatus === 'rejected' ? (className="bx bx-x"></i>
+                                                            ) : recipe.shareStatus === 'rejected' ? (
                                                                 <button
                                                                     className="edit-recipe-btn-mini"
                                                                     title={`Rejected: ${recipe.rejectionReason || 'No reason provided'}`}
                                                                     onClick={e => handleShareRecipe(recipe, e)}
-                                                                    style={{ background: "#ef4444" }}   title="Share Recipe"
-                                                                >ShareRecipe(recipe, e)}
-                                                                    <i className="bx bx-x"></i>={{ background: "#10b981" }}
-                                                                </button>  >
-                                                            ) : (        <Share2 size={18} />
-                                                                <buttonutton>
+                                                                    style={{ background: "#ef4444" }}
+                                                                >
+                                                                    <i className="bx bx-x"></i>
+                                                                </button>
+                                                            ) : (
+                                                                <button
                                                                     className="edit-recipe-btn-mini"
                                                                     title="Share Recipe"
                                                                     onClick={e => handleShareRecipe(recipe, e)}
                                                                     style={{ background: "#10b981" }}
-                                                                >   title="Delete Recipe"
-                                                                    <Share2 size={18} />DeleteRecipe(recipe, e)}
-                                                                </button>={{ background: "#ef4444" }}
+                                                                >
+                                                                    <Share2 size={18} />
+                                                                </button>
                                                             )}
-                                                                  <Trash2 size={18} />
-                                                            <button/button>
-                                                                className="edit-recipe-btn-mini"         </div>
-                                                                title="Delete Recipe"      </div>
-                                                                onClick={e => handleDeleteRecipe(recipe, e)}       </motion.div>
+                                                            
+                                                            <button
+                                                                className="edit-recipe-btn-mini"
+                                                                title="Delete Recipe"
+                                                                onClick={e => handleDeleteRecipe(recipe, e)}
                                                                 style={{ background: "#ef4444" }}
                                                             >
                                                                 <Trash2 size={18} />
@@ -986,73 +979,72 @@ export default SharedRecipePage;};                : "";
                                                         </div>
                                                     </div>
                                                 </motion.div>
-                                            ))}ry creations with the world.</p>
-                                        </div>nClick={() => navigate('/create-recipe')} className="create-recipe-btn">
-                                    ) : (  <i className="bx bx-plus"></i>
-                                        <div className="no-recipes">      Create Your First Recipe
-                                            <div className="empty-state">           </button>
-                                                <i className="bx bx-restaurant"></i>          </div>
-                                                <h3>No recipes yet!</h3>                                        </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="no-recipes">
+                                            <div className="empty-state">
+                                                <i className="bx bx-restaurant"></i>
+                                                <h3>No recipes yet!</h3>
                                                 <p>Start sharing your culinary creations with the world.</p>
                                                 <button onClick={() => navigate('/create-recipe')} className="create-recipe-btn">
                                                     <i className="bx bx-plus"></i>
                                                     Create Your First Recipe
-                                                </button>& (
+                                                </button>
                                             </div>
                                         </div>
                                     )
-                                )}ipe._id)
+                                )}
 
                                 {/* My Favorites Tab */}
-                                {activeTab === 'favorites' && (${favorite.recipe._id}`}
-                                    favoriteRecipes.length > 0 ? (e-card" 
-                                        <div className="recipes-grid">._id}`)}
-                                            {favoriteRecipes }}
-                                                .filter(favorite => favorite && favorite.recipe && favorite.recipe._id)0 }}
-                                                .map((favorite, index) => (   transition={{ duration: 0.4, delay: index * 0.1 }}
+                                {activeTab === 'favorites' && (
+                                    favoriteRecipes.length > 0 ? (
+                                        <div className="recipes-grid">
+                                            {favoriteRecipes
+                                                .filter(favorite => favorite && favorite.recipe && favorite.recipe._id)
+                                                .map((favorite, index) => (
                                                     <motion.div 
-                                                        key={`favorite-${favorite._id}-${favorite.recipe._id}`}{{ scale: 0.98 }}
+                                                        key={`favorite-${favorite._id}-${favorite.recipe._id}`}
                                                         className="recipe-card favorite-card" 
                                                         onClick={() => navigate(`/recipe/${favorite.recipe._id}`)}
                                                         initial={{ opacity: 0, y: 20 }}
-                                                        animate={{ opacity: 1, y: 0 }}l)} 
-                                                        transition={{ duration: 0.4, delay: index * 0.1 }}t={favorite.recipe.title || favorite.recipe.name || 'Recipe'} 
-                                                        whileHover={{ scale: 1.02 }}  onError={(e) => {
-                                                        whileTap={{ scale: 0.98 }}ceholder/200/150';
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ duration: 0.4, delay: index * 0.1 }}
+                                                        whileHover={{ scale: 1.02 }}
+                                                        whileTap={{ scale: 0.98 }}
                                                     >
                                                         <div className="recipe-image">
-                                                            <img assName="recipe-overlay">
-                                                                src={getRecipeImageUrl(favorite.recipe.imageUrl)} -alt"></i>
+                                                            <img 
+                                                                src={getRecipeImageUrl(favorite.recipe.imageUrl)} 
                                                                 alt={favorite.recipe.title || favorite.recipe.name || 'Recipe'} 
                                                                 onError={(e) => {
-                                                                    console.log('Favorite image failed to load:', favorite.recipe.imageUrl);   className="remove-favorite-btn"
-                                                                    e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';Favorites(favorite.recipe._id, e)}
-                                                                }}="Remove from favorites"
+                                                                    e.target.src = '/api/placeholder/200/150';
+                                                                }}
                                                             />
-                                                            <div className="recipe-overlay">heart"></i>
+                                                            <div className="recipe-overlay">
                                                                 <i className="bx bx-right-arrow-alt"></i>
                                                             </div>
                                                             <button
-                                                                className="remove-favorite-btn"avorite.recipe.name || 'Untitled Recipe'}</h3>
-                                                                onClick={(e) => handleRemoveFromFavorites(favorite.recipe._id, e)}cription available'}</p>
+                                                                className="remove-favorite-btn"
+                                                                onClick={(e) => handleRemoveFromFavorites(favorite.recipe._id, e)}
                                                                 title="Remove from favorites"
-                                                            >lassName="meta-item">
-                                                                <i className="bx bxs-heart"></i>egory"></i>
-                                                            </button>orite.recipe.category || 'Uncategorized'}</span>
+                                                            >
+                                                                <i className="bx bxs-heart"></i>
+                                                            </button>
                                                         </div>
-                                                        <div className="recipe-info">lassName="meta-item">
-                                                            <h3>{favorite.recipe.title || favorite.recipe.name || 'Untitled Recipe'}</h3>  <i className="bx bx-heart"></i>
-                                                            <p>{favorite.recipe.description || 'No description available'}</p>vorited {formatDate(favorite.createdAt)}</span>
+                                                        <div className="recipe-info">
+                                                            <h3>{favorite.recipe.title || favorite.recipe.name || 'Untitled Recipe'}</h3>
+                                                            <p>{favorite.recipe.description || 'No description available'}</p>
                                                             <div className="recipe-meta">
                                                                 <div className="meta-item">
                                                                     <i className="bx bx-category"></i>
-                                                                    <span className="category">{favorite.recipe.category || 'Uncategorized'}</span>lassName="cooking-time">
-                                                                </div>      <i className="bx bx-timer"></i>
-                                                                <div className="meta-item">      <span>{favorite.recipe.cookingTime} mins</span>
-                                                                    <i className="bx bx-heart"></i>/div>
-                                                                    <span className="date">Favorited {formatDate(favorite.createdAt)}</span>         )}
-                                                                </div>          </div>
-                                                            </div>           </motion.div>
+                                                                    <span className="category">{favorite.recipe.category || 'Uncategorized'}</span>
+                                                                </div>
+                                                                <div className="meta-item">
+                                                                    <i className="bx bx-heart"></i>
+                                                                    <span className="date">Favorited {formatDate(favorite.createdAt)}</span>
+                                                                </div>
+                                                            </div>
                                                             {favorite.recipe.cookingTime && (
                                                                 <div className="cooking-time">
                                                                     <i className="bx bx-timer"></i>
@@ -1060,64 +1052,61 @@ export default SharedRecipePage;};                : "";
                                                                 </div>
                                                             )}
                                                         </div>
-                                                    </motion.div>cipes to your favorites to see them here.</p>
-                                                ))}nClick={() => navigate('/recipes')} className="create-recipe-btn">
-                                        </div>  <i className="bx bx-search-alt"></i>
-                                    ) : (      Browse Recipes
-                                        <div className="no-recipes">           </button>
-                                            <div className="empty-state">          </div>
-                                                <i className="bx bx-heart"></i>         </div>
-                                                <h3>No favorites yet!</h3>          )
-                                                <p>Start adding recipes to your favorites to see them here.</p>}
-                                                <button onClick={() => navigate('/recipes')} className="create-recipe-btn">      </>
-                                                    <i className="bx bx-search-alt"></i>      )}
-                                                    Browse Recipes                    </motion.div>
+                                                    </motion.div>
+                                                ))}
+                                        </div>
+                                    ) : (
+                                        <div className="no-recipes">
+                                            <div className="empty-state">
+                                                <i className="bx bx-heart"></i>
+                                                <h3>No favorites yet!</h3>
+                                                <p>Start adding recipes to your favorites to see them here.</p>
+                                                <button onClick={() => navigate('/recipes')} className="create-recipe-btn">
+                                                    <i className="bx bx-search-alt"></i>
+                                                    Browse Recipes
                                                 </button>
                                             </div>
                                         </div>
                                     )
                                 )}
-                            </>verlay">
-                        )}ent">
-                    </motion.div>ditRecipePage
-                </div>  recipe={editRecipeData}
-            </div>      onClose={handleEditModalClose}
-          />
-            {/* Edit Recipe Modal */}                    </div>
+                            </>
+                        )}
+                    </motion.div>
+                </div>
+            </div>
+
+            {/* Edit Recipe Modal */}
             {showEditModal && (
                 <div className="edit-recipe-modal-overlay">
                     <div className="edit-recipe-modal-content">
-                        <EditRecipePage */}
+                        <EditRecipePage
                             recipe={editRecipeData}
                             onClose={handleEditModalClose}
                         />
-                    </div>{
-                </div>   recipeToDelete
-            )}ure you want to delete "${recipeToDelete.title}"? This cannot be undone.`
+                    </div>
+                </div>
+            )}
 
             {/* Confirm Delete Dialog */}
-            <ConfirmDialogte"
+            <ConfirmDialog
                 open={confirmOpen}
                 title="Delete Recipe"
-                description={Cancel={() => {
-                    recipeToDelete(false);
-                        ? `Are you sure you want to delete "${recipeToDelete.title}"? This cannot be undone.`      setRecipeToDelete(null);
-                        : ""  }}
-                }          loading={deleting}
-                confirmText="Delete"          />
-                cancelText="Cancel"        </div>
+                description={
+                    recipeToDelete
+                        ? `Are you sure you want to delete "${recipeToDelete.title}"? This cannot be undone.`
+                        : ""
+                }
+                confirmText="Delete"
+                cancelText="Cancel"
                 onConfirm={confirmDelete}
-
-
-
-
-
-
-
-
-
-
-
-export default UserProfilePage;};    );        </div>            />                loading={deleting}                }}                    setRecipeToDelete(null);                    setConfirmOpen(false);                onCancel={() => {};
+                onCancel={() => {
+                    setConfirmOpen(false);
+                    setRecipeToDelete(null);
+                }}
+                loading={deleting}
+            />
+        </div>
+    );
+};
 
 export default UserProfilePage;
