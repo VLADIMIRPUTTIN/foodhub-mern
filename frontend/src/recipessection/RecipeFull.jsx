@@ -18,20 +18,17 @@ const RecipeFull = () => {
 
   // Helper function to construct proper image URL
   const getImageUrl = (recipe) => {
-    // If no image URL provided, return placeholder
     if (!recipe.imageUrl) {
-        return 'https://via.placeholder.com/800x400?text=No+Image';
+      return 'https://via.placeholder.com/800x400?text=No+Image';
     }
-    
-    // If it's already a complete URL (Cloudinary or other external), use it as is
-    if (recipe.imageUrl.startsWith('http://') || recipe.imageUrl.startsWith('https://')) {
-        return recipe.imageUrl;
+    if (recipe.imageUrl.startsWith('http')) {
+      return recipe.imageUrl;
     }
-    
-    // If it's a relative path (old local uploads), construct the full URL
-    const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
-    const cleanPath = recipe.imageUrl.startsWith('/') ? recipe.imageUrl : `/${recipe.imageUrl}`;
-    return `${baseURL}${cleanPath}`;
+    const cleanPath = recipe.imageUrl.startsWith('/') ? recipe.imageUrl.slice(1) : recipe.imageUrl;
+    if (import.meta.env.MODE === "development") {
+      return `http://localhost:5000/${cleanPath}`;
+    }
+    return `/${cleanPath}`;
   };
 
   // Function to search YouTube videos using backend API
