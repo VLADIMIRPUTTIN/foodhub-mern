@@ -65,7 +65,7 @@ export const signup = async (req, res) => {
             console.log(`⏰ Token expires at: ${new Date(user.verificationTokenExpiresAt)}`);
             
             try {
-                await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
+                await sendVerificationEmail(user.email, user.name, verificationToken);
                 console.log("✅ Verification email process completed");
             } catch (emailError) {
                 console.error("❌ Verification email process failed:", emailError.message);
