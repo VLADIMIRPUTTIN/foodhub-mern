@@ -188,6 +188,8 @@ const CreateRecipePage = () => {
                 ? "http://localhost:5000" 
                 : "";
             
+            console.log("Creating recipe at:", `${baseURL}/api/recipes`);
+            
             const response = await axios.post(
                 `${baseURL}/api/recipes`,
                 formData,
@@ -201,11 +203,26 @@ const CreateRecipePage = () => {
 
             if (response.data.success) {
                 toast.success('Recipe created successfully!');
-                navigate('/recipes');
+                
+                // Trigger a small delay before navigation to ensure toast shows
+                setTimeout(() => {
+                    navigate('/profile', { state: { refreshRecipes: true } });
+                }, 500);
+            } else {
+                toast.error(response.data.message || 'Failed to create recipe');
             }
         } catch (error) {
             console.error('Error creating recipe:', error);
-            toast.error('Failed to create recipe. Please try again.');
+            
+            if (error.response) {
+                console.error('Server response:', error.response.data);
+                toast.error(error.response.data?.message || 'Server error: ' + error.response.status);
+            } else if (error.request) {
+                console.error('No response received:', error.request);
+                toast.error('No response from server. Check your internet connection.');
+            } else {
+                toast.error('Error: ' + error.message);
+            }
         } finally {
             setIsLoading(false);
         }

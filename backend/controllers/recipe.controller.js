@@ -5,21 +5,45 @@ import path from "path";
 import fs from "fs";
 import cloudinary from '../utils/cloudinary.js';
 
-// Configure multer for file uploads
+// Update the file upload configuration
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, '/tmp'); // temp folder
+        // Use a directory that exists in both environments
+        const uploadDir = process.env.NODE_ENV === 'production' ? '/tmp' : './uploads/temp';
+        fs.mkdirSync(uploadDir, { recursive: true }); // Create directory if it doesn't exist
+        cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
-        cb(null, Date.now() + '-' + file.originalname);
+        cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g, '-'));
     }
 });
-const upload = multer({ storage });
+
+const fileFilter = (req, file, cb) => {
+    // Accept only images
+    if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+    } else {
+        cb(new Error('Only image files are allowed!'), false);
+    }
+};
+
+const upload = multer({ 
+    storage, 
+    fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
+
 export const uploadMiddleware = upload.single('image');
 
 export const createRecipe = async (req, res) => {
     try {
         const { title, description, ingredients, instructions, category, cookingTime, servings, difficulty, price } = req.body;
+        
+        console.log("Recipe creation request received:", {
+            userId: req.userId,
+            title,
+            hasFile: !!req.file
+        });
         
         // Validate required fields
         if (!title || !description || !ingredients || !instructions) {
@@ -29,12 +53,18 @@ export const createRecipe = async (req, res) => {
             });
         }
 
-        // Parse JSON strings
+        // Parse JSON strings with better error handling
         let parsedIngredients, parsedInstructions;
         try {
             parsedIngredients = typeof ingredients === 'string' ? JSON.parse(ingredients) : ingredients;
             parsedInstructions = typeof instructions === 'string' ? JSON.parse(instructions) : instructions;
+            
+            // Additional validation
+            if (!Array.isArray(parsedIngredients) || !Array.isArray(parsedInstructions)) {
+                throw new Error("Ingredients and instructions must be arrays");
+            }
         } catch (parseError) {
+            console.error("JSON parsing error:", parseError);
             return res.status(400).json({ 
                 success: false, 
                 message: "Invalid ingredients or instructions format." 
@@ -45,17 +75,35 @@ export const createRecipe = async (req, res) => {
         let imageUrl = null;
         if (req.file) {
             try {
+                console.log("Uploading image to Cloudinary:", req.file.path);
                 const result = await cloudinary.uploader.upload(req.file.path, {
                     folder: 'foodhub/recipes',
                 });
                 imageUrl = result.secure_url;
+                console.log("Cloudinary upload successful:", imageUrl);
+                
+                // Clean up the temp file
+                fs.unlink(req.file.path, (err) => {
+                    if (err) console.error("Error removing temp file:", err);
+                });
             } catch (err) {
-                return res.status(500).json({ success: false, message: "Image upload failed" });
+                console.error("Cloudinary upload error:", err);
+                return res.status(500).json({ 
+                    success: false, 
+                    message: "Image upload failed: " + (err.message || "Unknown error") 
+                });
             }
         }
 
         // Get user info to determine visibility
         const user = await User.findById(req.userId);
+        if (!user) {
+            return res.status(401).json({ 
+                success: false, 
+                message: "User not found" 
+            });
+        }
+        
         const isPublic = user.role === 'admin'; // Only admin recipes are public
 
         const recipe = new Recipe({
@@ -70,10 +118,11 @@ export const createRecipe = async (req, res) => {
             imageUrl,
             createdBy: req.userId,
             isPublic: isPublic,
-            price: price ? parseFloat(price) : 0 // Added this line to save the price
+            price: price ? parseFloat(price) : 0
         });
 
         await recipe.save();
+        console.log("Recipe saved successfully:", recipe._id);
         
         // Populate the createdBy field with user info
         await recipe.populate('createdBy', 'name email');
@@ -81,7 +130,10 @@ export const createRecipe = async (req, res) => {
         res.status(201).json({ success: true, recipe });
     } catch (error) {
         console.error('Create recipe error:', error);
-        res.status(500).json({ success: false, message: error.message });
+        res.status(500).json({ 
+            success: false, 
+            message: "Server error: " + error.message 
+        });
     }
 };
 

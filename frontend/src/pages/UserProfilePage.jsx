@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import Navbar from './NavbarPage';
 import { motion } from 'framer-motion';
@@ -17,6 +17,7 @@ const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/WvG991xq/profile-default.png";
 const UserProfilePage = () => {
     const { user, logout, setUser } = useAuthStore();
     const navigate = useNavigate();
+    const location = useLocation();
     const [userRecipes, setUserRecipes] = useState([]);
     const [favoriteRecipes, setFavoriteRecipes] = useState([]);
     const [favoriteCount, setFavoriteCount] = useState(0);
@@ -38,7 +39,12 @@ const UserProfilePage = () => {
 
     useEffect(() => {
         fetchUserData();
-    }, []);
+        
+        // Check if coming from recipe creation with refresh flag
+        if (location.state?.refreshRecipes) {
+            setActiveTab('recipes');
+        }
+    }, [location.state]);
 
     useEffect(() => {
         if (socket) {
@@ -84,10 +90,15 @@ const UserProfilePage = () => {
 
     const fetchUserRecipes = async () => {
         try {
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+                
             const response = await axios.get(
-                `/api/recipes/user`,
+                `${baseURL}/api/recipes/user`,
                 { withCredentials: true }
             );
+            
             setUserRecipes(response.data.recipes || []);
         } catch (error) {
             console.error('Error fetching user recipes:', error);
@@ -177,8 +188,13 @@ const UserProfilePage = () => {
                 bio: editForm.bio,
                 profileImage: base64Image,
             };
+            
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+                
             const response = await axios.put(
-                `/api/users/profile`,
+                `${baseURL}/api/users/profile`,
                 payload,
                 {
                     headers: {
@@ -187,6 +203,7 @@ const UserProfilePage = () => {
                     withCredentials: true
                 }
             );
+            
             if (response.data.success) {
                 setUser(response.data.user);
                 setIsEditing(false);
@@ -195,7 +212,7 @@ const UserProfilePage = () => {
             }
         } catch (error) {
             console.error('Error updating profile:', error);
-            alert('Failed to update profile. Please try again.');
+            toast.error('Failed to update profile. Please try again.');
         }
     };
 
