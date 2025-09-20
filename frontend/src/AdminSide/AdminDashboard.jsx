@@ -48,24 +48,10 @@ const AdminDashboard = () => {
     const fetchRealTimeStats = async () => {
         try {
             const [usersRes, recipesRes, pendingRes] = await Promise.all([
-                // Fetch all users
-                axios.get(`${baseURL}/api/users`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                }),
-                // Fetch all recipes for admin
-                axios.get(`${baseURL}/api/recipes/admin/all`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                }),
-                // Fetch pending recipes
-                axios.get(`${baseURL}/api/recipes/admin/pending`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                })
+                // Use withCredentials instead of headers
+                axios.get(`${baseURL}/api/users`, { withCredentials: true }),
+                axios.get(`${baseURL}/api/recipes/admin/all`, { withCredentials: true }),
+                axios.get(`${baseURL}/api/recipes/admin/pending`, { withCredentials: true })
             ]);
 
             const usersData = usersRes.data.users || [];
@@ -105,11 +91,7 @@ const AdminDashboard = () => {
     // Fetch functions
     const fetchRecipes = async () => {
         try {
-            const res = await axios.get(`${baseURL}/api/recipes/admin/all`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
+            const res = await axios.get(`${baseURL}/api/recipes/admin/all`, { withCredentials: true });
             setRecipes(res.data.recipes || []);
             return res.data.recipes || [];
         } catch (error) {
@@ -121,11 +103,7 @@ const AdminDashboard = () => {
 
     const fetchPendingCount = async () => {
         try {
-            const res = await axios.get(`${baseURL}/api/recipes/admin/pending`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
+            const res = await axios.get(`${baseURL}/api/recipes/admin/pending`, { withCredentials: true });
             const pendingRecipes = res.data.recipes || [];
             setPendingCount(pendingRecipes.length);
             return pendingRecipes.length;
@@ -148,11 +126,7 @@ const AdminDashboard = () => {
 
     const fetchUsers = async () => {
         try {
-            const res = await axios.get(`${baseURL}/api/users`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
+            const res = await axios.get(`${baseURL}/api/users`, { withCredentials: true });
             setUsers(res.data.users || []);
             return res.data.users || [];
         } catch (error) {
@@ -202,17 +176,12 @@ const AdminDashboard = () => {
     const handleUserAction = async (userId, action) => {
         try {
             if (action === 'active') {
-                await axios.patch(`${baseURL}/api/users/${userId}/activate`, {}, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                await axios.patch(`${baseURL}/api/users/${userId}/activate`, {}, { withCredentials: true });
             } else if (action === 'banned') {
-                await axios.patch(`${baseURL}/api/users/${userId}/ban`, { reason: "Banned by admin" }, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                await axios.patch(`${baseURL}/api/users/${userId}/ban`, 
+                    { reason: "Banned by admin" }, 
+                    { withCredentials: true }
+                );
             }
             await fetchUsers();
             await fetchRealTimeStats(); // Update stats immediately
@@ -223,11 +192,7 @@ const AdminDashboard = () => {
 
     const handleDeleteUser = async (userId) => {
         try {
-            await axios.delete(`${baseURL}/api/users/${userId}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
+            await axios.delete(`${baseURL}/api/users/${userId}`, { withCredentials: true });
             await fetchUsers();
             await fetchRealTimeStats(); // Update stats immediately
         } catch {
@@ -258,8 +223,8 @@ const AdminDashboard = () => {
                 });
 
                 const response = await axios.delete(`${baseURL}/api/recipes/${id}`, {
+                    withCredentials: true,
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json'
                     }
                 });
@@ -315,11 +280,7 @@ const AdminDashboard = () => {
         });
         if (result.isConfirmed) {
             try {
-                await axios.delete(`${baseURL}/api/ingredients/${id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                await axios.delete(`${baseURL}/api/ingredients/${id}`, { withCredentials: true });
                 await fetchIngredients();
                 Swal.fire('Deleted!', 'Ingredient has been deleted.', 'success');
             } catch {
@@ -343,9 +304,7 @@ const AdminDashboard = () => {
         if (newTitle && newTitle !== (recipe.title || recipe.name)) {
             try {
                 await axios.patch(`${baseURL}/api/recipes/${recipe._id}`, { title: newTitle }, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
+                    withCredentials: true
                 });
                 await fetchRecipes();
                 await fetchRealTimeStats(); // Update stats immediately
@@ -371,9 +330,7 @@ const AdminDashboard = () => {
         if (newName && newName !== ingredient.name) {
             try {
                 await axios.patch(`${baseURL}/api/ingredients/${ingredient._id}`, { name: newName }, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
+                    withCredentials: true
                 });
                 await fetchIngredients();
                 Swal.fire('Saved!', 'Ingredient name updated.', 'success');

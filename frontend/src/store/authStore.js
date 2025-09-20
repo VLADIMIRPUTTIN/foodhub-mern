@@ -19,14 +19,20 @@ axios.interceptors.response.use(
     }
 );
 
-export const useAuthStore = create((set, get) => ({
+const useAuthStore = create((set, get) => ({
     user: null,
     isAuthenticated: false,
     error: null,
     isLoading: false,
     isCheckingAuth: true,
     message: null,
-    accountStatus: null, // Add this for account status
+    accountStatus: null,
+
+    // Add the isAdmin function
+    isAdmin: () => {
+        const { user } = get();
+        return user && user.role === 'admin';
+    },
 
     signup: async (email, password, name) => {
         set({ isLoading: true, error: null });
@@ -182,11 +188,6 @@ export const useAuthStore = create((set, get) => ({
     },
 
     // Admin functions
-    isAdmin: () => {
-        const { user } = get();
-        return user?.role === 'admin';
-    },
-
     createAdmin: async () => {
         set({ isLoading: true, error: null });
         try {

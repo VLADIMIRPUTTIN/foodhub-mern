@@ -13,6 +13,8 @@ import {
 } from "../controllers/auth.controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { testResendConnection } from "../mailtrap/resend.config.js";
+import User from "../models/User.js";
+import bcryptjs from "bcryptjs";
 
 const router = express.Router();
 
@@ -80,6 +82,56 @@ router.get("/test-gmail", async (req, res) => {
             message: "Failed to send test email with Gmail", 
             error: error.message 
         });
+    }
+});
+
+// Add this route for easy admin creation during development
+router.post("/create-admin-dev", async (req, res) => {
+    try {
+        // Only allow this in development
+        if (process.env.NODE_ENV === "production") {
+            return res.status(403).json({ 
+                success: false, 
+                message: "This endpoint is only available in development" 
+            });
+        }
+
+        const adminExists = await User.findOne({ email: 'admin@foodhub.com' });
+        
+        if (adminExists) {
+            return res.status(200).json({ 
+                success: true, 
+                message: "Admin already exists",
+                admin: {
+                    email: adminExists.email,
+                    name: adminExists.name,
+                    role: adminExists.role
+                }
+            });
+        }
+
+        const hashedPassword = await bcryptjs.hash('admin123', 10);
+
+        const admin = new User({
+            email: 'admin@foodhub.com',
+            password: hashedPassword,
+            name: 'FoodHub Administrator',
+            role: 'admin',
+            isVerified: true,
+        });
+
+        await admin.save();
+
+        res.status(201).json({
+            success: true,
+            message: "Admin account created successfully",
+            admin: {
+                ...admin._doc,
+                password: undefined,
+            },
+        });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
     }
 });
 

@@ -1,5 +1,7 @@
-import { Navigate, Route, Routes } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import { useAuthStore } from "./store/authStore";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 import SignUpPage from "./pages/SignUpPage";
@@ -21,9 +23,6 @@ import { ToastProvider } from "./components/ui/toast";
 import { SocketProvider } from './context/SocketContext';
 import NotificationToast from './components/NotificationToast';
 
-import { Toaster } from "react-hot-toast";
-import { useAuthStore } from "./store/authStore";
-
 // Global axios interceptor for handling account status errors
 const setupAxiosInterceptors = (setGlobalAccountStatus) => {
     axios.interceptors.response.use(
@@ -39,37 +38,18 @@ const setupAxiosInterceptors = (setGlobalAccountStatus) => {
     );
 };
 
-// protect routes that require authentication
-const ProtectedRoute = ({ children }) => {
+// Protect admin routes
+const AdminProtectedRoute = ({ children }) => {
     const { isAuthenticated, user } = useAuthStore();
-
-    if (!isAuthenticated) {
-        return <Navigate to='/login' replace />;
+    
+    if (!isAuthenticated || !user) {
+        return <Navigate to="/login" replace />;
     }
-
-    if (!user.isVerified) {
-        return <Navigate to='/verify-email' replace />;
-    }
-
-    return children;
-};
-
-// Admin route protection
-const AdminRoute = ({ children }) => {
-    const { isAuthenticated, user } = useAuthStore();
-
-    if (!isAuthenticated) {
-        return <Navigate to='/login' replace />;
-    }
-
-    if (!user.isVerified) {
-        return <Navigate to='/verify-email' replace />;
-    }
-
+    
     if (user.role !== 'admin') {
-        return <Navigate to='/' replace />;
+        return <Navigate to="/" replace />;
     }
-
+    
     return children;
 };
 
@@ -85,6 +65,21 @@ const RedirectAuthenticatedUser = ({ children }) => {
         }
         console.log("Redirecting authenticated user to home");
         return <Navigate to='/' replace />;
+    }
+
+    return children;
+};
+
+// protect routes that require authentication
+const ProtectedRoute = ({ children }) => {
+    const { isAuthenticated, user } = useAuthStore();
+
+    if (!isAuthenticated) {
+        return <Navigate to='/login' replace />;
+    }
+
+    if (!user.isVerified) {
+        return <Navigate to='/verify-email' replace />;
     }
 
     return children;
@@ -108,24 +103,21 @@ function App() {
     return (
         <ToastProvider>
             <SocketProvider>
-                <div>
+                <div className='min-h-screen bg-gradient-to-br from-gray-900 via-green-900 to-emerald-900 flex items-center justify-center relative overflow-hidden'>
+                    {/* ... existing background elements */}
+                    
                     <Routes>
-                        <Route
-                            path='/'
-                            element={<DashboardPage />}
-                        />
-                        <Route
-                            path='/recipes'
-                            element={<RecipePage />}
-                        />
+                        {/* Admin Dashboard Route */}
                         <Route
                             path='/admin-dashboard'
                             element={
-                                <AdminRoute>
+                                <AdminProtectedRoute>
                                     <AdminDashboard />
-                                </AdminRoute>
+                                </AdminProtectedRoute>
                             }
                         />
+
+                        {/* Public Routes */}
                         <Route
                             path='/signup'
                             element={
@@ -142,7 +134,10 @@ function App() {
                                 </RedirectAuthenticatedUser>
                             }
                         />
-                        <Route path='/verify-email' element={<EmailVerificationPage />} />
+                        <Route
+                            path='/verify-email'
+                            element={<EmailVerificationPage />}
+                        />
                         <Route
                             path='/forgot-password'
                             element={
@@ -158,6 +153,20 @@ function App() {
                                     <ResetPasswordPage />
                                 </RedirectAuthenticatedUser>
                             }
+                        />
+
+                        {/* Protected Routes */}
+                        <Route
+                            path='/'
+                            element={
+                                <ProtectedRoute>
+                                    <DashboardPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path='/recipes'
+                            element={<RecipePage />}
                         />
                         <Route
                             path='/create-recipe'
