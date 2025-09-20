@@ -94,10 +94,11 @@ export const useAuthStore = create((set, get) => ({
     logout: async () => {
         try {
             await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
-        } catch (error) {
-            console.error("Logout error:", error);
-        } finally {
-            // Always clear local state regardless of server response
+            
+            // Clear any localStorage items if they exist
+            localStorage.removeItem('token');
+            
+            // Clear the state
             set({ 
                 user: null, 
                 isAuthenticated: false, 
@@ -105,6 +106,20 @@ export const useAuthStore = create((set, get) => ({
                 isLoading: false,
                 accountStatus: null 
             });
+            
+            // Force a hard redirect to the login page to clear any cached state
+            window.location.href = '/login';
+        } catch (error) {
+            console.error("Logout error:", error);
+            // Still clear state and redirect even if the API call fails
+            set({ 
+                user: null, 
+                isAuthenticated: false, 
+                error: null, 
+                isLoading: false,
+                accountStatus: null 
+            });
+            window.location.href = '/login';
         }
     },
 
