@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Loader } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { GoogleLogin } from '@react-oauth/google';
 import axios from "axios";
@@ -17,6 +17,7 @@ const LoginPage = () => {
     const [showStatusModal, setShowStatusModal] = useState(false);
 
     const { login, isLoading, error, setUser, forgotPassword, accountStatus, clearAccountStatus } = useAuthStore();
+    const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -30,11 +31,20 @@ const LoginPage = () => {
 
     const handleGoogleLogin = async (credentialResponse) => {
         try {
+            console.log("Starting Google login process...");
+            
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+                
             const response = await axios.post(
-                `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/auth/google-login" : "/api/auth/google-login"}`,
+                `${baseURL}/api/auth/google-login`,
                 { credential: credentialResponse.credential },
                 { withCredentials: true }
             );
+            
+            console.log("Google login response received:", response.status);
+            
             if (response.data.user) {
                 setUser(response.data.user);
                 if (response.data.user.profileImage) {
@@ -46,13 +56,23 @@ const LoginPage = () => {
                     }));
                 }
             }
+            
             if (response.data.user && response.data.user.isVerified) {
-                window.location.reload();
+                // Use navigate instead of window.location for better state management
+                navigate('/');
+                // Force a reload only if needed
+                setTimeout(() => window.location.reload(), 100);
             } else {
-                window.location.href = "/verify-email";
+                navigate('/verify-email');
             }
         } catch (error) {
-            alert("Google login failed");
+            console.error("Google login failed:", error);
+            if (error.response) {
+                console.error("Server response:", error.response.data);
+                toast.error(error.response.data.message || "Google login failed");
+            } else {
+                toast.error("Google login failed. Please try again.");
+            }
         }
     };
 

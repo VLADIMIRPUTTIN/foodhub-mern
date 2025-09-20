@@ -40,9 +40,12 @@ const SignUpPage = () => {
         try {
             console.log("Starting Google signup process...");
             
-            // Send the credential to your backend for verification
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+                
             const response = await axios.post(
-                `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/auth/google-login" : "/api/auth/google-login"}`,
+                `${baseURL}/api/auth/google-login`,
                 { credential: credentialResponse.credential },
                 { withCredentials: true }
             );
@@ -54,13 +57,15 @@ const SignUpPage = () => {
 
             if (response.data.user && response.data.user.isVerified) {
                 navigate("/");
-                window.location.reload();
+                // Force a reload only if needed
+                setTimeout(() => window.location.reload(), 100);
             } else {
                 navigate("/verify-email");
             }
         } catch (error) {
-            console.error("❌ Google signup failed:", error);
-            alert("Google signup failed. Please try again.");
+            console.error("Google signup failed:", error);
+            console.error("Error details:", error.response?.data || error.message);
+            toast.error(error.response?.data?.message || "Google signup failed. Please try again.");
         }
     };
 

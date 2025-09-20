@@ -362,22 +362,38 @@ export const checkAuth = async (req, res) => {
 export const googleLogin = async (req, res) => {
     const { credential } = req.body;
     try {
+        console.log("Google login attempt received");
+        
+        if (!credential) {
+            console.error("No Google credential provided");
+            return res.status(400).json({ 
+                success: false, 
+                message: "No Google credential provided" 
+            });
+        }
+        
         const ticket = await client.verifyIdToken({
             idToken: credential,
             audience: "209979773198-fl8bvitq2b48gfj6mhnomgiqr1tkbb0f.apps.googleusercontent.com"
         });
+        
         const payload = ticket.getPayload();
+        console.log("Google auth successful for email:", payload.email);
         
         // Extract profile image from Google payload
         const googleProfileImage = payload.picture;
 
         // Check if user exists
         let user = await User.findOne({ email: payload.email });
+        console.log("User exists in database:", !!user);
         
         if (user) {
+            console.log("User verified status:", user.isVerified);
+            
             // If user exists but doesn't have a profile image, add the Google one
             if (!user.profileImage && googleProfileImage) {
                 user.profileImage = googleProfileImage;
+                console.log("Updated user profile with Google image");
             }
             
             // If user exists but isn't verified, send a new verification code
@@ -455,7 +471,10 @@ export const googleLogin = async (req, res) => {
         }
     } catch (error) {
         console.error("Google login error:", error);
-        res.status(500).json({ success: false, message: "Error logging in with Google" });
+        res.status(500).json({ 
+            success: false, 
+            message: "Error logging in with Google: " + error.message 
+        });
     }
 };
 
