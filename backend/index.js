@@ -60,7 +60,8 @@ const __dirname = path.resolve();
 const allowedOrigins = [
     "http://localhost:5173",
     "https://foodhub-mern-production.up.railway.app",
-    "https://foodhubrecipe.shop"
+    "https://foodhubrecipe.shop",
+    "https://www.foodhubrecipe.shop"
 ];
 
 app.use(cors({
