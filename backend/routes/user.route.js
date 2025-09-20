@@ -1,7 +1,6 @@
 import express from "express";
 import { suspendUser, banUser, activateUser, getAllUsers, deleteUser, updateProfile } from "../controllers/user.controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
-import { verifyAdmin } from "../middleware/verifyAdmin.js"; // Create this middleware
 
 const router = express.Router();
 
