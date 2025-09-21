@@ -23,10 +23,10 @@ const ManageRecipeAndIngredientsPage = ({
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('recipes');
     
-    // Add delete confirmation states
+    // Delete confirmation states
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
-    const [deleteType, setDeleteType] = useState(''); // 'recipe' or 'ingredient'
+    const [deleteType, setDeleteType] = useState('');
     const [deleting, setDeleting] = useState(false);
 
     const handleIngredientUpdated = (updatedIngredient) => {
@@ -55,12 +55,14 @@ const ManageRecipeAndIngredientsPage = ({
 
     // Delete confirmation handlers
     const openDeleteDialog = (item, type) => {
+        console.log('Opening delete dialog for:', { item, type }); // Debug log
         setItemToDelete(item);
         setDeleteType(type);
         setDeleteDialogOpen(true);
     };
 
     const closeDeleteDialog = () => {
+        console.log('Closing delete dialog'); // Debug log
         setDeleteDialogOpen(false);
         setItemToDelete(null);
         setDeleteType('');
@@ -68,22 +70,31 @@ const ManageRecipeAndIngredientsPage = ({
     };
 
     const confirmDelete = async () => {
-        if (!itemToDelete || !deleteType) return;
+        if (!itemToDelete || !deleteType) {
+            console.error('Missing delete data:', { itemToDelete, deleteType });
+            return;
+        }
 
+        console.log('Confirming delete:', { itemToDelete: itemToDelete._id, deleteType }); // Debug log
         setDeleting(true);
         
         try {
             if (deleteType === 'recipe') {
+                console.log('Deleting recipe:', itemToDelete._id);
                 await handleDeleteRecipe(itemToDelete._id);
+                console.log('Recipe deleted successfully');
                 fetchRecipes();
             } else if (deleteType === 'ingredient') {
+                console.log('Deleting ingredient:', itemToDelete._id);
                 await handleDeleteIngredient(itemToDelete._id);
+                console.log('Ingredient deleted successfully');
                 fetchIngredients();
             }
             closeDeleteDialog();
         } catch (error) {
             console.error('Delete failed:', error);
             setDeleting(false);
+            // Don't close dialog on error, let user try again
         }
     };
 
@@ -293,7 +304,11 @@ const ManageRecipeAndIngredientsPage = ({
                                             </motion.button>
                                             <motion.button 
                                                 className="btn btn--destructive btn--sm"
-                                                onClick={() => openDeleteDialog(recipe, 'recipe')}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    console.log('Delete button clicked for recipe:', recipe._id);
+                                                    openDeleteDialog(recipe, 'recipe');
+                                                }}
                                                 title="Delete Recipe"
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}
@@ -401,7 +416,11 @@ const ManageRecipeAndIngredientsPage = ({
                                             </button>
                                             <button 
                                                 className="btn btn--destructive btn--sm"
-                                                onClick={() => openDeleteDialog(ingredient, 'ingredient')}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    console.log('Delete button clicked for ingredient:', ingredient._id);
+                                                    openDeleteDialog(ingredient, 'ingredient');
+                                                }}
                                                 title="Delete Ingredient"
                                             >
                                                 <i className="bx bx-trash"></i>
@@ -455,7 +474,7 @@ const ManageRecipeAndIngredientsPage = ({
                 isOpen={isEditModalOpen}
             />
 
-            {/* Delete Confirmation Dialog - Higher z-index to appear above other modals */}
+            {/* Delete Confirmation Dialog */}
             <ConfirmDialog
                 open={deleteDialogOpen}
                 title={`Delete ${deleteType === 'recipe' ? 'Recipe' : 'Ingredient'}`}
