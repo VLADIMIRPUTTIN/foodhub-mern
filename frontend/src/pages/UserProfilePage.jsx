@@ -323,20 +323,8 @@ const UserProfilePage = () => {
             });
             
             if (response.data.success) {
-                // Use react-hot-toast for consistent styling with other parts of the app
-                toast.success("Recipe removed from favorites!", {
-                    style: {
-                        borderRadius: "8px",
-                        background: "#fff",
-                        color: "#222",
-                        boxShadow: "0 4px 16px rgba(239,68,68,0.15)",
-                        fontWeight: 600,
-                    },
-                    iconTheme: {
-                        primary: "#ef4444",
-                        secondary: "#fff",
-                    },
-                });
+                // Fixed: Just pass the message, no extra options needed for simple success toast
+                toast.success("Recipe removed from favorites!");
             } else {
                 // Revert on failure
                 setFavoriteRecipes(previousFavorites);
@@ -349,19 +337,8 @@ const UserProfilePage = () => {
             setFavoriteCount(previousCount);
             
             console.error('Error removing from favorites:', error);
-            toast.error("Failed to remove from favorites. Please try again.", {
-                style: {
-                    borderRadius: "8px",
-                    background: "#fff",
-                    color: "#222",
-                    boxShadow: "0 4px 16px rgba(239,68,68,0.15)",
-                    fontWeight: 600,
-                },
-                iconTheme: {
-                    primary: "#ef4444",
-                    secondary: "#fff",
-                },
-            });
+            // Fixed: Just pass the message, no extra options needed for simple error toast
+            toast.error("Failed to remove from favorites. Please try again.");
         }
     };
 

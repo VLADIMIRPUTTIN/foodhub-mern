@@ -7,16 +7,14 @@ import './RecipePage.scss';
 import { Sheet, SheetContent, SheetTrigger } from "../components/ui/sheet";
 import { useAuthStore } from '../store/authStore';
 import LoginPromptModal from '../components/ui/login-prompt-modal';
-import { useToast } from '../components/ui/toast'; // Keep this import
+import { toast } from "react-hot-toast";
 import RatingModal from "../components/RatingModal"; // Import the RatingModal at the top
 import RateButton from '../components/RateButton'; // Add this import
 import BottomNavbar from "../components/BottomNavbar";
 import CameraModal from "../components/CameraModal";
-import { toast } from "react-hot-toast";
 
 const RecipePage = () => {
     const { user } = useAuthStore();
-    const { toast } = useToast(); // Add this hook
     const [recipes, setRecipes] = useState([]);
     const [ingredients, setIngredients] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -338,6 +336,7 @@ const RecipePage = () => {
                     setFavoriteRecipes(prevFavorites => 
                         prevFavorites.filter(id => id !== recipeId)
                     );
+                    // Fixed toast call - message as first parameter, options as second
                     toast.success("Recipe removed from favorites!", {
                         style: {
                             borderRadius: "8px",
@@ -362,7 +361,9 @@ const RecipePage = () => {
                 
                 if (response.data.success) {
                     setFavoriteRecipes(prevFavorites => [...prevFavorites, recipeId]);
+                    // Fixed toast call - message as first parameter, options as second
                     toast.success("Added to favorites! ❤️", {
+                        duration: 4000,
                         style: {
                             borderRadius: "8px",
                             background: "#fff",
@@ -370,25 +371,20 @@ const RecipePage = () => {
                             boxShadow: "0 4px 16px rgba(16,185,129,0.15)",
                             fontWeight: 600,
                         },
-                        iconTheme: {
-                            primary: "#10b981",
-                            secondary: "#fff",
-                        },
                     });
                 }
             }
         } catch (error) {
             console.error("Error toggling favorite:", error);
+            // Fixed toast call - message as first parameter, options as second
             toast.error("Failed to update favorites. Please try again.", {
+                duration: 4000,
                 style: {
                     borderRadius: "8px",
                     background: "#fff",
                     color: "#222",
+                    boxShadow: "0 4px 16px rgba(239,68,68,0.15)",
                     fontWeight: 600,
-                },
-                iconTheme: {
-                    primary: "#ef4444",
-                    secondary: "#fff",
                 },
             });
         }
