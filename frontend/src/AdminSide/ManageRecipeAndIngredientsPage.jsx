@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EditRecipe from './EditRecipe';
 import EditIngredientModal from './EditIngredientModal';
-import ConfirmDialog from '../components/ConfirmDialog';
 import './ManageRecipeAndIngredientsPage.scss';
 
 const ManageRecipeAndIngredientsPage = ({
@@ -21,13 +20,7 @@ const ManageRecipeAndIngredientsPage = ({
     const [editingRecipe, setEditingRecipe] = useState(null);
     const [editingIngredient, setEditingIngredient] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('recipes');
-    
-    // Delete confirmation states
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [itemToDelete, setItemToDelete] = useState(null);
-    const [deleteType, setDeleteType] = useState('');
-    const [deleting, setDeleting] = useState(false);
+    const [activeTab, setActiveTab] = useState('recipes'); // For mobile view
 
     const handleIngredientUpdated = (updatedIngredient) => {
         setEditingIngredient(null);
@@ -51,51 +44,6 @@ const ManageRecipeAndIngredientsPage = ({
 
     const clearIngredientSearch = () => {
         setIngredientSearch('');
-    };
-
-    // Delete confirmation handlers
-    const openDeleteDialog = (item, type) => {
-        console.log('Opening delete dialog for:', { item, type }); // Debug log
-        setItemToDelete(item);
-        setDeleteType(type);
-        setDeleteDialogOpen(true);
-    };
-
-    const closeDeleteDialog = () => {
-        console.log('Closing delete dialog'); // Debug log
-        setDeleteDialogOpen(false);
-        setItemToDelete(null);
-        setDeleteType('');
-        setDeleting(false);
-    };
-
-    const confirmDelete = async () => {
-        if (!itemToDelete || !deleteType) {
-            console.error('Missing delete data:', { itemToDelete, deleteType });
-            return;
-        }
-
-        console.log('Confirming delete:', { itemToDelete: itemToDelete._id, deleteType }); // Debug log
-        setDeleting(true);
-        
-        try {
-            if (deleteType === 'recipe') {
-                console.log('Deleting recipe:', itemToDelete._id);
-                await handleDeleteRecipe(itemToDelete._id);
-                console.log('Recipe deleted successfully');
-                fetchRecipes();
-            } else if (deleteType === 'ingredient') {
-                console.log('Deleting ingredient:', itemToDelete._id);
-                await handleDeleteIngredient(itemToDelete._id);
-                console.log('Ingredient deleted successfully');
-                fetchIngredients();
-            }
-            closeDeleteDialog();
-        } catch (error) {
-            console.error('Delete failed:', error);
-            setDeleting(false);
-            // Don't close dialog on error, let user try again
-        }
     };
 
     return (
@@ -304,11 +252,7 @@ const ManageRecipeAndIngredientsPage = ({
                                             </motion.button>
                                             <motion.button 
                                                 className="btn btn--destructive btn--sm"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    console.log('Delete button clicked for recipe:', recipe._id);
-                                                    openDeleteDialog(recipe, 'recipe');
-                                                }}
+                                                onClick={() => handleDeleteRecipe(recipe._id)}
                                                 title="Delete Recipe"
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}
@@ -416,11 +360,7 @@ const ManageRecipeAndIngredientsPage = ({
                                             </button>
                                             <button 
                                                 className="btn btn--destructive btn--sm"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    console.log('Delete button clicked for ingredient:', ingredient._id);
-                                                    openDeleteDialog(ingredient, 'ingredient');
-                                                }}
+                                                onClick={() => handleDeleteIngredient(ingredient._id)}
                                                 title="Delete Ingredient"
                                             >
                                                 <i className="bx bx-trash"></i>
@@ -444,7 +384,6 @@ const ManageRecipeAndIngredientsPage = ({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => setEditingRecipe(null)}
-                        style={{ zIndex: 1000 }}
                     >
                         <motion.div
                             className="modal-content"
@@ -472,22 +411,6 @@ const ManageRecipeAndIngredientsPage = ({
                 onUpdated={handleIngredientUpdated}
                 onCancel={closeEditModal}
                 isOpen={isEditModalOpen}
-            />
-
-            {/* Delete Confirmation Dialog */}
-            <ConfirmDialog
-                open={deleteDialogOpen}
-                title={`Delete ${deleteType === 'recipe' ? 'Recipe' : 'Ingredient'}`}
-                description={
-                    deleteType === 'recipe' 
-                        ? `Are you sure you want to delete "${itemToDelete?.title || itemToDelete?.name}"? This action cannot be undone and will remove all associated data.`
-                        : `Are you sure you want to delete the ingredient "${itemToDelete?.name}"? This action cannot be undone.`
-                }
-                confirmText="Delete"
-                cancelText="Cancel"
-                onConfirm={confirmDelete}
-                onCancel={closeDeleteDialog}
-                loading={deleting}
             />
         </div>
     );
