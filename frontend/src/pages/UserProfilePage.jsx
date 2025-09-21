@@ -323,6 +323,7 @@ const UserProfilePage = () => {
             });
             
             if (response.data.success) {
+                // Use react-hot-toast for consistent styling with other parts of the app
                 toast.success("Recipe removed from favorites!", {
                     style: {
                         borderRadius: "8px",
