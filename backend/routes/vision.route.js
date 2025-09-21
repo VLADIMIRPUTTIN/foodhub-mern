@@ -722,21 +722,21 @@ async function handleFallbackIngredients(recipeName, res) {
   }
 }
 
-// Add this route to generate preparation steps
+// Update the suggest-steps endpoint handler to include description
 router.post("/suggest-steps", async (req, res) => {
   try {
     console.log("Step suggestion request received for:", req.body.recipeName);
-    const { recipeName, ingredients, category } = req.body;
+    const { recipeName, ingredients, category, description } = req.body;
     
-    if (!recipeName || !ingredients || !Array.isArray(ingredients)) {
+    if (!recipeName) {
       return res.status(400).json({ 
         success: false, 
-        message: "Recipe name and ingredients are required" 
+        message: "Recipe name is required" 
       });
     }
     
-    // Use handleFallbackSteps to generate steps
-    return await handleFallbackSteps(recipeName, ingredients, category, res);
+    // Use handleFallbackSteps to generate steps, now including description
+    return await handleFallbackSteps(recipeName, ingredients || [], category, description, res);
     
   } catch (error) {
     console.error("Error in suggest-steps:", error);
@@ -748,18 +748,166 @@ router.post("/suggest-steps", async (req, res) => {
   }
 });
 
-// Add this function to generate steps based on recipe and ingredients
-async function handleFallbackSteps(recipeName, ingredients, category, res) {
+// Replace the generateGenericSteps function with this AI-powered version
+async function generateGenericSteps(recipeName, ingredients, category, description = "") {
   try {
-    // Generate steps based on recipe name and ingredients
-    const steps = generateGenericSteps(recipeName, ingredients, category);
+    // Check if Gemini AI is available
+    if (!genAI) {
+      console.log("Gemini AI not available, using minimal fallback for steps");
+      return generateMinimalSteps(recipeName, ingredients);
+    }
+
+    // Process ingredients to get proper format
+    const ingredientsList = ingredients.map(ing => 
+      typeof ing === 'string' ? ing : ing.name
+    ).join(", ");
+    
+    // Create the prompt for step generation
+    const prompt = `
+    You are a professional chef creating a recipe for "${recipeName}".
+    
+    Recipe Category: ${category || "Main Course"}
+    Recipe Description: ${description}
+    Available Ingredients: ${ingredientsList}
+    
+    Please create 4-6 clear, practical cooking steps for this recipe.
+    Format your response as a JSON array of step objects with "instruction" and "details" properties:
+    [
+      {
+        "instruction": "Short step name",
+        "details": "Detailed explanation of the step"
+      }
+    ]
+
+    Only provide the JSON array, nothing else.
+    `;
+    
+    try {
+      // Generate content with Gemini
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      console.log("Raw AI steps response:", text);
+      
+      // Parse the JSON from the response
+      const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+      if (jsonMatch) {
+        const steps = JSON.parse(jsonMatch[0]);
+        
+        // Validate steps format
+        if (Array.isArray(steps) && steps.length > 0 && steps[0].instruction && steps[0].details) {
+          console.log(`Generated ${steps.length} AI steps for "${recipeName}"`);
+          return steps;
+        }
+      }
+      
+      // If parsing failed or format is incorrect, try a different extraction approach
+      console.log("JSON parsing failed, trying alternative extraction");
+      return extractStepsFromText(text, recipeName, ingredients);
+      
+    } catch (aiError) {
+      console.error("Error generating steps with AI:", aiError);
+      return generateMinimalSteps(recipeName, ingredients);
+    }
+  } catch (error) {
+    console.error("Error in step generation:", error);
+    return generateMinimalSteps(recipeName, ingredients);
+  }
+}
+
+// Helper function to extract steps from unstructured text
+function extractStepsFromText(text, recipeName, ingredients) {
+  const steps = [];
+  const lines = text.split('\n');
+  
+  let currentInstruction = "";
+  let currentDetails = "";
+  
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) continue;
+    
+    // Check if this line looks like a new step (has a number or step keyword)
+    if (/^(\d+\.|\[\d+\]|Step \d+:)/i.test(trimmedLine)) {
+      // If we have an existing instruction, save it
+      if (currentInstruction) {
+        steps.push({
+          instruction: currentInstruction,
+          details: currentDetails || `Complete this step for ${recipeName}`
+        });
+      }
+      
+      // Start a new instruction
+      currentInstruction = trimmedLine.replace(/^(\d+\.|\[\d+\]|Step \d+:)\s*/i, "");
+      currentDetails = "";
+    } else if (currentInstruction) {
+      // Add to existing details
+      if (currentDetails) currentDetails += " ";
+      currentDetails += trimmedLine;
+    } else {
+      // If no instruction yet, this might be the first one
+      currentInstruction = trimmedLine;
+    }
+  }
+  
+  // Add the last step if exists
+  if (currentInstruction) {
+    steps.push({
+      instruction: currentInstruction,
+      details: currentDetails || `Complete this step for ${recipeName}`
+    });
+  }
+  
+  // If we couldn't extract steps properly, generate minimal steps
+  if (steps.length === 0) {
+    return generateMinimalSteps(recipeName, ingredients);
+  }
+  
+  return steps;
+}
+
+// Simple fallback if AI is unavailable
+function generateMinimalSteps(recipeName, ingredients) {
+  // Get the first few ingredients for reference
+  const mainIngredients = ingredients
+    .slice(0, 3)
+    .map(ing => typeof ing === 'string' ? ing : ing.name)
+    .join(", ");
+  
+  return [
+    {
+      instruction: "Prepare ingredients",
+      details: `Gather and prepare all ingredients needed for ${recipeName}.`
+    },
+    {
+      instruction: "Cook main ingredients",
+      details: `Cook ${mainIngredients} according to your preferred method.`
+    },
+    {
+      instruction: "Combine and season",
+      details: "Combine all ingredients and season to taste."
+    },
+    {
+      instruction: "Serve",
+      details: `Plate your ${recipeName} and enjoy!`
+    }
+  ];
+}
+
+// Update the handleFallbackSteps function to use the async version
+async function handleFallbackSteps(recipeName, ingredients, category, description, res) {
+  try {
+    // Generate steps based on recipe name, ingredients, and description
+    const steps = await generateGenericSteps(recipeName, ingredients, category, description);
     
     console.log(`Generated ${steps.length} steps for "${recipeName}"`);
     
     return res.json({
       success: true,
       steps: steps,
-      source: "system-generated"
+      source: "ai-generated"
     });
   } catch (error) {
     console.error("Error generating steps:", error);
@@ -769,68 +917,6 @@ async function handleFallbackSteps(recipeName, ingredients, category, res) {
       error: error.message
     });
   }
-}
-
-// Function to generate generic but customized steps
-function generateGenericSteps(recipeName, ingredients, category) {
-  const mainIngredients = ingredients.slice(0, 3).join(", ");
-  const isProtein = ingredients.some(ing => 
-    ing.toLowerCase().includes('chicken') || 
-    ing.toLowerCase().includes('beef') || 
-    ing.toLowerCase().includes('pork') || 
-    ing.toLowerCase().includes('fish') ||
-    ing.toLowerCase().includes('meat')
-  );
-  
-  const isRice = ingredients.some(ing => ing.toLowerCase().includes('rice'));
-  const isPasta = ingredients.some(ing => 
-    ing.toLowerCase().includes('pasta') || 
-    ing.toLowerCase().includes('noodle')
-  );
-  
-  let cookingMethod = "cook";
-  let cookingTime = "20-30 minutes";
-  
-  if (category === 'Soup') {
-    cookingMethod = "simmer";
-    cookingTime = "30-40 minutes";
-  } else if (isProtein) {
-    cookingMethod = "sauté";
-    cookingTime = "15-20 minutes";
-  } else if (isRice) {
-    cookingMethod = "boil";
-    cookingTime = "20 minutes";
-  } else if (isPasta) {
-    cookingMethod = "boil";
-    cookingTime = "10-12 minutes";
-  }
-  
-  return [
-    {
-      instruction: "Prepare ingredients",
-      details: `Gather all ingredients for ${recipeName}. Wash, peel, and chop vegetables as needed. Measure out all ingredients before beginning.`
-    },
-    {
-      instruction: "Prepare cooking equipment",
-      details: `Heat a pot or pan over medium heat. Add oil or butter if the recipe requires it.`
-    },
-    {
-      instruction: `${cookingMethod.charAt(0).toUpperCase() + cookingMethod.slice(1)} main ingredients`,
-      details: `Add ${mainIngredients} to the pot/pan and ${cookingMethod} for approximately ${cookingTime}, stirring occasionally.`
-    },
-    {
-      instruction: "Add seasonings",
-      details: `Season with salt, pepper, and other spices to taste. Stir well to combine all flavors.`
-    },
-    {
-      instruction: "Complete the cooking process",
-      details: `Cover and reduce heat if needed. Continue cooking until all ingredients are tender and flavors are well combined.`
-    },
-    {
-      instruction: "Serve and enjoy",
-      details: `Remove ${recipeName} from heat and transfer to serving dishes. Garnish if desired and serve immediately.`
-    }
-  ];
 }
 
 export default router;

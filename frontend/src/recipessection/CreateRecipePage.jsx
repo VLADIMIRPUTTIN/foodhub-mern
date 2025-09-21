@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import axios from 'axios';
 import toast from 'react-hot-toast'; // Add this import
 import './CreateRecipePage.scss';
+import IngredientsModal from './IngredientsModal';
 
 const CreateRecipePage = () => {
     const navigate = useNavigate();
@@ -30,6 +31,11 @@ const CreateRecipePage = () => {
     const [isSearching, setIsSearching] = useState(false);
     const suggestionTimeoutRef = useRef(null);
     const inputRef = useRef(null);
+
+    const [isIngredientsModalOpen, setIsIngredientsModalOpen] = useState(false);
+
+    // New state to store all ingredients
+    const [allIngredients, setAllIngredients] = useState([]);
 
     const categories = [
         'Appetizer', 'Main Course', 'Dessert', 'Breakfast', 
@@ -228,6 +234,90 @@ const CreateRecipePage = () => {
         }
     };
 
+    const handleIngredientSelect = (ingredientData) => {
+        setRecipe(prev => ({
+            ...prev,
+            ingredients: [...prev.ingredients, ingredientData]
+        }));
+        // Optionally close the modal after selection or keep it open for multiple selections
+        // setIsIngredientsModalOpen(false);
+    };
+
+    // Fetch all ingredients for the modal
+    const fetchAllIngredients = async () => {
+        try {
+            const response = await axios.get(
+                `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/ingredients" : "/api/ingredients"}`,
+                { withCredentials: true }
+            );
+
+            if (response.data.success) {
+                setAllIngredients(response.data.ingredients);
+            }
+        } catch (error) {
+            console.error('Error fetching ingredients:', error);
+        }
+    };
+
+    // Call fetchAllIngredients when component mounts
+    useEffect(() => {
+        fetchAllIngredients();
+    }, []);
+
+    const handleIngredientFieldClick = () => {
+        setIsIngredientsModalOpen(true);
+    };
+
+    // Add this function after the other handler functions, before renderTabContent()
+    const generateAIInstructions = async () => {
+        if (!recipe.title || !recipe.description) {
+            toast.error('Please fill in recipe name and description first');
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+            
+            // Create payload with recipe details
+            const payload = {
+                recipeName: recipe.title,
+                ingredients: recipe.ingredients.map(ing => ing.name),
+                category: recipe.category || 'Main Course',
+                description: recipe.description
+            };
+            
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+                
+            const response = await axios.post(
+                `${baseURL}/api/vision/suggest-steps`,
+                payload,
+                { withCredentials: true }
+            );
+            
+            if (response.data.success && response.data.steps) {
+                // Add each step to the instructions
+                const newInstructions = [
+                    ...recipe.instructions,
+                    ...response.data.steps.map(step => step.instruction + ": " + step.details)
+                ];
+                
+                setRecipe(prev => ({
+                    ...prev,
+                    instructions: newInstructions
+                }));
+                
+                toast.success('AI generated instructions added!');
+            }
+        } catch (error) {
+            console.error('Error generating instructions:', error);
+            toast.error('Failed to generate instructions');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const renderTabContent = () => {
         switch (activeTab) {
             case 'basic':
@@ -323,12 +413,16 @@ const CreateRecipePage = () => {
                                         placeholder="Ingredient name"
                                         value={newIngredient.name}
                                         onChange={(e) => handleIngredientNameChange(e.target.value)}
-                                        onFocus={() => {
-                                            if (suggestions.length > 0) {
-                                                setShowSuggestions(true);
-                                            }
-                                        }}
+                                        onClick={handleIngredientFieldClick} // Add this line to make the input clickable
                                     />
+                                    <button 
+                                        type="button" 
+                                        className="ingredient-suggest-btn"
+                                        onClick={handleIngredientFieldClick}
+                                        title="Browse ingredients"
+                                    >
+                                        <i className="bx bx-search"></i>
+                                    </button>
                                     {showSuggestions && suggestions.length > 0 && (
                                         <div className="suggestions-dropdown">
                                             {isSearching && (
@@ -396,6 +490,17 @@ const CreateRecipePage = () => {
                                 <i className="bx bx-detail"></i>
                                 <h3>Instructions ({recipe.instructions.length} steps)</h3>
                             </div>
+                            
+                            {/* Move AI button here - at the top */}
+                            <button 
+                                type="button" 
+                                onClick={generateAIInstructions}
+                                disabled={isLoading || !recipe.title || !recipe.description}
+                                className="ai-icon-button"
+                                title="Generate AI instructions"
+                            >
+                                <i className="bx bx-bulb"></i>
+                            </button>
                             
                             <div className="instruction-input">
                                 <textarea
@@ -490,6 +595,14 @@ const CreateRecipePage = () => {
                             {renderTabContent()}
                         </div>
                     </form>
+
+                    <IngredientsModal
+                        isOpen={isIngredientsModalOpen}
+                        onClose={() => setIsIngredientsModalOpen(false)}
+                        onIngredientSelect={handleIngredientSelect}
+                        allIngredients={allIngredients.length > 0 ? allIngredients : []} // Updated line
+                        units={units}
+                    />
                 </motion.div>
             </div>
         </div>

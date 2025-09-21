@@ -1,0 +1,298 @@
+// Animation for the overlay
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.ingredients-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.15); // Reduced opacity for better visibility
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: none; // Removed the blur effect
+    animation: fadeIn 0.2s ease-out;
+}
+
+.ingredients-modal {
+    background: white;
+    border-radius: 16px 0 0 16px; // Only round left corners
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+    width: 320px; // Fixed width
+    height: 100vh;
+    max-height: 100vh; // Take full height
+    overflow-y: auto;
+    position: relative;
+    padding: 1.25rem;
+    margin-right: 0; // Align to right edge
+    animation: slideIn 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    
+    @keyframes slideIn {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+    }
+    
+    // Custom scrollbar
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    &::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+        background: #BB8860;
+        border-radius: 3px;
+    }
+}
+
+.close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(0, 0, 0, 0.05);
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    i {
+        font-size: 1.2rem;
+        color: #4b5563;
+    }
+    
+    &:hover {
+        background: rgba(0, 0, 0, 0.1);
+        transform: scale(1.05);
+    }
+}
+
+.modal-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #BB8860;
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    
+    i {
+        font-size: 1.25rem;
+    }
+}
+
+.search-container {
+    position: relative;
+    margin-bottom: 1rem;
+    
+    .search-input {
+        width: 100%;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        
+        &:focus {
+            outline: none;
+            border-color: #BB8860;
+            box-shadow: 0 0 0 2px rgba(187, 136, 96, 0.1);
+        }
+    }
+}
+
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    max-height: calc(100vh - 150px); // Adjust based on other elements
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    
+    // Custom scrollbar
+    &::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    &::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 2px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+        background: #BB8860;
+        border-radius: 2px;
+    }
+}
+
+.item-button {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    span {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #4b5563;
+        text-align: center;
+    }
+    
+    &:hover {
+        background: #f1f5f9;
+        border-color: #BB8860;
+        transform: translateY(-2px);
+    }
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #9ca3af;
+    
+    p {
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin: 0;
+    }
+}
+
+.back-button {
+    background: #f1f5f9;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #4b5563;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    transition: all 0.2s;
+    
+    &:hover {
+        background: #e2e8f0;
+    }
+    
+    i {
+        font-size: 1rem;
+    }
+}
+
+.selected-info {
+    background: rgba(187, 136, 96, 0.1);
+    border: 1px solid rgba(187, 136, 96, 0.2);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #BB8860;
+    text-align: center;
+}
+
+.amount-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+    
+    @media (max-width: 480px) {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.amount-button {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+        background: #f1f5f9;
+        border-color: #BB8860;
+        color: #BB8860;
+    }
+    
+    &.custom {
+        grid-column: span 2;
+        font-size: 0.9rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        
+        i {
+            font-size: 1rem;
+        }
+        
+        @media (max-width: 480px) {
+            grid-column: span 3;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .ingredients-modal {
+        width: 90%;
+        padding: 1rem;
+        max-height: 80vh;
+    }
+    
+    .modal-title {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.5rem;
+    }
+    
+    .item-button {
+        padding: 0.6rem 0.4rem;
+        
+        i {
+            font-size: 1.1rem;
+        }
+        
+        span {
+            font-size: 0.75rem;
+        }
+    }
+}
