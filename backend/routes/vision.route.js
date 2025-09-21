@@ -1,7 +1,6 @@
 import express from "express";
 import { verifyToken } from "../middleware/verifyToken.js";
 import dotenv from "dotenv";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import axios from "axios";
 import FormData from "form-data";
 
@@ -9,13 +8,18 @@ dotenv.config();
 
 const router = express.Router();
 
-// Setup Google Gemini API if the key exists
+// Setup Google Gemini API with better error handling
 let genAI = null;
-if (process.env.GEMINI_API_KEY) {
-  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  console.log("Gemini API initialized successfully");
-} else {
-  console.warn("GEMINI_API_KEY not found in environment variables");
+try {
+  if (process.env.GEMINI_API_KEY) {
+    const { GoogleGenerativeAI } = await import("@google/generative-ai");
+    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    console.log("Gemini API initialized successfully");
+  } else {
+    console.warn("GEMINI_API_KEY not found in environment variables");
+  }
+} catch (error) {
+  console.error("Failed to initialize Gemini API:", error);
 }
 
 // Helper function to strip data URL prefix
@@ -617,5 +621,216 @@ Check the full recipe and see which steps you can still follow with your availab
     });
   }
 });
+
+// Update the suggest-ingredients route to use async
+router.post("/suggest-ingredients", async (req, res) => {
+  try {
+    console.log("Ingredient suggestion request received for:", req.body.recipeName);
+    const { recipeName } = req.body;
+    
+    if (!recipeName) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Recipe name is required" 
+      });
+    }
+    
+    // Use the async handleFallbackIngredients function
+    return await handleFallbackIngredients(recipeName, res);
+    
+  } catch (error) {
+    console.error("Error in suggest-ingredients:", error);
+    // Don't crash the server, return a basic response
+    return res.status(500).json({
+      success: false,
+      message: "Error generating ingredients",
+      error: error.message
+    });
+  }
+});
+
+// Replace the hardcoded getDefaultIngredients function with this dynamic version
+async function getDefaultIngredients(recipeName) {
+  try {
+    // First try to get ingredients from database
+    const { Ingredient } = await import('../models/ingredient.model.js');
+    
+    // Get all ingredients from the database
+    const allIngredients = await Ingredient.find({}).lean();
+    console.log(`Found ${allIngredients.length} ingredients in database`);
+    
+    if (allIngredients.length > 0) {
+      // If we have ingredients in the database, use them
+      // Select 8-12 random ingredients
+      const ingredientCount = Math.min(allIngredients.length, Math.floor(Math.random() * 5) + 8);
+      
+      // Shuffle and slice
+      const selectedIngredients = [...allIngredients]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, ingredientCount);
+      
+      // Common units to assign randomly
+      const units = ['cups', 'tbsp', 'tsp', 'g', 'kg', 'ml', 'l', 'pieces'];
+      
+      // Map to proper format with amounts and units
+      return selectedIngredients.map(ing => ({
+        name: ing.name,
+        amount: Math.ceil(Math.random() * 3).toString(),
+        unit: units[Math.floor(Math.random() * units.length)]
+      }));
+    }
+    
+    // If no ingredients in database, return just a few basic ones
+    return [
+      { name: "Salt", amount: "1", unit: "tsp" },
+      { name: "Pepper", amount: "1/2", unit: "tsp" },
+      { name: "Garlic", amount: "3", unit: "pieces" },
+      { name: "Onion", amount: "1", unit: "piece" },
+      { name: "Vegetable oil", amount: "2", unit: "tbsp" }
+    ];
+  } catch (error) {
+    console.error("Error getting ingredients from database:", error);
+    // Fallback to minimal list if database error
+    return [
+      { name: "Salt", amount: "1", unit: "tsp" },
+      { name: "Pepper", amount: "1/2", unit: "tsp" },
+      { name: "Garlic", amount: "3", unit: "pieces" },
+      { name: "Onion", amount: "1", unit: "piece" }
+    ];
+  }
+}
+
+// Update the handleFallbackIngredients function to support async
+async function handleFallbackIngredients(recipeName, res) {
+  try {
+    const ingredients = await getDefaultIngredients(recipeName);
+    
+    console.log(`Using dynamic ingredients from system: ${ingredients.length} items`);
+    
+    return res.json({
+      success: true,
+      ingredients: ingredients,
+      source: "system-database"
+    });
+  } catch (error) {
+    console.error("Error in fallback ingredients:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error generating ingredients",
+      error: error.message
+    });
+  }
+}
+
+// Add this route to generate preparation steps
+router.post("/suggest-steps", async (req, res) => {
+  try {
+    console.log("Step suggestion request received for:", req.body.recipeName);
+    const { recipeName, ingredients, category } = req.body;
+    
+    if (!recipeName || !ingredients || !Array.isArray(ingredients)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Recipe name and ingredients are required" 
+      });
+    }
+    
+    // Use handleFallbackSteps to generate steps
+    return await handleFallbackSteps(recipeName, ingredients, category, res);
+    
+  } catch (error) {
+    console.error("Error in suggest-steps:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error generating preparation steps",
+      error: error.message
+    });
+  }
+});
+
+// Add this function to generate steps based on recipe and ingredients
+async function handleFallbackSteps(recipeName, ingredients, category, res) {
+  try {
+    // Generate steps based on recipe name and ingredients
+    const steps = generateGenericSteps(recipeName, ingredients, category);
+    
+    console.log(`Generated ${steps.length} steps for "${recipeName}"`);
+    
+    return res.json({
+      success: true,
+      steps: steps,
+      source: "system-generated"
+    });
+  } catch (error) {
+    console.error("Error generating steps:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error generating steps",
+      error: error.message
+    });
+  }
+}
+
+// Function to generate generic but customized steps
+function generateGenericSteps(recipeName, ingredients, category) {
+  const mainIngredients = ingredients.slice(0, 3).join(", ");
+  const isProtein = ingredients.some(ing => 
+    ing.toLowerCase().includes('chicken') || 
+    ing.toLowerCase().includes('beef') || 
+    ing.toLowerCase().includes('pork') || 
+    ing.toLowerCase().includes('fish') ||
+    ing.toLowerCase().includes('meat')
+  );
+  
+  const isRice = ingredients.some(ing => ing.toLowerCase().includes('rice'));
+  const isPasta = ingredients.some(ing => 
+    ing.toLowerCase().includes('pasta') || 
+    ing.toLowerCase().includes('noodle')
+  );
+  
+  let cookingMethod = "cook";
+  let cookingTime = "20-30 minutes";
+  
+  if (category === 'Soup') {
+    cookingMethod = "simmer";
+    cookingTime = "30-40 minutes";
+  } else if (isProtein) {
+    cookingMethod = "sauté";
+    cookingTime = "15-20 minutes";
+  } else if (isRice) {
+    cookingMethod = "boil";
+    cookingTime = "20 minutes";
+  } else if (isPasta) {
+    cookingMethod = "boil";
+    cookingTime = "10-12 minutes";
+  }
+  
+  return [
+    {
+      instruction: "Prepare ingredients",
+      details: `Gather all ingredients for ${recipeName}. Wash, peel, and chop vegetables as needed. Measure out all ingredients before beginning.`
+    },
+    {
+      instruction: "Prepare cooking equipment",
+      details: `Heat a pot or pan over medium heat. Add oil or butter if the recipe requires it.`
+    },
+    {
+      instruction: `${cookingMethod.charAt(0).toUpperCase() + cookingMethod.slice(1)} main ingredients`,
+      details: `Add ${mainIngredients} to the pot/pan and ${cookingMethod} for approximately ${cookingTime}, stirring occasionally.`
+    },
+    {
+      instruction: "Add seasonings",
+      details: `Season with salt, pepper, and other spices to taste. Stir well to combine all flavors.`
+    },
+    {
+      instruction: "Complete the cooking process",
+      details: `Cover and reduce heat if needed. Continue cooking until all ingredients are tender and flavors are well combined.`
+    },
+    {
+      instruction: "Serve and enjoy",
+      details: `Remove ${recipeName} from heat and transfer to serving dishes. Garnish if desired and serve immediately.`
+    }
+  ];
+}
 
 export default router;

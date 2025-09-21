@@ -610,6 +610,36 @@
             color: #CF996C;
         }
     }
+
+    &--ai {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: none;
+        border-radius: 8px;
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.2s;
+        white-space: nowrap;
+
+        i {
+            font-size: 1.1rem;
+        }
+
+        &:hover:not(:disabled) {
+            background: linear-gradient(135deg, #4f46e5, #4338ca);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    }
 }
 
 // Form Actions Section - FIXED AT BOTTOM FOR MODAL
@@ -880,4 +910,82 @@ i[class^="bx-"], i[class*=" bx-"] {
     line-height: 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+.recipe-name-with-ai {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  
+  .form-input {
+    flex: 1;
+  }
+}
+
+.btn--ai {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  white-space: nowrap;
+  
+  i {
+    font-size: 1.1rem;
+  }
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #4f46e5, #4338ca);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.suggestion-success {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  color: #10b981;
+  font-size: 0.85rem;
+  
+  i {
+    font-size: 1rem;
+  }
+}
+
+// Add these new styles
+.ingredients-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  
+  .card-title {
+    margin: 0;
+  }
+}
+
+.ingredients-ai-button {
+  padding: 0.5rem 1rem;
+  margin-left: 1rem;
+}
+
+.ingredients-success {
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.8rem;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 8px;
+  border-left: 3px solid #10b981;
 }
