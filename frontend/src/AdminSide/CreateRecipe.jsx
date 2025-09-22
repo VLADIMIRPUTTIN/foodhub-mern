@@ -179,10 +179,7 @@ const CreateRecipe = ({ onRecipeSaved }) => {
             // If server is accessible, proceed with AI request
             const response = await axios.post(
                 `${baseURL}/api/vision/suggest-ingredients`,
-                { 
-                    recipeName: name,
-                    description: description  // Include description for better ingredients
-                },
+                { recipeName: name },
                 { 
                     withCredentials: true,
                     timeout: 30000 // Add a longer timeout for AI operations
@@ -238,8 +235,8 @@ const CreateRecipe = ({ onRecipeSaved }) => {
         setIsGeneratingIngredients(false);
     };
 
-    // Update the processIngredientsResponse function to correctly match ingredients with existing ones
     const processIngredientsResponse = async (ingredientsList) => {
+        // Get existing ingredients from system
         try {
             const baseURL = import.meta.env.MODE === "development" 
                 ? "http://localhost:5000" 
@@ -253,57 +250,67 @@ const CreateRecipe = ({ onRecipeSaved }) => {
             // Track missing ingredients that need to be created
             const missingIngredients = [];
             
-            // Create new recipe ingredients array with exact name matches from database
+            // Create new recipe ingredients array
             const newIngredients = ingredientsList.map(ing => {
-                // Find exact match or closest match in existing ingredients
-                const matchedIngredient = existingIngredients.find(
+                // Check if ingredient exists in system
+                const exists = existingIngredients.some(
                     existingIng => existingIng.name.toLowerCase() === ing.name.toLowerCase()
                 );
                 
-                // If no exact match, add to missing ingredients list
-                if (!matchedIngredient) {
+                if (!exists) {
                     missingIngredients.push(ing.name);
-                    
-                    // Return the ingredient with original name (will be added to DB later)
-                    return {
-                        name: ing.name,
-                        amount: ing.amount || '1',
-                        unit: ing.unit || 'piece'
-                    };
                 }
                 
-                // Return with exact name from database to ensure dropdown selects correctly
                 return {
-                    name: matchedIngredient.name, // Use exact name from database
+                    name: ing.name,
                     amount: ing.amount || '1',
                     unit: ing.unit || 'piece'
                 };
             });
             
-            console.log("Generated ingredients:", newIngredients);
             console.log("Missing ingredients to add:", missingIngredients);
             
-            // Add missing ingredients to system if needed
+            // Add missing ingredients to system
             if (missingIngredients.length > 0) {
                 try {
-                    // Create the missing ingredients in the database
-                    for (const ingredientName of missingIngredients) {
-                        await axios.post(
-                            `${baseURL}/api/ingredients`,
-                            { name: ingredientName },
-                            { withCredentials: true }
-                        );
+                    const addedIngredients = [];
+                    
+                    // Add each missing ingredient to the database
+                    for (const name of missingIngredients) {
+                        try {
+                            const addResponse = await axios.post(
+                                `${baseURL}/api/ingredients`,
+                                { name },
+                                { withCredentials: true }
+                            );
+                            
+                            if (addResponse.data.success) {
+                                addedIngredients.push(name);
+                                console.log("Added new ingredient to database:", name);
+                            }
+                        } catch (err) {
+                            if (err.response?.status === 400 && 
+                                err.response?.data?.message === "Ingredient already exists") {
+                                console.log(`Ingredient ${name} already exists`);
+                            } else {
+                                console.warn(`Error adding ingredient ${name}:`, err.message);
+                            }
+                        }
                     }
                     
-                    console.log(`Added ${missingIngredients.length} new ingredients to the database`);
-                    setSuggestionSuccess(`Generated ${newIngredients.length} ingredients for "${name}" (${missingIngredients.length} new ingredients added)`);
-                    
-                    // Reload all ingredients to include the new ones we just added
-                    const updatedIngredientsRes = await axios.get(`${baseURL}/api/ingredients`);
-                    setAllIngredients(updatedIngredientsRes.data.ingredients || []);
-                    
+                    // Refresh ingredients list to include newly added ingredients
+                    const refreshRes = await axios.get(`${baseURL}/api/ingredients`);
+                    if (refreshRes.data.success) {
+                        setAllIngredients(refreshRes.data.ingredients);
+                        
+                        // Update success message to include added ingredients
+                        if (addedIngredients.length > 0) {
+                            setSuggestionSuccess(`Generated ${newIngredients.length} ingredients for "${name}" (Added ${addedIngredients.length} new ingredients to system)`);
+                        }
+                    }
                 } catch (addErr) {
-                    console.error("Error adding new ingredients:", addErr);
+                    console.error("Error adding ingredients:", addErr);
+                    // Continue anyway as we have the ingredient names
                 }
             }
             
