@@ -657,30 +657,32 @@ const RecipePage = () => {
                                             <p className="recipe-desc">{recipe.description}</p>
                                             
                                             <div className="recipe-meta">
-                                                <div className="recipe-category">{recipe.category}</div>
-                                                <RateButton 
-                                                    recipe={recipe} 
-                                                    onRateClick={handleRateClick} 
-                                                />
-                                            </div>
-                                            
-                                            {recipe.averageRating > 0 && (
-                                                <div className="star-rating-display">
-                                                    {[1, 2, 3, 4, 5].map((star) => (
-                                                        <i
-                                                            key={star}
-                                                            className={`bx ${
-                                                                star <= Math.round(recipe.averageRating) 
-                                                                    ? "bxs-star text-yellow-400" 
-                                                                    : "bx-star text-gray-300"
-                                                            }`}
-                                                        ></i>
-                                                    ))}
-                                                    <span className="star-rating-value">
-                                                        {recipe.averageRating.toFixed(1)} ({recipe.ratings?.length || 0})
-                                                    </span>
+                                                <div className="category-rating-row">
+                                                    <div className="recipe-category">{recipe.category}</div>
+                                                    <RateButton 
+                                                        recipe={recipe} 
+                                                        onRateClick={handleRateClick} 
+                                                    />
                                                 </div>
-                                            )}
+                                                
+                                                {recipe.averageRating > 0 && (
+                                                    <div className="star-rating-display">
+                                                        {[1, 2, 3, 4, 5].map((star) => (
+                                                            <i
+                                                                key={star}
+                                                                className={`bx ${
+                                                                    star <= Math.round(recipe.averageRating) 
+                                                                        ? "bxs-star text-yellow-400" 
+                                                                        : "bx-star text-gray-300"
+                                                                }`}
+                                                            ></i>
+                                                        ))}
+                                                        <span className="star-rating-value">
+                                                            {recipe.averageRating.toFixed(1)} ({recipe.ratings?.length || 0})
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
                                             
                                             <div className="recipe-price">
                                                 <i className='bx bx-money'></i>

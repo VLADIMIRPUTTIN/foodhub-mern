@@ -622,11 +622,175 @@ Check the full recipe and see which steps you can still follow with your availab
   }
 });
 
-// Update the suggest-ingredients route to use async
+// New AI-powered function to replace getKnownRecipes and other hardcoded functions
+async function generateIngredientsWithAI(recipeName, description, res) {
+  try {
+    console.log(`Generating AI ingredients for recipe: ${recipeName}`);
+    
+    // Check if Gemini AI is available
+    if (!genAI) {
+      console.log("Gemini AI not available, using minimal ingredients");
+      return res.json({
+        success: true,
+        ingredients: getBasicCookingIngredients(),
+        source: "system-minimal"
+      });
+    }
+    
+    // Create a much more specific prompt for the AI with stronger instructions
+    const prompt = `
+    You are a professional chef specializing specifically in the recipe "${recipeName}".
+    ${description ? `The recipe description is: "${description}"` : ""}
+
+    IMPORTANT INSTRUCTION: Provide ONLY the authentic, traditional ingredients for ${recipeName}.
+    DO NOT include any random or unrelated ingredients that don't belong in this dish.
+    
+    For example, if this is "Chicken Adobo", ONLY include ingredients like chicken, soy sauce, vinegar, 
+    garlic, bay leaves, and peppercorns - NOT unrelated ingredients like eggplant, tuna, crab, etc.
+
+    Return ONLY a JSON array of ingredient objects in this exact format:
+    [
+      {"name": "ingredient name", "amount": "quantity", "unit": "measurement unit"},
+      {"name": "next ingredient", "amount": "quantity", "unit": "measurement unit"}
+    ]
+    
+    Use appropriate units (cups, tbsp, tsp, g, kg, pieces, etc.) and realistic amounts for each ingredient.
+    IMPORTANT: Double check that EVERY ingredient you list is actually used in a traditional ${recipeName} recipe.
+    `;
+    
+    // Generate content with Gemini
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-pro",
+      generationConfig: {
+        temperature: 0.2, // Lower temperature for more focused/accurate responses
+        topP: 0.8,
+        topK: 40
+      }
+    });
+    
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    console.log("Raw AI ingredients response:", text);
+    
+    // Parse the JSON from the response
+    try {
+      // Try to extract JSON array
+      const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+      if (jsonMatch) {
+        const ingredients = JSON.parse(jsonMatch[0]);
+        
+        // Validate ingredients format
+        if (Array.isArray(ingredients) && ingredients.length > 0) {
+          // Ensure all ingredients have the required properties
+          const validIngredients = ingredients.filter(ing => 
+            ing.name && ing.amount && ing.unit
+          );
+          
+          if (validIngredients.length > 0) {
+            console.log(`Generated ${validIngredients.length} ingredients for "${recipeName}"`);
+            return res.json({
+              success: true,
+              ingredients: validIngredients,
+              source: "ai-generated"
+            });
+          }
+        }
+      }
+      
+      // If JSON parsing fails, try extracting ingredients manually
+      console.log("JSON parsing failed, trying text extraction");
+      const extractedIngredients = extractIngredientsFromText(text);
+      return res.json({
+        success: true,
+        ingredients: extractedIngredients,
+        source: "ai-extracted"
+      });
+      
+    } catch (parseError) {
+      console.error("Error parsing AI response:", parseError);
+      // Fall back to basic ingredients
+      return res.json({
+        success: true,
+        ingredients: getBasicCookingIngredients(),
+        source: "fallback-basic"
+      });
+    }
+  } catch (error) {
+    console.error("Error generating ingredients with AI:", error);
+    // Fall back to basic ingredients
+    return res.json({
+      success: true,
+      ingredients: getBasicCookingIngredients(),
+      source: "error-fallback"
+    });
+  }
+}
+
+// Extract ingredients from unstructured text
+function extractIngredientsFromText(text) {
+  const ingredients = [];
+  const lines = text.split('\n');
+  
+  // Common measurement units
+  const units = ['cups', 'cup', 'tbsp', 'tsp', 'g', 'kg', 'ml', 'l', 'oz', 'lb', 'lbs', 'pieces', 'piece', 'pinch', 'dash'];
+  
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    // Skip empty lines or lines that don't look like ingredients
+    if (!trimmedLine || trimmedLine.startsWith('#') || trimmedLine.startsWith('//')) continue;
+    
+    // Try to extract quantity, unit and ingredient name
+    const quantityMatch = trimmedLine.match(/^([\d./]+|\ba\b|\ban\b)/i);
+    if (quantityMatch) {
+      let amount = quantityMatch[0];
+      let remaining = trimmedLine.slice(quantityMatch[0].length).trim();
+      
+      // Find the unit
+      let unit = 'pieces';
+      for (const possibleUnit of units) {
+        if (remaining.toLowerCase().startsWith(possibleUnit.toLowerCase())) {
+          unit = possibleUnit.toLowerCase();
+          remaining = remaining.slice(possibleUnit.length).trim();
+          break;
+        }
+      }
+      
+      // Clean up the remaining text to get ingredient name
+      const name = remaining.replace(/^(of|-)/, '').trim();
+      
+      if (name) {
+        ingredients.push({ name, amount, unit });
+      }
+    }
+  }
+  
+  // If we couldn't extract anything, provide minimal ingredients
+  if (ingredients.length === 0) {
+    return getBasicCookingIngredients();
+  }
+  
+  return ingredients;
+}
+
+// Function for basic cooking ingredients - no recipe-specific hardcoding
+function getBasicCookingIngredients() {
+  return [
+    { name: "Main Ingredient", amount: "500", unit: "g" },
+    { name: "Salt", amount: "1", unit: "tsp" },
+    { name: "Pepper", amount: "1/2", unit: "tsp" },
+    { name: "Garlic", amount: "3", unit: "pieces" },
+    { name: "Onion", amount: "1", unit: "piece" },
+    { name: "Vegetable oil", amount: "2", unit: "tbsp" }
+  ];
+}
+
+// Add this route to handle ingredient suggestions
 router.post("/suggest-ingredients", async (req, res) => {
   try {
     console.log("Ingredient suggestion request received for:", req.body.recipeName);
-    const { recipeName } = req.body;
+    const { recipeName, description } = req.body;
     
     if (!recipeName) {
       return res.status(400).json({ 
@@ -635,12 +799,11 @@ router.post("/suggest-ingredients", async (req, res) => {
       });
     }
     
-    // Use the async handleFallbackIngredients function
-    return await handleFallbackIngredients(recipeName, res);
+    // Use AI to generate appropriate ingredients
+    return await generateIngredientsWithAI(recipeName, description, res);
     
   } catch (error) {
     console.error("Error in suggest-ingredients:", error);
-    // Don't crash the server, return a basic response
     return res.status(500).json({
       success: false,
       message: "Error generating ingredients",
@@ -649,80 +812,7 @@ router.post("/suggest-ingredients", async (req, res) => {
   }
 });
 
-// Replace the hardcoded getDefaultIngredients function with this dynamic version
-async function getDefaultIngredients(recipeName) {
-  try {
-    // First try to get ingredients from database
-    const { Ingredient } = await import('../models/ingredient.model.js');
-    
-    // Get all ingredients from the database
-    const allIngredients = await Ingredient.find({}).lean();
-    console.log(`Found ${allIngredients.length} ingredients in database`);
-    
-    if (allIngredients.length > 0) {
-      // If we have ingredients in the database, use them
-      // Select 8-12 random ingredients
-      const ingredientCount = Math.min(allIngredients.length, Math.floor(Math.random() * 5) + 8);
-      
-      // Shuffle and slice
-      const selectedIngredients = [...allIngredients]
-        .sort(() => 0.5 - Math.random())
-        .slice(0, ingredientCount);
-      
-      // Common units to assign randomly
-      const units = ['cups', 'tbsp', 'tsp', 'g', 'kg', 'ml', 'l', 'pieces'];
-      
-      // Map to proper format with amounts and units
-      return selectedIngredients.map(ing => ({
-        name: ing.name,
-        amount: Math.ceil(Math.random() * 3).toString(),
-        unit: units[Math.floor(Math.random() * units.length)]
-      }));
-    }
-    
-    // If no ingredients in database, return just a few basic ones
-    return [
-      { name: "Salt", amount: "1", unit: "tsp" },
-      { name: "Pepper", amount: "1/2", unit: "tsp" },
-      { name: "Garlic", amount: "3", unit: "pieces" },
-      { name: "Onion", amount: "1", unit: "piece" },
-      { name: "Vegetable oil", amount: "2", unit: "tbsp" }
-    ];
-  } catch (error) {
-    console.error("Error getting ingredients from database:", error);
-    // Fallback to minimal list if database error
-    return [
-      { name: "Salt", amount: "1", unit: "tsp" },
-      { name: "Pepper", amount: "1/2", unit: "tsp" },
-      { name: "Garlic", amount: "3", unit: "pieces" },
-      { name: "Onion", amount: "1", unit: "piece" }
-    ];
-  }
-}
-
-// Update the handleFallbackIngredients function to support async
-async function handleFallbackIngredients(recipeName, res) {
-  try {
-    const ingredients = await getDefaultIngredients(recipeName);
-    
-    console.log(`Using dynamic ingredients from system: ${ingredients.length} items`);
-    
-    return res.json({
-      success: true,
-      ingredients: ingredients,
-      source: "system-database"
-    });
-  } catch (error) {
-    console.error("Error in fallback ingredients:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Error generating ingredients",
-      error: error.message
-    });
-  }
-}
-
-// Update the suggest-steps endpoint handler to include description
+// Add this route after the suggest-ingredients route
 router.post("/suggest-steps", async (req, res) => {
   try {
     console.log("Step suggestion request received for:", req.body.recipeName);
@@ -735,8 +825,8 @@ router.post("/suggest-steps", async (req, res) => {
       });
     }
     
-    // Use handleFallbackSteps to generate steps, now including description
-    return await handleFallbackSteps(recipeName, ingredients || [], category, description, res);
+    // Use AI to generate appropriate steps
+    return await generateStepsWithAI(recipeName, ingredients, category, description, res);
     
   } catch (error) {
     console.error("Error in suggest-steps:", error);
@@ -748,77 +838,121 @@ router.post("/suggest-steps", async (req, res) => {
   }
 });
 
-// Replace the generateGenericSteps function with this AI-powered version
-async function generateGenericSteps(recipeName, ingredients, category, description = "") {
+// Add this function for step generation with AI
+async function generateStepsWithAI(recipeName, ingredients, category, description = "", res) {
   try {
+    console.log(`Generating AI steps for recipe: ${recipeName}`);
+    
     // Check if Gemini AI is available
     if (!genAI) {
-      console.log("Gemini AI not available, using minimal fallback for steps");
-      return generateMinimalSteps(recipeName, ingredients);
+      console.log("Gemini AI not available, using minimal steps");
+      return res.json({
+        success: true,
+        steps: getBasicCookingSteps(recipeName),
+        source: "system-minimal"
+      });
     }
-
-    // Process ingredients to get proper format
-    const ingredientsList = ingredients.map(ing => 
-      typeof ing === 'string' ? ing : ing.name
-    ).join(", ");
     
-    // Create the prompt for step generation
+    // Format ingredients for better prompt context
+    const formattedIngredients = Array.isArray(ingredients) 
+      ? ingredients.join(", ") 
+      : ingredients;
+    
+    // Create a prompt for the AI with stronger instructions
     const prompt = `
-    You are a professional chef creating a recipe for "${recipeName}".
+    You are a professional chef creating detailed cooking instructions for "${recipeName}".
     
     Recipe Category: ${category || "Main Course"}
-    Recipe Description: ${description}
-    Available Ingredients: ${ingredientsList}
-    
-    Please create 4-6 clear, practical cooking steps for this recipe.
-    Format your response as a JSON array of step objects with "instruction" and "details" properties:
-    [
-      {
-        "instruction": "Short step name",
-        "details": "Detailed explanation of the step"
-      }
-    ]
+    Recipe Description: ${description || ""}
+    Available Ingredients: ${formattedIngredients}
 
-    Only provide the JSON array, nothing else.
+    IMPORTANT: Create 5-8 clear, practical cooking steps that:
+    1. Specifically use the ingredients mentioned above
+    2. Follow proper cooking techniques for this type of dish
+    3. Result in an authentic version of ${recipeName}
+    
+    Return ONLY a JSON array of step objects with this exact structure:
+    [
+      {"instruction": "Brief step title", "details": "Detailed explanation of this step"},
+      {"instruction": "Next step title", "details": "Detailed explanation of this step"}
+    ]
+    
+    Make each step specific to this recipe, not generic cooking instructions.
+    Double check that your steps match the proper preparation method for ${recipeName}.
     `;
     
+    // Generate content with Gemini
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-pro",
+      generationConfig: {
+        temperature: 0.3, // Lower temperature for more focused/accurate responses
+        topP: 0.8,
+        topK: 40
+      }
+    });
+    
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    console.log("Raw AI steps response:", text);
+    
+    // Parse the JSON from the response
     try {
-      // Generate content with Gemini
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-      
-      console.log("Raw AI steps response:", text);
-      
-      // Parse the JSON from the response
+      // Try to extract JSON array
       const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
       if (jsonMatch) {
         const steps = JSON.parse(jsonMatch[0]);
         
         // Validate steps format
-        if (Array.isArray(steps) && steps.length > 0 && steps[0].instruction && steps[0].details) {
-          console.log(`Generated ${steps.length} AI steps for "${recipeName}"`);
-          return steps;
+        if (Array.isArray(steps) && steps.length > 0) {
+          // Ensure all steps have the required properties
+          const validSteps = steps.filter(step => 
+            step.instruction && step.details
+          );
+          
+          if (validSteps.length > 0) {
+            console.log(`Generated ${validSteps.length} steps for "${recipeName}"`);
+            return res.json({
+              success: true,
+              steps: validSteps,
+              source: "ai-generated"
+            });
+          }
         }
       }
       
-      // If parsing failed or format is incorrect, try a different extraction approach
-      console.log("JSON parsing failed, trying alternative extraction");
-      return extractStepsFromText(text, recipeName, ingredients);
+      // If JSON parsing fails, try extracting steps manually
+      console.log("JSON parsing failed, trying text extraction");
+      const extractedSteps = extractStepsFromText(text, recipeName);
+      return res.json({
+        success: true,
+        steps: extractedSteps,
+        source: "ai-extracted"
+      });
       
-    } catch (aiError) {
-      console.error("Error generating steps with AI:", aiError);
-      return generateMinimalSteps(recipeName, ingredients);
+    } catch (parseError) {
+      console.error("Error parsing AI response:", parseError);
+      // Fall back to basic steps
+      return res.json({
+        success: true,
+        steps: getBasicCookingSteps(recipeName),
+        source: "fallback-basic"
+      });
     }
   } catch (error) {
-    console.error("Error in step generation:", error);
-    return generateMinimalSteps(recipeName, ingredients);
+    console.error("Error generating steps with AI:", error);
+    // Fall back to basic steps
+    return res.json({
+      success: true,
+      steps: getBasicCookingSteps(recipeName),
+      source: "error-fallback"
+    });
   }
 }
 
-// Helper function to extract steps from unstructured text
-function extractStepsFromText(text, recipeName, ingredients) {
+// Extract steps from unstructured text
+function extractStepsFromText(text, recipeName) {
   const steps = [];
   const lines = text.split('\n');
   
@@ -830,7 +964,7 @@ function extractStepsFromText(text, recipeName, ingredients) {
     if (!trimmedLine) continue;
     
     // Check if this line looks like a new step (has a number or step keyword)
-    if (/^(\d+\.|\[\d+\]|Step \d+:)/i.test(trimmedLine)) {
+    if (/^(\d+\.|\[\d+\]|Step \d+:|Step:|Instruction:|First:|Next:)/i.test(trimmedLine)) {
       // If we have an existing instruction, save it
       if (currentInstruction) {
         steps.push({
@@ -840,7 +974,7 @@ function extractStepsFromText(text, recipeName, ingredients) {
       }
       
       // Start a new instruction
-      currentInstruction = trimmedLine.replace(/^(\d+\.|\[\d+\]|Step \d+:)\s*/i, "");
+      currentInstruction = trimmedLine.replace(/^(\d+\.|\[\d+\]|Step \d+:|Step:|Instruction:|First:|Next:)\s*/i, "");
       currentDetails = "";
     } else if (currentInstruction) {
       // Add to existing details
@@ -860,63 +994,43 @@ function extractStepsFromText(text, recipeName, ingredients) {
     });
   }
   
-  // If we couldn't extract steps properly, generate minimal steps
+  // If we couldn't extract steps properly, generate basic steps
   if (steps.length === 0) {
-    return generateMinimalSteps(recipeName, ingredients);
+    return getBasicCookingSteps(recipeName);
   }
   
   return steps;
 }
 
-// Simple fallback if AI is unavailable
-function generateMinimalSteps(recipeName, ingredients) {
-  // Get the first few ingredients for reference
-  const mainIngredients = ingredients
-    .slice(0, 3)
-    .map(ing => typeof ing === 'string' ? ing : ing.name)
-    .join(", ");
-  
+// Basic cooking steps as fallback
+function getBasicCookingSteps(recipeName) {
   return [
     {
       instruction: "Prepare ingredients",
-      details: `Gather and prepare all ingredients needed for ${recipeName}.`
+      details: `Gather and measure all ingredients for ${recipeName}. Wash, peel, and chop vegetables as needed.`
+    },
+    {
+      instruction: "Heat cooking vessel",
+      details: "Place a pot or pan over medium heat. Add oil or butter if the recipe requires it."
     },
     {
       instruction: "Cook main ingredients",
-      details: `Cook ${mainIngredients} according to your preferred method.`
+      details: "Add the main ingredients and cook according to their requirements."
     },
     {
-      instruction: "Combine and season",
-      details: "Combine all ingredients and season to taste."
+      instruction: "Add seasonings",
+      details: "Add salt, pepper, and other seasonings to taste. Stir well to combine."
+    },
+    {
+      instruction: "Simmer if needed",
+      details: "Cover and reduce heat if needed. Cook until all ingredients are tender and flavors are well combined."
     },
     {
       instruction: "Serve",
-      details: `Plate your ${recipeName} and enjoy!`
+      details: `Serve your ${recipeName} hot. Garnish if desired.`
     }
   ];
 }
 
-// Update the handleFallbackSteps function to use the async version
-async function handleFallbackSteps(recipeName, ingredients, category, description, res) {
-  try {
-    // Generate steps based on recipe name, ingredients, and description
-    const steps = await generateGenericSteps(recipeName, ingredients, category, description);
-    
-    console.log(`Generated ${steps.length} steps for "${recipeName}"`);
-    
-    return res.json({
-      success: true,
-      steps: steps,
-      source: "ai-generated"
-    });
-  } catch (error) {
-    console.error("Error generating steps:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Error generating steps",
-      error: error.message
-    });
-  }
-}
-
+// Add this line at the end of the file
 export default router;
