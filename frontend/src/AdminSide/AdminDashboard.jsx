@@ -564,6 +564,9 @@ const AdminDashboard = () => {
                                 type: "spring",
                                 stiffness: 100
                             }}
+                            style={{
+                                boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15), 0 4px 15px rgba(207, 153, 108, 0.2)"
+                            }}
                             whileHover={{ 
                                 y: -12, 
                                 scale: 1.05,
