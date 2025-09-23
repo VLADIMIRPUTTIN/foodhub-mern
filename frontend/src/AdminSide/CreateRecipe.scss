@@ -420,33 +420,34 @@
 .ingredient-row {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    padding: 0.8rem;
-    background: #ffffff;
-    border: 2px solid #e2e8f0;
-    border-radius: 10px;
-    transition: all 0.3s ease;
-    flex-shrink: 0;
-
-    &:hover {
-        border-color: rgba(207, 153, 108, 0.3);
-        box-shadow: 0 3px 10px rgba(207, 153, 108, 0.15);
-        transform: translateY(-1px);
-    }
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
 
     .ingredient-fields {
-        display: grid;
-        grid-template-columns: 1fr 1fr 2fr;
-        gap: 0.5rem;
+        display: flex;
         flex: 1;
+        gap: 0.5rem;
+
+        .ingredient-amount {
+            width: 20%;
+            min-width: 60px;
+        }
+
+        .ingredient-unit {
+            width: 25%;
+            min-width: 80px;
+        }
+
+        .ingredient-name {
+            flex: 1;
+        }
     }
 
-    .ingredient-amount,
-    .ingredient-unit,
-    .ingredient-name {
-        height: 2rem;
-        border: 1px solid #cbd5e1;
-        font-size: 0.8rem;
+    .btn--icon {
+        padding: 0.4rem;
+        min-width: auto;
+        height: 2.2rem;
+        width: 2.2rem;
     }
 }
 
@@ -988,4 +989,103 @@ i[class^="bx-"], i[class*=" bx-"] {
   background: rgba(16, 185, 129, 0.1);
   border-radius: 8px;
   border-left: 3px solid #10b981;
+}
+
+/* Add this CSS to fix the units dropdown display */
+.ingredient-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+
+    .ingredient-fields {
+        display: flex;
+        flex: 1;
+        gap: 0.5rem;
+
+        .ingredient-amount {
+            width: 20%;
+            min-width: 60px;
+        }
+
+        .ingredient-unit {
+            width: 25%;
+            min-width: 80px;
+        }
+
+        .ingredient-name {
+            flex: 1;
+        }
+    }
+
+    .btn--icon {
+        padding: 0.4rem;
+        min-width: auto;
+        height: 2.2rem;
+        width: 2.2rem;
+    }
+}
+
+/* Make the dropdown options visible */
+.form-select {
+    display: block;
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+    appearance: auto; /* This ensures the dropdown arrow shows properly */
+}
+
+/* Add these styles to fix the units dropdown display issue */
+.form-select.ingredient-unit {
+  appearance: menulist !important; /* Forces native dropdown appearance */
+  -webkit-appearance: menulist !important;
+  -moz-appearance: menulist !important;
+  background-color: white;
+  color: black;
+  padding: 0.5rem;
+  font-size: 1rem;
+  min-width: 100px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Ensure dropdown items are visible */
+.form-select.ingredient-unit option {
+  padding: 10px;
+  background-color: white;
+  color: black;
+}
+
+/* Style ingredient row for better spacing */
+.ingredient-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.ingredient-fields {
+  display: flex;
+  flex: 1;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.ingredient-amount {
+  width: 20%;
+  min-width: 70px;
+}
+
+.ingredient-unit {
+  width: 25%;
+  min-width: 100px;
+}
+
+.ingredient-name {
+  flex: 1;
 }

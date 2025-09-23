@@ -622,11 +622,11 @@ Check the full recipe and see which steps you can still follow with your availab
   }
 });
 
-// Update the suggest-ingredients route to use async
+// Update the suggest-ingredients route to search existing ingredients
 router.post("/suggest-ingredients", async (req, res) => {
   try {
     console.log("Ingredient suggestion request received for:", req.body.recipeName);
-    const { recipeName } = req.body;
+    const { recipeName, category, description } = req.body;
     
     if (!recipeName) {
       return res.status(400).json({ 
@@ -635,12 +635,90 @@ router.post("/suggest-ingredients", async (req, res) => {
       });
     }
     
-    // Use the async handleFallbackIngredients function
-    return await handleFallbackIngredients(recipeName, res);
+    // First get keywords from the recipe
+    const keywords = extractKeywords(recipeName, category, description);
+    console.log("Extracted keywords:", keywords);
+    
+    // Search the ingredient database for matching ingredients
+    const matchedIngredients = await searchIngredientsInDatabase(keywords);
+    console.log(`Found ${matchedIngredients.length} matching ingredients in database`);
+    
+    if (matchedIngredients.length >= 3) {
+      // If we found enough ingredients, use them
+      const formattedIngredients = formatIngredientsWithUnits(matchedIngredients, recipeName, category);
+      return res.json({
+        success: true,
+        ingredients: formattedIngredients,
+        source: "database-search"
+      });
+    }
+    
+    // If we don't have enough ingredients from the database, use AI to fill in the gaps
+    if (genAI) {
+      try {
+        // Generate content with Gemini using complete recipe context
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        
+        // Include matched ingredients in the prompt to guide AI suggestions
+        const existingIngredientsText = matchedIngredients.length > 0 
+          ? `Include these ingredients that I already have: ${matchedIngredients.join(", ")}.` 
+          : "";
+        
+        const prompt = `
+        You are a professional chef creating a recipe for "${recipeName}".
+        
+        Recipe Category: ${category || "Main Course"}
+        Recipe Description: ${description || ""}
+        
+        ${existingIngredientsText}
+        
+        Please create a realistic list of ingredients needed for this recipe.
+        Include quantities and units where possible.
+        
+        Format your response as a JSON array of ingredient objects with "name", "amount", and "unit" properties:
+        [
+          {
+            "name": "Ingredient name",
+            "amount": "quantity",
+            "unit": "unit of measure"
+          }
+        ]
+
+        Only provide the JSON array, nothing else.
+        `;
+        
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        
+        console.log("Raw AI ingredients response:", text);
+        
+        // Parse the JSON from the response
+        const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+        if (jsonMatch) {
+          const ingredients = JSON.parse(jsonMatch[0]);
+          
+          // Validate ingredients format and ensure we include database matches
+          if (Array.isArray(ingredients) && ingredients.length > 0) {
+            // Ensure database matches are included
+            const combinedIngredients = ensureDatabaseMatchesIncluded(ingredients, matchedIngredients);
+            return res.json({
+              success: true,
+              ingredients: combinedIngredients,
+              source: "database-and-ai"
+            });
+          }
+        }
+      } catch (aiError) {
+        console.error("Error generating ingredients with AI:", aiError);
+      }
+    }
+    
+    // Use the fallback method if both database search and AI fail
+    return await handleFallbackIngredients(recipeName, res, matchedIngredients);
     
   } catch (error) {
     console.error("Error in suggest-ingredients:", error);
-    // Don't crash the server, return a basic response
     return res.status(500).json({
       success: false,
       message: "Error generating ingredients",
@@ -649,61 +727,168 @@ router.post("/suggest-ingredients", async (req, res) => {
   }
 });
 
-// Replace the hardcoded getDefaultIngredients function with this dynamic version
-async function getDefaultIngredients(recipeName) {
+// Helper function to extract keywords from recipe info
+function extractKeywords(name, category, description) {
+  const keywords = [];
+  
+  // Extract words from recipe name
+  if (name) {
+    const nameWords = name.toLowerCase()
+      .replace(/[^\w\s]/g, '')
+      .split(/\s+/)
+      .filter(word => word.length > 2);
+    keywords.push(...nameWords);
+  }
+  
+  // Add category as a keyword
+  if (category && category.toLowerCase() !== 'main course') {
+    keywords.push(category.toLowerCase());
+  }
+  
+  // Extract main words from description
+  if (description) {
+    const descWords = description.toLowerCase()
+      .replace(/[^\w\s]/g, '')
+      .split(/\s+/)
+      .filter(word => 
+        word.length > 3 && 
+        !['with', 'and', 'the', 'for', 'this', 'that'].includes(word)
+      );
+    keywords.push(...descWords);
+  }
+  
+  // Remove duplicates and return
+  return [...new Set(keywords)];
+}
+
+// Search database for ingredients matching keywords
+async function searchIngredientsInDatabase(keywords) {
   try {
-    // First try to get ingredients from database
     const { Ingredient } = await import('../models/ingredient.model.js');
     
     // Get all ingredients from the database
-    const allIngredients = await Ingredient.find({}).lean();
-    console.log(`Found ${allIngredients.length} ingredients in database`);
+    const allIngredients = await Ingredient.find().lean();
+    const matchedIngredients = [];
     
-    if (allIngredients.length > 0) {
-      // If we have ingredients in the database, use them
-      // Select 8-12 random ingredients
-      const ingredientCount = Math.min(allIngredients.length, Math.floor(Math.random() * 5) + 8);
+    // For each ingredient, check if it contains any keyword
+    for (const ingredient of allIngredients) {
+      const ingredientName = ingredient.name.toLowerCase();
       
-      // Shuffle and slice
-      const selectedIngredients = [...allIngredients]
-        .sort(() => 0.5 - Math.random())
-        .slice(0, ingredientCount);
+      // Check if any keyword is in the ingredient name
+      for (const keyword of keywords) {
+        if (ingredientName.includes(keyword) || keyword.includes(ingredientName)) {
+          matchedIngredients.push(ingredient.name);
+          break;
+        }
+      }
       
-      // Common units to assign randomly
-      const units = ['cups', 'tbsp', 'tsp', 'g', 'kg', 'ml', 'l', 'pieces'];
-      
-      // Map to proper format with amounts and units
-      return selectedIngredients.map(ing => ({
-        name: ing.name,
-        amount: Math.ceil(Math.random() * 3).toString(),
-        unit: units[Math.floor(Math.random() * units.length)]
-      }));
+      // Also add some common essential ingredients
+      const essentials = ['salt', 'pepper', 'olive oil', 'onion', 'garlic'];
+      if (essentials.includes(ingredientName) && Math.random() > 0.3) {
+        matchedIngredients.push(ingredient.name);
+      }
     }
     
-    // If no ingredients in database, return just a few basic ones
-    return [
-      { name: "Salt", amount: "1", unit: "tsp" },
-      { name: "Pepper", amount: "1/2", unit: "tsp" },
-      { name: "Garlic", amount: "3", unit: "pieces" },
-      { name: "Onion", amount: "1", unit: "piece" },
-      { name: "Vegetable oil", amount: "2", unit: "tbsp" }
-    ];
+    // Add some random ingredients if we don't have enough matches
+    if (matchedIngredients.length < 3) {
+      const randomIngredients = allIngredients
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 5 - matchedIngredients.length)
+        .map(ing => ing.name);
+      
+      matchedIngredients.push(...randomIngredients);
+    }
+    
+    return [...new Set(matchedIngredients)]; // Remove duplicates
   } catch (error) {
-    console.error("Error getting ingredients from database:", error);
-    // Fallback to minimal list if database error
-    return [
-      { name: "Salt", amount: "1", unit: "tsp" },
-      { name: "Pepper", amount: "1/2", unit: "tsp" },
-      { name: "Garlic", amount: "3", unit: "pieces" },
-      { name: "Onion", amount: "1", unit: "piece" }
-    ];
+    console.error("Error searching ingredients database:", error);
+    return [];
   }
 }
 
-// Update the handleFallbackIngredients function to support async
-async function handleFallbackIngredients(recipeName, res) {
+// Add units and amounts to ingredients from database
+function formatIngredientsWithUnits(ingredientNames, recipeName, category) {
+  const units = ['cups', 'tbsp', 'tsp', 'g', 'kg', 'ml', 'l', 'pieces'];
+  
+  return ingredientNames.map(name => {
+    // Assign appropriate units based on ingredient type
+    let unit = units[Math.floor(Math.random() * units.length)];
+    let amount = "1";
+    
+    // Customize units based on ingredient type
+    const nameLower = name.toLowerCase();
+    if (nameLower.includes('salt') || nameLower.includes('pepper') || 
+        nameLower.includes('spice') || nameLower.includes('powder')) {
+      unit = Math.random() > 0.5 ? 'tsp' : 'tbsp';
+      amount = Math.random() > 0.5 ? '1' : '1/2';
+    } else if (nameLower.includes('water') || nameLower.includes('milk') || 
+               nameLower.includes('juice') || nameLower.includes('broth')) {
+      unit = Math.random() > 0.5 ? 'cups' : 'ml';
+      amount = Math.random() > 0.5 ? '1' : '2';
+    } else if (nameLower.includes('onion') || nameLower.includes('tomato') || 
+               nameLower.includes('potato') || nameLower.includes('apple')) {
+      unit = 'pieces';
+      amount = '1';
+    }
+    
+    return {
+      name: name,
+      amount: amount,
+      unit: unit
+    };
+  });
+}
+
+// Ensure database matches are included in AI suggestions
+function ensureDatabaseMatchesIncluded(aiIngredients, databaseMatches) {
+  // First, map all AI ingredients to lowercase names for comparison
+  const aiIngredientNames = aiIngredients.map(ing => ing.name.toLowerCase());
+  
+  // For each database match, check if it's already in AI ingredients
+  for (const dbIngName of databaseMatches) {
+    const dbNameLower = dbIngName.toLowerCase();
+    
+    // Check if this ingredient is already included in AI results
+    const isIncluded = aiIngredientNames.some(aiName => 
+      aiName.includes(dbNameLower) || dbNameLower.includes(aiName)
+    );
+    
+    // If not included, add it
+    if (!isIncluded) {
+      const units = ['cups', 'tbsp', 'tsp', 'pieces'];
+      aiIngredients.push({
+        name: dbIngName,
+        amount: "1",
+        unit: units[Math.floor(Math.random() * units.length)]
+      });
+    }
+  }
+  
+  return aiIngredients;
+}
+
+// Update the handleFallbackIngredients function to include database matches
+async function handleFallbackIngredients(recipeName, res, matchedIngredients = []) {
   try {
-    const ingredients = await getDefaultIngredients(recipeName);
+    // Get default ingredients
+    let ingredients = await getDefaultIngredients(recipeName);
+    
+    // Add any database matches that aren't already included
+    for (const matchName of matchedIngredients) {
+      const matchNameLower = matchName.toLowerCase();
+      const isIncluded = ingredients.some(ing => 
+        ing.name.toLowerCase().includes(matchNameLower) || 
+        matchNameLower.includes(ing.name.toLowerCase())
+      );
+      
+      if (!isIncluded) {
+        ingredients.push({
+          name: matchName,
+          amount: "1",
+          unit: "tbsp"
+        });
+      }
+    }
     
     console.log(`Using dynamic ingredients from system: ${ingredients.length} items`);
     
@@ -918,5 +1103,52 @@ async function handleFallbackSteps(recipeName, ingredients, category, descriptio
     });
   }
 }
+
+// Add this new endpoint to fetch recipes from API Ninjas
+router.post("/fetch-ninjas-recipe", async (req, res) => {
+  try {
+    const { query } = req.body;
+    
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        message: "Recipe query is required"
+      });
+    }
+    
+    console.log(`Fetching API Ninjas recipe for: ${query}`);
+    
+    // Use environment variable instead of hardcoded API key
+    const apiKey = process.env.API_NINJAS_KEY || 'L03pvjV25sI419QlCrWheg==nBVi4RhtQY48lw14';
+    
+    // Make the request to API Ninjas
+    const response = await axios.get(
+      `https://api.api-ninjas.com/v1/recipe?query=${encodeURIComponent(query)}`,
+      {
+        headers: {
+          'X-Api-Key': apiKey
+        },
+        timeout: 10000
+      }
+    );
+    
+    // Return the data
+    return res.json({
+      success: true,
+      recipes: response.data
+    });
+    
+  } catch (error) {
+    console.error("Error fetching from API Ninjas:", error);
+    
+    // Provide detailed error information
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching recipe data from API Ninjas",
+      error: error.message,
+      details: error.response?.data || "No additional details"
+    });
+  }
+});
 
 export default router;

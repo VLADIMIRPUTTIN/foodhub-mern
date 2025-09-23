@@ -144,7 +144,7 @@ const CreateRecipe = ({ onRecipeSaved }) => {
         }
     };
 
-    // Enhanced function with better error handling
+    // Updated function to use API Ninjas through backend proxy
     const generateIngredientSuggestions = async () => {
         if (!name.trim()) {
             setError("Please enter a recipe name first");
@@ -162,55 +162,89 @@ const CreateRecipe = ({ onRecipeSaved }) => {
             
             console.log("Requesting ingredients for:", name);
             
-            // Add a connection check first
-            try {
-                // Quick ping to check if server is accessible
-                await axios.get(`${baseURL}/api/ingredients`, { 
-                    timeout: 2000,
-                    withCredentials: true 
-                });
-            } catch (pingError) {
-                console.log("Server connection check failed, using offline mode", pingError);
-                // Show more helpful error message
-                setError("Backend server not running. Using offline mode with common ingredients.");
-                return useFallbackIngredients();
-            }
-            
-            // If server is accessible, proceed with AI request
+            // Call the backend proxy endpoint for API Ninjas
             const response = await axios.post(
-                `${baseURL}/api/vision/suggest-ingredients`,
-                { recipeName: name },
+                `${baseURL}/api/vision/fetch-ninjas-recipe`,
+                { 
+                    query: name 
+                },
                 { 
                     withCredentials: true,
-                    timeout: 30000 // Add a longer timeout for AI operations
+                    timeout: 20000
                 }
             );
             
-            console.log("AI response:", response.data);
+            console.log("API Ninjas response:", response.data);
             
-            if (response.data.success && response.data.ingredients && response.data.ingredients.length > 0) {
-                processIngredientsResponse(response.data.ingredients);
+            // Check if we got recipes from API Ninjas
+            if (response.data.success && response.data.recipes && 
+                Array.isArray(response.data.recipes) && response.data.recipes.length > 0) {
+              
+                // Find best matching recipe
+                const recipes = response.data.recipes;
+                let bestRecipe = recipes[0];
+                
+                if (recipes.length > 1) {
+                    const lowerName = name.toLowerCase();
+                    const betterMatch = recipes.find(recipe => 
+                        recipe.title.toLowerCase().includes(lowerName)
+                    );
+                    if (betterMatch) bestRecipe = betterMatch;
+                }
+                
+                console.log("Selected recipe:", bestRecipe.title);
+                
+                // Parse ingredients from the recipe
+                if (bestRecipe.ingredients) {
+                    const ingredientsList = parseIngredientsFromText(bestRecipe.ingredients);
+                    console.log("Parsed ingredients:", ingredientsList);
+                    
+                    // Apply the ingredients to the form
+                    if (ingredientsList && ingredientsList.length > 0) {
+                        setIngredients(ingredientsList);
+                        setSuggestionSuccess(`Found ${ingredientsList.length} ingredients for "${bestRecipe.title}" from API Ninjas!`);
+                        setActiveTab('ingredients');
+                        return;
+                    }
+                }
+            }
+            
+            // If no results from API Ninjas, fallback to existing method
+            console.log("No ingredients found from API Ninjas, trying fallback method");
+            
+            // Try the database search method
+            const dbResponse = await axios.post(
+                `${baseURL}/api/vision/suggest-ingredients`,
+                { 
+                    recipeName: name,
+                    category: category,
+                    description: description
+                },
+                { 
+                    withCredentials: true,
+                    timeout: 30000
+                }
+            );
+            
+            if (dbResponse.data.success && dbResponse.data.ingredients && dbResponse.data.ingredients.length > 0) {
+                setIngredients(dbResponse.data.ingredients);
+                setSuggestionSuccess(`Generated ${dbResponse.data.ingredients.length} ingredients from database search`);
+                setActiveTab('ingredients');
             } else {
-                setError("Could not generate ingredients. Using common ingredients instead.");
+                setError("Could not find or generate ingredients. Using common ingredients instead.");
                 useFallbackIngredients();
             }
+            
         } catch (err) {
             console.error("Error generating ingredients:", err);
             
-            // Enhanced error reporting
             let errorMessage = "Failed to generate ingredients";
             
             if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
-                errorMessage = "Cannot connect to server. Please ensure the backend is running.";
-                // Use fallback ingredients when server is unreachable
-                useFallbackIngredients();
-            } else if (err.response) {
-                errorMessage = err.response.data?.message || `Server error: ${err.response.status}`;
-            } else if (err.request) {
-                errorMessage = "No response from server. Using common ingredients instead.";
+                errorMessage = "Network error. Using common ingredients instead.";
                 useFallbackIngredients();
             } else {
-                errorMessage = err.message;
+                errorMessage = err.message || "Error fetching ingredients";
             }
             
             setError(errorMessage);
@@ -252,19 +286,13 @@ const CreateRecipe = ({ onRecipeSaved }) => {
             
             // Create new recipe ingredients array
             const newIngredients = ingredientsList.map(ing => {
-                // Check if ingredient exists in system
-                const exists = existingIngredients.some(
-                    existingIng => existingIng.name.toLowerCase() === ing.name.toLowerCase()
-                );
-                
-                if (!exists) {
-                    missingIngredients.push(ing.name);
-                }
+                // Ensure the unit exists in our units array
+                const validUnit = units.includes(ing.unit) ? ing.unit : 'pieces';
                 
                 return {
                     name: ing.name,
                     amount: ing.amount || '1',
-                    unit: ing.unit || 'piece'
+                    unit: validUnit
                 };
             });
             
@@ -492,82 +520,83 @@ const CreateRecipe = ({ onRecipeSaved }) => {
                 return (
                     <motion.div 
                         className="tab-content-wrapper"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5 }}
                     >
                         <div className="form-card">
-                            <h3 className="card-title">
+                            <h2 className="card-title">
                                 <i className="bx bx-info-circle"></i>
-                                Basic Information
-                            </h3>
-                            
+                                Basic Recipe Information
+                            </h2>
                             <div className="form-content">
                                 <div className="form-group">
-                                    <label className="form-label">
+                                    <label className="form-label" htmlFor="recipeName">
                                         <i className="bx bx-food-menu"></i>
                                         Recipe Name
                                     </label>
-                                    <input 
-                                        type="text" 
-                                        className="form-input"
-                                        placeholder="Enter a delicious recipe name..."
-                                        value={name} 
-                                        onChange={e => setName(e.target.value)} 
-                                        required 
-                                    />
+                                    <div className="recipe-name-with-ai">
+                                        <input
+                                            type="text"
+                                            id="recipeName"
+                                            className="form-input"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            placeholder="Enter recipe name"
+                                            required
+                                        />
+                                    </div>
                                 </div>
                                 
                                 <div className="form-group">
-                                    <label className="form-label">
+                                    <label className="form-label" htmlFor="category">
                                         <i className="bx bx-category"></i>
                                         Category
                                     </label>
-                                    <select 
+                                    <select
+                                        id="category"
                                         className="form-select"
-                                        value={category} 
-                                        onChange={e => setCategory(e.target.value)} 
+                                        value={category}
+                                        onChange={(e) => setCategory(e.target.value)}
                                         required
                                     >
-                                        <option value="">Select a category</option>
-                                        {categories.map(cat => (
+                                        <option value="" disabled>Select a category</option>
+                                        {categories.map((cat) => (
                                             <option key={cat} value={cat}>{cat}</option>
                                         ))}
                                     </select>
                                 </div>
                                 
                                 <div className="form-group">
-                                    <label className="form-label">
-                                        <i className="bx bx-text"></i>
+                                    <label className="form-label" htmlFor="description">
+                                        <i className="bx bx-message-alt-detail"></i>
                                         Description
                                     </label>
-                                    <textarea 
+                                    <textarea
+                                        id="description"
                                         className="form-textarea"
-                                        placeholder="Describe your recipe, cooking tips, or what makes it special..."
-                                        value={description} 
-                                        onChange={e => setDescription(e.target.value)} 
-                                        required 
+                                        value={description}
+                                        onChange={(e) => setDescription(e.target.value)}
+                                        placeholder="Describe your recipe"
+                                        required
                                     />
                                 </div>
                                 
                                 <div className="form-group">
-                                    <label className="form-label">
-                                        <i className="bx bx-money-withdraw"></i>
-                                        Recipe Price
+                                    <label className="form-label" htmlFor="price">
+                                        <i className="bx bx-dollar"></i>
+                                        Price (optional)
                                     </label>
-                                    <input 
-                                        type="number" 
+                                    <input
+                                        type="number"
+                                        id="price"
                                         className="form-input"
-                                        placeholder="Enter recipe price (e.g. 250.00)"
-                                        value={price} 
-                                        onChange={e => setPrice(e.target.value)} 
-                                        min="0"
+                                        value={price}
+                                        onChange={(e) => setPrice(e.target.value)}
+                                        placeholder="Enter price"
                                         step="0.01"
+                                        min="0"
                                     />
-                                    <p className="form-description">
-                                        <i className="bx bx-info-circle"></i>
-                                        Estimated cost of ingredients in PHP
-                                    </p>
                                 </div>
                                 
                                 <div className="form-group">
@@ -576,30 +605,21 @@ const CreateRecipe = ({ onRecipeSaved }) => {
                                         Recipe Image
                                     </label>
                                     <div className="image-upload-container">
-                                        <input 
-                                            type="file" 
-                                            id="recipe-image"
+                                        <input
+                                            type="file"
+                                            id="recipeImage"
                                             className="form-input-file"
-                                            accept="image/*" 
-                                            onChange={handleImageChange} 
+                                            onChange={handleImageChange}
+                                            accept="image/*"
                                         />
-                                        <label htmlFor="recipe-image" className="image-upload-label">
-                                            <i className="bx bx-cloud-upload"></i>
-                                            <span>Choose an image or drag & drop</span>
+                                        <label htmlFor="recipeImage" className="image-upload-label">
+                                            <i className="bx bx-upload"></i>
+                                            <span>Click to upload image</span>
                                         </label>
                                         {imagePreview && (
-                                            <motion.div 
-                                                className="image-preview-container"
-                                                initial={{ opacity: 0, scale: 0.9 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                transition={{ duration: 0.3 }}
-                                            >
-                                                <img 
-                                                    src={imagePreview} 
-                                                    alt="Recipe Preview" 
-                                                    className="image-preview" 
-                                                />
-                                                <button 
+                                            <div className="image-preview-container">
+                                                <img src={imagePreview} alt="Preview" className="image-preview" />
+                                                <button
                                                     type="button"
                                                     className="remove-image"
                                                     onClick={() => {
@@ -609,13 +629,9 @@ const CreateRecipe = ({ onRecipeSaved }) => {
                                                 >
                                                     <i className="bx bx-x"></i>
                                                 </button>
-                                            </motion.div>
+                                            </div>
                                         )}
                                     </div>
-                                    <p className="form-description">
-                                        <i className="bx bx-info-circle"></i>
-                                        Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
-                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -626,107 +642,98 @@ const CreateRecipe = ({ onRecipeSaved }) => {
                 return (
                     <motion.div 
                         className="tab-content-wrapper"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5 }}
                     >
                         <div className="form-card">
                             <div className="ingredients-header">
-                                <h3 className="card-title">
+                                <h2 className="card-title">
                                     <i className="bx bx-leaf"></i>
-                                    Ingredients ({ingredients.length})
-                                </h3>
-                                
-                                <motion.button
+                                    Ingredients
+                                </h2>
+                                <button
                                     type="button"
                                     className="btn btn--ai ingredients-ai-button"
                                     onClick={generateIngredientSuggestions}
                                     disabled={isGeneratingIngredients || !name.trim()}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    title="Generate ingredients with AI"
                                 >
-                                    <i className="bx bx-bulb"></i>
-                                    {isGeneratingIngredients ? "Generating..." : "Suggest Ingredients"}
-                                </motion.button>
+                                    {isGeneratingIngredients ? (
+                                        <span className="btn__loading">
+                                            <span className="spinner"></span>
+                                            Generating...
+                                        </span>
+                                    ) : (
+                                        <>
+                                            <i className="bx bx-bulb"></i>
+                                            Suggest Ingredients
+                                        </>
+                                    )}
+                                </button>
                             </div>
                             
                             {suggestionSuccess && (
-                                <div className="suggestion-success ingredients-success">
+                                <div className="ingredients-success">
                                     <i className="bx bx-check-circle"></i> {suggestionSuccess}
                                 </div>
                             )}
                             
                             <div className="ingredients-list">
-                                <AnimatePresence>
-                                    {ingredients.map((ing, idx) => (
-                                        <motion.div
-                                            key={idx}
-                                            className="ingredient-row"
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: 20 }}
-                                            transition={{ duration: 0.2, delay: idx * 0.05 }}
+                                {ingredients.map((ingredient, idx) => (
+                                    <div key={idx} className="ingredient-row">
+                                        <div className="ingredient-fields">
+                                            <input
+                                                type="text"
+                                                className="form-input ingredient-amount"
+                                                value={ingredient.amount}
+                                                onChange={(e) => handleIngredientChange(idx, 'amount', e.target.value)}
+                                                placeholder="Amount"
+                                            />
+                                            <select
+                                                className="form-select ingredient-unit"
+                                                value={ingredient.unit || ''}
+                                                onChange={(e) => handleIngredientChange(idx, 'unit', e.target.value)}
+                                            >
+                                                <option value="">Select Unit</option>
+                                                {units.map(unit => (
+                                                    <option key={unit} value={unit}>{unit}</option>
+                                                ))}
+                                            </select>
+                                            <input
+                                                type="text"
+                                                className="form-input ingredient-name"
+                                                value={ingredient.name}
+                                                onChange={(e) => handleIngredientChange(idx, 'name', e.target.value)}
+                                                placeholder="Ingredient name"
+                                                list="ingredient-options"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="btn btn--destructive btn--icon"
+                                            onClick={() => removeIngredient(idx)}
+                                            disabled={ingredients.length === 1}
                                         >
-                                            <div className="ingredient-fields">
-                                                <input
-                                                    type="text"
-                                                    className="form-input ingredient-amount"
-                                                    placeholder="Amount"
-                                                    value={ing.amount}
-                                                    onChange={e => handleIngredientChange(idx, 'amount', e.target.value)}
-                                                    required
-                                                />
-                                                <select
-                                                    className="form-select ingredient-unit"
-                                                    value={ing.unit}
-                                                    onChange={e => handleIngredientChange(idx, 'unit', e.target.value)}
-                                                    required
-                                                >
-                                                    <option value="">Unit</option>
-                                                    {units.map(unit => (
-                                                        <option key={unit} value={unit}>{unit}</option>
-                                                    ))}
-                                                </select>
-                                                <select
-                                                    className="form-select ingredient-name"
-                                                    value={ing.name}
-                                                    onChange={e => handleIngredientChange(idx, 'name', e.target.value)}
-                                                    required
-                                                >
-                                                    <option value="">Select Ingredient</option>
-                                                    {allIngredients.map(ingredient => (
-                                                        <option key={ingredient._id} value={ingredient.name}>
-                                                            {ingredient.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                            {ingredients.length > 1 && (
-                                                <button 
-                                                    type="button" 
-                                                    className="btn btn--destructive btn--sm btn--icon"
-                                                    onClick={() => removeIngredient(idx)}
-                                                    title="Remove ingredient"
-                                                >
-                                                    <i className="bx bx-trash"></i>
-                                                </button>
-                                            )}
-                                        </motion.div>
-                                    ))}
-                                </AnimatePresence>
+                                            <i className="bx bx-trash"></i>
+                                        </button>
+                                    </div>
+                                ))}
                                 
-                                <motion.button 
-                                    type="button" 
-                                    className="btn btn--secondary btn--add"
-                                    onClick={addIngredient}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
-                                    <i className="bx bx-plus"></i>
-                                    Add Ingredient
-                                </motion.button>
+                                <datalist id="ingredient-options">
+                                    {allIngredients.map(ing => (
+                                        <option key={ing._id} value={ing.name} />
+                                    ))}
+                                </datalist>
                             </div>
+                            
+                            <button
+                                type="button"
+                                className="btn btn--add"
+                                onClick={addIngredient}
+                            >
+                                <i className="bx bx-plus"></i>
+                                Add Ingredient
+                            </button>
                         </div>
                     </motion.div>
                 );
@@ -735,94 +742,85 @@ const CreateRecipe = ({ onRecipeSaved }) => {
                 return (
                     <motion.div 
                         className="tab-content-wrapper"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5 }}
                     >
                         <div className="form-card">
                             <div className="ingredients-header">
-                                <h3 className="card-title">
+                                <h2 className="card-title">
                                     <i className="bx bx-list-ol"></i>
-                                    Preparation Steps ({steps.length})
-                                </h3>
-                                
-                                <motion.button
+                                    Preparation Steps
+                                </h2>
+                                <button
                                     type="button"
                                     className="btn btn--ai ingredients-ai-button"
                                     onClick={generateStepSuggestions}
                                     disabled={isGeneratingSteps || !name.trim() || ingredients.length < 2}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    title="Generate preparation steps with AI"
                                 >
-                                    <i className="bx bx-bulb"></i>
-                                    {isGeneratingSteps ? "Generating..." : "Suggest Steps"}
-                                </motion.button>
+                                    {isGeneratingSteps ? (
+                                        <span className="btn__loading">
+                                            <span className="spinner"></span>
+                                            Generating...
+                                        </span>
+                                    ) : (
+                                        <>
+                                            <i className="bx bx-bulb"></i>
+                                            Suggest Steps
+                                        </>
+                                    )}
+                                </button>
                             </div>
                             
                             {stepSuggestionSuccess && (
-                                <div className="suggestion-success ingredients-success">
+                                <div className="ingredients-success">
                                     <i className="bx bx-check-circle"></i> {stepSuggestionSuccess}
                                 </div>
                             )}
                             
                             <div className="steps-list">
-                                <AnimatePresence>
-                                    {steps.map((step, idx) => (
-                                        <motion.div
-                                            key={idx}
-                                            className="step-row"
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: 20 }}
-                                            transition={{ duration: 0.2, delay: idx * 0.05 }}
+                                {steps.map((step, idx) => (
+                                    <div key={idx} className="step-row">
+                                        <div className="step-number">{idx + 1}</div>
+                                        <div className="step-content">
+                                            <input
+                                                type="text"
+                                                className="form-input"
+                                                value={step.instruction}
+                                                onChange={(e) => handleStepChange(idx, 'instruction', e.target.value)}
+                                                placeholder="Step title"
+                                            />
+                                            <textarea
+                                                className="form-textarea"
+                                                value={step.details}
+                                                onChange={(e) => handleStepChange(idx, 'details', e.target.value)}
+                                                placeholder="Step details"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="btn btn--destructive btn--icon"
+                                            onClick={() => removeStep(idx)}
+                                            disabled={steps.length === 1}
                                         >
-                                            <div className="step-number">{idx + 1}</div>
-                                            <div className="step-content">
-                                                <input
-                                                    type="text"
-                                                    className="form-input"
-                                                    placeholder="Brief step description (e.g., 'Mix ingredients')"
-                                                    value={step.instruction}
-                                                    onChange={e => handleStepChange(idx, 'instruction', e.target.value)}
-                                                    required
-                                                />
-                                                <textarea
-                                                    className="form-textarea"
-                                                    placeholder="Detailed preparation instructions..."
-                                                    value={step.details}
-                                                    onChange={e => handleStepChange(idx, 'details', e.target.value)}
-                                                    required
-                                                />
-                                            </div>
-                                            {steps.length > 1 && (
-                                                <button 
-                                                    type="button" 
-                                                    className="btn btn--destructive btn--sm btn--icon"
-                                                    onClick={() => removeStep(idx)}
-                                                    title="Remove step"
-                                                >
-                                                    <i className="bx bx-trash"></i>
-                                                </button>
-                                            )}
-                                        </motion.div>
-                                    ))}
-                                </AnimatePresence>
-                                
-                                <motion.button 
-                                    type="button" 
-                                    className="btn btn--secondary btn--add"
-                                    onClick={addStep}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
-                                    <i className="bx bx-plus"></i>
-                                    Add Step
-                                </motion.button>
+                                            <i className="bx bx-trash"></i>
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
+                            
+                            <button
+                                type="button"
+                                className="btn btn--add"
+                                onClick={addStep}
+                            >
+                                <i className="bx bx-plus"></i>
+                                Add Step
+                            </button>
                         </div>
                     </motion.div>
                 );
+
             default:
                 return null;
         }
@@ -934,3 +932,136 @@ const CreateRecipe = ({ onRecipeSaved }) => {
 };
 
 export default CreateRecipe;
+
+// Updated function to properly parse pipe-separated ingredients from API Ninjas
+const parseIngredientsFromText = (ingredientsText) => {
+  // First, split by pipe character which API Ninjas uses as separator
+  const pipeSeparated = ingredientsText.split('|');
+  
+  // If we found pipe separators, process each segment
+  if (pipeSeparated.length > 1) {
+    return pipeSeparated.map(ingredient => parseIngredientString(ingredient.trim()));
+  }
+  
+  // Otherwise, fall back to the original line-by-line parsing
+  const ingredientLines = ingredientsText.split(/[;\n]+/).filter(line => line.trim());
+  return ingredientLines.map(line => parseIngredientString(line.trim()));
+};
+
+// Helper function to parse a single ingredient string
+const parseIngredientString = (ingredientStr) => {
+  // Common units for better detection
+  const commonUnits = ['cup', 'cups', 'tbsp', 'tsp', 'tablespoon', 'tablespoons', 'teaspoon', 
+                   'teaspoons', 'oz', 'ounce', 'ounces', 'lb', 'pound', 'pounds', 
+                   'g', 'gram', 'grams', 'kg', 'ml', 'l', 'liter', 'liters', 'piece', 
+                   'pieces', 'slice', 'slices', 'clove', 'cloves', 'lg', 'md', 'c', 'ts'];
+  
+  // Pattern 1: Amount + Unit + Name (e.g., "1 cup sugar")
+  const pattern1 = new RegExp(`^(\\d+(?:\\.\\d+)?(?:\\s+\\d+/\\d+)?)\\s+(${commonUnits.join('|')})\\s+(.+)$`, 'i');
+  
+  // Pattern 2: Amount + Name (e.g., "2 eggs")
+  const pattern2 = /^(\d+(?:\.\d+)?(?:\s+\d+\/\d+)?)(?:\s+)?(.+)$/i;
+  
+  // Pattern 3: Just Name (e.g., "Salt to taste")
+  const pattern3 = /^(.+)$/i;
+  
+  let match = ingredientStr.match(pattern1);
+  if (match) {
+    const [, amount, unit, name] = match;
+    const normalizedUnit = normalizeUnit(unit.trim().toLowerCase());
+    
+    // Make sure the unit exists in our units array, or default to pieces
+    const validUnit = units.includes(normalizedUnit) ? normalizedUnit : 'pieces';
+    
+    return {
+      name: name.trim(),
+      amount: amount.trim(),
+      unit: validUnit
+    };
+  }
+  
+  match = ingredientStr.match(pattern2);
+  if (match) {
+    const [, amount, name] = match;
+    return {
+      name: name.trim(),
+      amount: amount.trim(),
+      unit: 'pieces'
+    };
+  }
+  
+  match = ingredientStr.match(pattern3);
+  if (match) {
+    // Just name, no amount or unit
+    return {
+      name: match[1].trim(),
+      amount: '1',
+      unit: 'pieces'
+    };
+  }
+  
+  // Fallback
+  return {
+    name: ingredientStr,
+    amount: '1',
+    unit: 'pieces'
+  };
+};
+
+// Enhanced function to normalize units and ensure they exist in our application's unit list
+const normalizeUnit = (unit) => {
+  const unitMap = {
+    // Standard units
+    'cup': 'cups',
+    'tablespoon': 'tbsp',
+    'tablespoons': 'tbsp',
+    'teaspoon': 'tsp',
+    'teaspoons': 'tsp',
+    'ounce': 'oz',
+    'ounces': 'oz',
+    'pound': 'lbs',
+    'pounds': 'lbs',
+    'gram': 'g',
+    'grams': 'g',
+    'kilogram': 'kg',
+    'kilograms': 'kg',
+    'milliliter': 'ml',
+    'milliliters': 'ml',
+    'liter': 'l',
+    'liters': 'l',
+    'piece': 'pieces',
+    'slice': 'pieces',
+    'slices': 'pieces',
+    'clove': 'pieces',
+    'cloves': 'pieces',
+    
+    // API Ninjas specific abbreviations
+    'c': 'cups',      // cup
+    'ts': 'tsp',      // teaspoon
+    'tb': 'tbsp',     // tablespoon
+    'lg': 'pieces',   // large
+    'md': 'pieces',   // medium
+    'sm': 'pieces'    // small
+  };
+  
+  return unitMap[unit] || unit;
+};
+
+// In your component, make sure you handle setting a valid default unit when receiving ingredients
+const processIngredientsResponse = async (ingredientsList) => {
+  // Your existing code...
+  
+  // Create new recipe ingredients array
+  const newIngredients = ingredientsList.map(ing => {
+    // Ensure the unit exists in our units array
+    const validUnit = units.includes(ing.unit) ? ing.unit : 'pieces';
+    
+    return {
+      name: ing.name,
+      amount: ing.amount || '1',
+      unit: validUnit
+    };
+  });
+  
+  // Your existing code...
+};
