@@ -4,23 +4,26 @@ import { useSocket } from '../context/SocketContext';
 import './NotificationToast.scss';
 
 const NotificationToast = () => {
-    const { notifications, removeNotification } = useSocket();
+    const { notifications = [], removeNotification } = useSocket();
 
     useEffect(() => {
-        // Auto remove notifications after 5 seconds
-        notifications.forEach(notification => {
-            const timer = setTimeout(() => {
+        // Auto remove notifications after 6 seconds
+        const timers = notifications.map(notification => {
+            return setTimeout(() => {
                 removeNotification(notification.id);
-            }, 5000);
-
-            return () => clearTimeout(timer);
+            }, 6000);
         });
+
+        // Clear all timers on unmount
+        return () => {
+            timers.forEach(timer => clearTimeout(timer));
+        };
     }, [notifications, removeNotification]);
 
     return (
         <div className="notification-container">
             <AnimatePresence>
-                {notifications.map((notification) => (
+                {notifications && notifications.map((notification) => (
                     <motion.div
                         key={notification.id}
                         initial={{ opacity: 0, x: 300, scale: 0.3 }}
@@ -32,13 +35,17 @@ const NotificationToast = () => {
                         <div className="notification-icon">
                             {notification.type === 'success' ? (
                                 <i className="bx bx-check-circle"></i>
-                            ) : (
+                            ) : notification.type === 'error' ? (
                                 <i className="bx bx-x-circle"></i>
+                            ) : (
+                                <i className="bx bx-bell"></i>
                             )}
                         </div>
                         <div className="notification-content">
                             <h4>
-                                {notification.type === 'success' ? 'Recipe Approved!' : 'Recipe Rejected'}
+                                {notification.type === 'success' ? 'Recipe Approved!' : 
+                                 notification.type === 'error' ? 'Recipe Rejected' : 
+                                 'New Pending Recipe'}
                             </h4>
                             <p>{notification.message}</p>
                             {notification.reason && (

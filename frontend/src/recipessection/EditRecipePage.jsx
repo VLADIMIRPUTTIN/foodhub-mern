@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import './EditRecipePage.scss';
+import IngredientsModal from './IngredientsModal';
 
 const categories = [
     'Appetizer', 'Main Course', 'Dessert', 'Breakfast', 
@@ -26,6 +29,31 @@ const EditRecipePage = ({ recipe, onClose }) => {
     const suggestionTimeoutRef = useRef(null);
     const inputRef = useRef(null);
     const [loading, setLoading] = useState(false);
+    const [imagePreview, setImagePreview] = useState(recipe.imageUrl || null);
+    const [allIngredients, setAllIngredients] = useState([]);
+    const [isIngredientsModalOpen, setIsIngredientsModalOpen] = useState(false);
+
+    // Fetch all ingredients for the modal
+    useEffect(() => {
+        const fetchAllIngredients = async () => {
+            try {
+                const baseURL = import.meta.env.MODE === "development" 
+                    ? "http://localhost:5000" 
+                    : "";
+                const response = await axios.get(
+                    `${baseURL}/api/ingredients`,
+                    { withCredentials: true }
+                );
+
+                if (response.data.success) {
+                    setAllIngredients(response.data.ingredients);
+                }
+            } catch (error) {
+                console.error('Error fetching ingredients:', error);
+            }
+        };
+        fetchAllIngredients();
+    }, []);
 
     // Ingredient search
     const searchIngredients = async (query) => {
@@ -36,8 +64,11 @@ const EditRecipePage = ({ recipe, onClose }) => {
         }
         setIsSearching(true);
         try {
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
             const response = await axios.get(
-                `${import.meta.env.MODE === "development" ? "http://localhost:5000/api/ingredients/search" : "/api/ingredients/search"}?query=${encodeURIComponent(query)}`,
+                `${baseURL}/api/ingredients/search?query=${encodeURIComponent(query)}`,
                 { withCredentials: true }
             );
             if (response.data.success) {
@@ -66,6 +97,17 @@ const EditRecipePage = ({ recipe, onClose }) => {
         inputRef.current?.focus();
     };
 
+    const handleIngredientFieldClick = () => {
+        setIsIngredientsModalOpen(true);
+    };
+
+    const handleIngredientSelect = (ingredientData) => {
+        setForm(prev => ({
+            ...prev,
+            ingredients: [...prev.ingredients, ingredientData]
+        }));
+    };
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (inputRef.current && !inputRef.current.contains(event.target)) {
@@ -90,6 +132,12 @@ const EditRecipePage = ({ recipe, onClose }) => {
         const file = e.target.files[0];
         if (file) {
             setForm(prev => ({ ...prev, image: file }));
+            
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
         }
     };
 
@@ -102,6 +150,8 @@ const EditRecipePage = ({ recipe, onClose }) => {
             setNewIngredient({ name: '', amount: '', unit: '' });
             setShowSuggestions(false);
             setSuggestions([]);
+        } else {
+            toast.error('Please enter ingredient name and amount');
         }
     };
 
@@ -119,6 +169,8 @@ const EditRecipePage = ({ recipe, onClose }) => {
                 instructions: [...prev.instructions, newInstruction.trim()]
             }));
             setNewInstruction('');
+        } else {
+            toast.error('Please enter an instruction');
         }
     };
 
@@ -129,8 +181,63 @@ const EditRecipePage = ({ recipe, onClose }) => {
         }));
     };
 
+    const generateAIInstructions = async () => {
+        if (!form.title || !form.description) {
+            toast.error('Please fill in recipe name and description first');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            
+            // Create payload with recipe details
+            const payload = {
+                recipeName: form.title,
+                ingredients: form.ingredients.map(ing => ing.name),
+                category: form.category || 'Main Course',
+                description: form.description
+            };
+            
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+                
+            const response = await axios.post(
+                `${baseURL}/api/vision/suggest-steps`,
+                payload,
+                { withCredentials: true }
+            );
+            
+            if (response.data.success && response.data.steps) {
+                // Add each step to the instructions
+                const newInstructions = [
+                    ...form.instructions,
+                    ...response.data.steps.map(step => step.instruction + ": " + step.details)
+                ];
+                
+                setForm(prev => ({
+                    ...prev,
+                    instructions: newInstructions
+                }));
+                
+                toast.success('AI generated instructions added!');
+            }
+        } catch (error) {
+            console.error('Error generating instructions:', error);
+            toast.error('Failed to generate instructions');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (!form.title || !form.description || form.ingredients.length === 0 || form.instructions.length === 0) {
+            toast.error('Please fill in all required fields');
+            return;
+        }
+        
         setLoading(true);
         try {
             const formData = new FormData();
@@ -149,11 +256,17 @@ const EditRecipePage = ({ recipe, onClose }) => {
             await axios.patch(
                 `${baseURL}/api/recipes/${recipe._id}`,
                 formData,
-                { headers: { 'Content-Type': 'multipart/form-data' }, withCredentials: true }
+                { 
+                    headers: { 'Content-Type': 'multipart/form-data' }, 
+                    withCredentials: true 
+                }
             );
+            
+            toast.success('Recipe updated successfully!');
             onClose(true);
         } catch (err) {
-            alert('Failed to update recipe.');
+            console.error('Update error:', err);
+            toast.error('Failed to update recipe.');
         }
         setLoading(false);
     };
@@ -222,10 +335,14 @@ const EditRecipePage = ({ recipe, onClose }) => {
                                     id="image-upload-edit"
                                 />
                                 <label htmlFor="image-upload-edit" className="upload-label">
-                                    <div className="upload-placeholder">
-                                        <i className="bx bx-plus"></i>
-                                        <span>Choose Image</span>
-                                    </div>
+                                    {imagePreview ? (
+                                        <img src={imagePreview} alt="Recipe preview" />
+                                    ) : (
+                                        <div className="upload-placeholder">
+                                            <i className="bx bx-cloud-upload"></i>
+                                            <span>Choose Image</span>
+                                        </div>
+                                    )}
                                 </label>
                             </div>
                         </div>
@@ -246,11 +363,17 @@ const EditRecipePage = ({ recipe, onClose }) => {
                                         placeholder="Ingredient name"
                                         value={newIngredient.name}
                                         onChange={(e) => handleIngredientNameChange(e.target.value)}
-                                        onFocus={() => {
-                                            if (suggestions.length > 0) setShowSuggestions(true);
-                                        }}
+                                        onClick={handleIngredientFieldClick}
                                         style={{ background: '#f9f7f3' }}
                                     />
+                                    <button 
+                                        type="button" 
+                                        className="ingredient-suggest-btn"
+                                        onClick={handleIngredientFieldClick}
+                                        title="Browse ingredients"
+                                    >
+                                        <i className="bx bx-search"></i>
+                                    </button>
                                     {showSuggestions && suggestions.length > 0 && (
                                         <div className="suggestions-dropdown">
                                             {isSearching && (
@@ -293,6 +416,7 @@ const EditRecipePage = ({ recipe, onClose }) => {
                                 </select>
                                 <button type="button" onClick={addIngredient} className="add-btn" title="Add ingredient">
                                     <i className="bx bx-plus"></i>
+                                    <span>Add</span>
                                 </button>
                             </div>
                             <div className="items-list">
@@ -306,7 +430,7 @@ const EditRecipePage = ({ recipe, onClose }) => {
                                     </div>
                                 ))}
                                 {form.ingredients.length === 0 && (
-                                    <div className="empty-list-hint">No ingredients yet.</div>
+                                    <div className="empty-list-hint">No ingredients yet. Start adding some!</div>
                                 )}
                             </div>
                         </div>
@@ -320,6 +444,18 @@ const EditRecipePage = ({ recipe, onClose }) => {
                                 <i className="bx bx-detail"></i>
                                 <h3>Instructions <span className="count-badge">{form.instructions.length}</span></h3>
                             </div>
+                            
+                            {/* Add AI button */}
+                            <button 
+                                type="button" 
+                                onClick={generateAIInstructions}
+                                disabled={loading || !form.title || !form.description}
+                                className="ai-icon-button"
+                                title="Generate AI instructions"
+                            >
+                                <i className="bx bx-bulb"></i>
+                            </button>
+                            
                             <div className="instruction-input">
                                 <textarea
                                     placeholder="Add instruction step"
@@ -330,6 +466,7 @@ const EditRecipePage = ({ recipe, onClose }) => {
                                 />
                                 <button type="button" onClick={addInstruction} className="add-btn" title="Add step">
                                     <i className="bx bx-plus"></i>
+                                    <span>Add Step</span>
                                 </button>
                             </div>
                             <div className="items-list">
@@ -352,7 +489,7 @@ const EditRecipePage = ({ recipe, onClose }) => {
                                 <i className="bx bx-x"></i>
                                 Cancel
                             </button>
-                            <button type="submit" disabled={loading} className="submit-btn">
+                            <button type="submit" disabled={loading} className="submit-btn" onClick={handleSubmit}>
                                 <i className="bx bx-check"></i>
                                 {loading ? 'Updating...' : 'Update Recipe'}
                             </button>
@@ -365,8 +502,20 @@ const EditRecipePage = ({ recipe, onClose }) => {
     };
 
     return (
-        <div className="edit-recipe-page-modal enhanced-modal">
-            <div className="edit-recipe-modal-tabs">
+        <motion.div 
+            className="edit-recipe-page-modal enhanced-modal"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+        >
+            <div className="form-header">
+                <h1>
+                    <i className="bx bx-edit"></i>
+                    Edit Recipe
+                </h1>
+            </div>
+            
+            <div className="tab-navigation">
                 <button
                     className={`tab-button ${activeTab === 'basic' ? 'active' : ''}`}
                     onClick={() => setActiveTab('basic')}
@@ -389,12 +538,21 @@ const EditRecipePage = ({ recipe, onClose }) => {
                     <span>Instructions</span>
                 </button>
             </div>
+            
             <form onSubmit={handleSubmit}>
                 <div className="tab-content">
                     {renderTabContent()}
                 </div>
             </form>
-        </div>
+            
+            <IngredientsModal
+                isOpen={isIngredientsModalOpen}
+                onClose={() => setIsIngredientsModalOpen(false)}
+                onIngredientSelect={handleIngredientSelect}
+                allIngredients={allIngredients.length > 0 ? allIngredients : []}
+                units={units}
+            />
+        </motion.div>
     );
 };
 

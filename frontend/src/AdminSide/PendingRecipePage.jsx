@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import './PendingRecipePage.scss';
+import { useSocket } from '../context/SocketContext'; // Add this import
 
 const baseURL = import.meta.env.MODE === "development"
     ? "http://localhost:5000"
     : "";
 
-const PendingRecipePage = () => {
+const PendingRecipePage = ({ onRecipeModerated }) => {
     const [pendingRecipes, setPendingRecipes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedRecipe, setSelectedRecipe] = useState(null);
@@ -19,6 +20,7 @@ const PendingRecipePage = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+    const { socket } = useSocket(); // Add this line
 
     // Filter recipes based on search
     const filteredRecipes = pendingRecipes.filter(recipe => 
@@ -31,6 +33,48 @@ const PendingRecipePage = () => {
     useEffect(() => {
         fetchPendingRecipes();
     }, []);
+    
+    // Add Socket.IO event listeners for real-time updates
+    useEffect(() => {
+        if (!socket) return;
+        
+        // Listen for new pending recipes
+        const handleRecipePending = (newRecipe) => {
+            // Check if recipe is already in the list to avoid duplicates
+            setPendingRecipes(prev => {
+                const exists = prev.some(recipe => recipe._id === newRecipe._id);
+                if (exists) return prev;
+                return [newRecipe, ...prev];
+            });
+            
+            // Show success notification
+            setSuccess(`New recipe "${newRecipe.title}" pending approval`);
+            setTimeout(() => setSuccess(''), 3000);
+        };
+        
+        // Listen for recipe status changes
+        const handleRecipeStatusChange = (recipeId) => {
+            // Remove the recipe from the pending list
+            setPendingRecipes(prev => prev.filter(recipe => recipe._id !== recipeId));
+            
+            // Notify parent component about the change
+            if (onRecipeModerated) {
+                onRecipeModerated();
+            }
+        };
+        
+        // Register event listeners
+        socket.on('recipePending', handleRecipePending);
+        socket.on('recipeApproved', data => handleRecipeStatusChange(data.recipeId));
+        socket.on('recipeRejected', data => handleRecipeStatusChange(data.recipeId));
+        
+        // Cleanup event listeners on component unmount
+        return () => {
+            socket.off('recipePending', handleRecipePending);
+            socket.off('recipeApproved');
+            socket.off('recipeRejected');
+        };
+    }, [socket, onRecipeModerated]);
 
     const fetchPendingRecipes = async () => {
         try {
@@ -80,6 +124,11 @@ const PendingRecipePage = () => {
                 setShowApprovalDialog(false);
                 setShowRejectionDialog(false);
                 setRejectionReason('');
+                
+                // Notify parent component for dashboard updates
+                if (onRecipeModerated) {
+                    onRecipeModerated();
+                }
 
                 // Clear success message after 3 seconds
                 setTimeout(() => setSuccess(''), 3000);

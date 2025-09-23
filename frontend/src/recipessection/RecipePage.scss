@@ -924,7 +924,7 @@ i[class*=" bx-"] {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   cursor: pointer;
-  height: 30rem; // Increased height for larger cards
+  height: 28rem; // Increased height for larger cards
   display: flex;
   flex-direction: column;
   position: relative; // Add this for heart positioning
@@ -1884,5 +1884,156 @@ i[class*=" bx-"] {
       font-size: 0.65rem;
     }
   }
-}}
+}
+
+// =============================================================================
+// ENHANCED STAR RATING DISPLAY - MATCHES COMMUNITY PAGE STYLE
+// =============================================================================
+.star-rating-display {
+  display: flex;
+  align-items: center;
+  gap: 0.05rem; // Ultra compact spacing between stars
+  margin: 0.2rem 0; // Reduced margin
+  padding: 0.1rem 0; // Minimal padding
+  max-width: 100%;
+  overflow: hidden;
+  
+  i {
+    font-size: 0.7rem !important; // SMALLER STARS - matching community page
+    color: #CF996C !important; // Consistent gold color
+    flex-shrink: 0; // Prevent stars from shrinking
+    
+    &.text-gray-300 {
+      color: #D1D5DB !important; // Light gray for empty stars
+    }
+    
+    &.text-yellow-400 {
+      color: #CF996C !important; // Override any other colors
+    }
+  }
+  
+  .star-rating-value {
+    font-size: 0.6rem !important; // SMALLER TEXT - matching community page
+    color: #666;
+    margin-left: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+  }
+}
+
+// =============================================================================
+// RECIPE META SECTION - ENHANCED COMPACT LAYOUT
+// =============================================================================
+.recipe-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 0.4rem !important; // Reduced margin
+  width: 100%;
+  gap: 0.1rem !important; // Tighter gap between elements
+  
+  // Make category and rating appear on the same row consistently
+  .category-rating-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 0.1rem !important; // Minimal margin
+    flex-wrap: nowrap; // Prevent wrapping to next line
+  }
+}
+
+.recipe-category {
+  display: inline-block;
+  background: #CF996C;
+  color: white;
+  padding: 0.2rem 0.5rem !important; // SMALLER PADDING - matching community page
+  border-radius: 8px !important; // Smaller border radius
+  font-size: 0.65rem !important; // SMALLER FONT - matching community page
+  font-weight: 600;
+  max-width: 60%; // Limit width to prevent pushing rate button down
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  height: 20px; // Fixed height for consistency
+  line-height: 20px; // Match height for vertical centering
+  display: flex;
+  align-items: center;
+}
+
+// Style the Rate button consistently with community style
+.rate-button {
+  flex-shrink: 0; // Prevent the button from shrinking
+  margin-left: auto; // Push to the right side
+  padding: 0.2rem 0.5rem !important; // SMALLER PADDING
+  background: rgba(207, 153, 108, 0.06);
+  border: 1px solid rgba(207, 153, 108, 0.2);
+  color: #CF996C;
+  border-radius: 8px !important; // Smaller border radius
+  font-size: 0.65rem !important; // SMALLER FONT - matching community page
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 20px; // Fixed height to match category
+  display: flex;
+  align-items: center;
+  
+  &:hover {
+    background: rgba(207, 153, 108, 0.1);
+    border-color: #CF996C;
+  }
+  
+  i {
+    margin-right: 3px;
+    font-size: 0.7rem !important; // Smaller icon
+  }
+}
+
+// Ensure consistent styling on mobile devices
+@media (max-width: 768px) {
+  .recipe-content {
+    padding: 0.6rem !important; // Smaller padding on mobile
+    
+    .recipe-meta {
+      margin-bottom: 0.3rem !important;
+      
+      .category-rating-row {
+        margin-bottom: 0.1rem !important;
+      }
+    }
+    
+    .recipe-category {
+      font-size: 0.6rem !important; // Even smaller on mobile
+      padding: 0.15rem 0.4rem !important;
+      height: 18px !important;
+      line-height: 18px !important;
+    }
+    
+    .rate-button {
+      font-size: 0.6rem !important; // Even smaller on mobile
+      padding: 0.15rem 0.4rem !important;
+      height: 18px !important;
+      
+      i {
+        font-size: 0.65rem !important;
+      }
+    }
+    
+    .star-rating-display {
+      i {
+        font-size: 0.65rem !important;
+      }
+      
+      .star-rating-value {
+        font-size: 0.55rem !important;
+      }
+    }
+  }
+}
+  }
 }

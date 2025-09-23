@@ -10,6 +10,7 @@ import Swal from 'sweetalert2';
 import ManageUsersPage from './ManageUsersPage';
 import ManageRecipeAndIngredientsPage from './ManageRecipeAndIngredientsPage';
 import QuickActionModal from '../components/QuickActionModal';
+import { useSocket } from '../context/SocketContext';
 
 const baseURL = import.meta.env.MODE === "development"
   ? "http://localhost:5000"
@@ -17,6 +18,7 @@ const baseURL = import.meta.env.MODE === "development"
 
 const AdminDashboard = () => {
     const { user, isAdmin, logout } = useAuthStore();
+    const { socket } = useSocket();
     const [activeTab, setActiveTab] = useState('overview');
     const [users, setUsers] = useState([]);
     const [recipes, setRecipes] = useState([]);
@@ -194,6 +196,43 @@ const AdminDashboard = () => {
             fetchRealTimeStats();
         }
     }, [users.length, recipes.length, pendingCount]);
+
+    // Add Socket.IO event listeners for real-time updates
+    useEffect(() => {
+        if (!socket) return;
+        
+        const handleRecipePending = () => {
+            // Update pending count when a new recipe is submitted for review
+            setPendingCount(prev => prev + 1);
+            // Update stats as well
+            setStats(prev => ({
+                ...prev,
+                pendingRecipes: prev.pendingRecipes + 1
+            }));
+        };
+        
+        const handleRecipeStatusChange = () => {
+            // Update pending count when a recipe is approved or rejected
+            setPendingCount(prev => Math.max(0, prev - 1));
+            // Update stats as well
+            setStats(prev => ({
+                ...prev,
+                pendingRecipes: Math.max(0, prev.pendingRecipes - 1)
+            }));
+        };
+        
+        // Register event listeners
+        socket.on('recipePending', handleRecipePending);
+        socket.on('recipeApproved', handleRecipeStatusChange);
+        socket.on('recipeRejected', handleRecipeStatusChange);
+        
+        // Cleanup event listeners on component unmount
+        return () => {
+            socket.off('recipePending', handleRecipePending);
+            socket.off('recipeApproved');
+            socket.off('recipeRejected');
+        };
+    }, [socket]);
 
     const handleLogout = () => {
         logout();

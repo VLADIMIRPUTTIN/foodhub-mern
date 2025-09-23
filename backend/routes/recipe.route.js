@@ -40,7 +40,7 @@ router.get("/shared", async (req, res) => {
     }
 });
 
-// Update the share recipe route to set status as pending
+// Update the share recipe route to set status as pending and emit socket event
 router.post("/:id/share", verifyToken, async (req, res) => {
     try {
         const recipe = await Recipe.findByIdAndUpdate(
@@ -50,12 +50,25 @@ router.post("/:id/share", verifyToken, async (req, res) => {
                 isShared: false // Will be set to true after approval
             },
             { new: true }
-        );
+        ).populate('createdBy', 'name email');
+        
         if (!recipe) {
             return res.status(404).json({ success: false, message: "Recipe not found" });
         }
+        
+        // Emit socket event for real-time updates
+        const io = req.app.get('io');
+        // Broadcast to all connected clients - admins will handle this event
+        io.emit('recipePending', {
+            recipeId: recipe._id,
+            title: recipe.title || recipe.name,
+            userId: recipe.createdBy,
+            description: recipe.description
+        });
+        
         res.json({ success: true, recipe, message: "Recipe submitted for review" });
     } catch (error) {
+        console.error('Error sharing recipe:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
