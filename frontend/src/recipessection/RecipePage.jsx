@@ -13,6 +13,53 @@ import RateButton from '../components/RateButton'; // Add this import
 import BottomNavbar from "../components/BottomNavbar";
 import CameraModal from "../components/CameraModal";
 
+// Add this helper function above your component
+const ingredientMatches = (recipeIngredient, selectedIngredient) => {
+    // Normalize selected ingredient
+    const selectedLower = selectedIngredient.toLowerCase().trim();
+    
+    // Handle pluralization
+    const singularSelected = selectedLower.endsWith('s') ? selectedLower.slice(0, -1) : selectedLower;
+    const pluralSelected = selectedLower.endsWith('s') ? selectedLower : selectedLower + 's';
+    
+    // Recipe ingredient might be an object or string
+    if (typeof recipeIngredient === 'string') {
+        const ingredientLower = recipeIngredient.toLowerCase();
+        return ingredientLower.includes(selectedLower) || 
+               ingredientLower.includes(singularSelected) || 
+               ingredientLower.includes(pluralSelected);
+    }
+    
+    // If it's an object with name property
+    if (recipeIngredient && recipeIngredient.name) {
+        const ingredientName = recipeIngredient.name.toLowerCase();
+        
+        // Direct match (including pluralization)
+        if (ingredientName === selectedLower || 
+            ingredientName === singularSelected || 
+            ingredientName === pluralSelected) {
+            return true;
+        }
+        
+        // Check if name contains the selected ingredient
+        if (ingredientName.includes(selectedLower) ||
+            ingredientName.includes(singularSelected) ||
+            ingredientName.includes(pluralSelected)) {
+            return true;
+        }
+        
+        // Check full ingredient string with amount and unit
+        const fullIngredient = `${recipeIngredient.amount || ''} ${recipeIngredient.unit || ''} ${recipeIngredient.name}`.toLowerCase();
+        if (fullIngredient.includes(selectedLower) ||
+            fullIngredient.includes(singularSelected) ||
+            fullIngredient.includes(pluralSelected)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 const RecipePage = () => {
     const { user } = useAuthStore();
     const [recipes, setRecipes] = useState([]);
@@ -176,7 +223,7 @@ const RecipePage = () => {
         );
     }, [ingredientSearch, ingredients]);
 
-    // Update the filtered recipes logic with more robust price handling
+    // Update the filtered recipes logic with more robust ingredient matching
     const filteredRecipes = recipes.filter(recipe => {
         // Handle both 'name' and 'title' fields for backward compatibility
         const recipeName = recipe.title || recipe.name || '';
@@ -186,9 +233,10 @@ const RecipePage = () => {
             selectedIngredients.length === 0 ||
             (recipe.ingredients &&
                 selectedIngredients.every(selIng =>
-                    recipe.ingredients.some(ri => ri.name && ri.name === selIng)
+                    recipe.ingredients.some(ri => ingredientMatches(ri, selIng))
                 )
             );
+        
         const matchesCategory = !categoryFilter || recipe.category === categoryFilter;
         
         // Enhanced price filtering with more careful parsing
