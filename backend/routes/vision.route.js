@@ -945,25 +945,34 @@ async function generateGenericSteps(recipeName, ingredients, category, descripti
     // Process ingredients to get proper format
     const ingredientsList = ingredients.map(ing => 
       typeof ing === 'string' ? ing : ing.name
-    ).join(", ");
+    );
     
-    // Create the prompt for step generation
+    // Create a more focused prompt for step generation
     const prompt = `
     You are a professional chef creating a recipe for "${recipeName}".
     
     Recipe Category: ${category || "Main Course"}
     Recipe Description: ${description}
-    Available Ingredients: ${ingredientsList}
     
-    Please create 4-6 clear, practical cooking steps for this recipe.
+    INGREDIENTS:
+    ${ingredientsList.map(ing => `- ${ing}`).join('\n')}
+    
+    Please create 4-8 detailed cooking steps that SPECIFICALLY use the ingredients listed above.
+    Each step should:
+    1. Mention specific ingredients from the list
+    2. Include precise cooking techniques
+    3. Specify cooking times and temperatures where appropriate
+    4. Follow a logical preparation sequence
+    
     Format your response as a JSON array of step objects with "instruction" and "details" properties:
     [
       {
-        "instruction": "Short step name",
-        "details": "Detailed explanation of the step"
+        "instruction": "Short step name that mentions key ingredients",
+        "details": "Detailed explanation including specific measurements, techniques, and timing"
       }
     ]
 
+    IMPORTANT: Every step must reference at least one of the ingredients in the list. Do not add ingredients that are not in the list.
     Only provide the JSON array, nothing else.
     `;
     
@@ -983,7 +992,7 @@ async function generateGenericSteps(recipeName, ingredients, category, descripti
         
         // Validate steps format
         if (Array.isArray(steps) && steps.length > 0 && steps[0].instruction && steps[0].details) {
-          console.log(`Generated ${steps.length} AI steps for "${recipeName}"`);
+          console.log(`Generated ${steps.length} ingredient-focused AI steps for "${recipeName}"`);
           return steps;
         }
       }
@@ -1007,6 +1016,11 @@ function extractStepsFromText(text, recipeName, ingredients) {
   const steps = [];
   const lines = text.split('\n');
   
+  // Process ingredients to get a clean list of names
+  const ingredientNames = ingredients.map(ing => 
+    typeof ing === 'string' ? ing : ing.name
+  );
+  
   let currentInstruction = "";
   let currentDetails = "";
   
@@ -1020,7 +1034,7 @@ function extractStepsFromText(text, recipeName, ingredients) {
       if (currentInstruction) {
         steps.push({
           instruction: currentInstruction,
-          details: currentDetails || `Complete this step for ${recipeName}`
+          details: currentDetails || `Prepare the ${ingredientNames.slice(0, 2).join(" and ")} for ${recipeName}`
         });
       }
       
@@ -1041,12 +1055,34 @@ function extractStepsFromText(text, recipeName, ingredients) {
   if (currentInstruction) {
     steps.push({
       instruction: currentInstruction,
-      details: currentDetails || `Complete this step for ${recipeName}`
+      details: currentDetails || `Complete this step using ${ingredientNames.slice(0, 2).join(" and ")} for ${recipeName}`
     });
   }
   
-  // If we couldn't extract steps properly, generate minimal steps
-  if (steps.length === 0) {
+  // If we extracted steps but they don't reference ingredients, enhance them
+  if (steps.length > 0) {
+    steps.forEach((step, index) => {
+      // Check if step already mentions ingredients
+      const mentionsIngredient = ingredientNames.some(ing => 
+        step.instruction.toLowerCase().includes(ing.toLowerCase()) ||
+        step.details.toLowerCase().includes(ing.toLowerCase())
+      );
+      
+      // If not, add references to ingredients
+      if (!mentionsIngredient) {
+        // Choose ingredients based on step position
+        const relevantIngredients = ingredientNames.slice(
+          Math.floor(index * ingredientNames.length / steps.length),
+          Math.floor((index + 1) * ingredientNames.length / steps.length) + 1
+        );
+        
+        if (relevantIngredients.length > 0) {
+          step.details += ` Use ${relevantIngredients.join(", ")} for this step.`;
+        }
+      }
+    });
+  } else {
+    // If we couldn't extract steps properly, generate minimal steps
     return generateMinimalSteps(recipeName, ingredients);
   }
   
@@ -1055,30 +1091,77 @@ function extractStepsFromText(text, recipeName, ingredients) {
 
 // Simple fallback if AI is unavailable
 function generateMinimalSteps(recipeName, ingredients) {
-  // Get the first few ingredients for reference
-  const mainIngredients = ingredients
-    .slice(0, 3)
-    .map(ing => typeof ing === 'string' ? ing : ing.name)
-    .join(", ");
+  // Get ingredients for reference
+  const processedIngredients = ingredients.map(ing => 
+    typeof ing === 'string' ? ing : ing.name
+  );
   
-  return [
+  // Group ingredients by likely use
+  const mainIngredients = processedIngredients.slice(0, 3).join(", ");
+  const remainingIngredients = processedIngredients.slice(3).join(", ");
+  
+  // Create more specific steps based on ingredient types
+  const hasProtein = processedIngredients.some(ing => 
+    /chicken|beef|fish|pork|tofu|meat|shrimp|lamb/i.test(ing)
+  );
+  
+  const hasVegetables = processedIngredients.some(ing =>
+    /onion|garlic|carrot|potato|tomato|pepper|vegetable|broccoli|spinach|lettuce/i.test(ing)
+  );
+  
+  const steps = [
     {
       instruction: "Prepare ingredients",
-      details: `Gather and prepare all ingredients needed for ${recipeName}.`
-    },
-    {
-      instruction: "Cook main ingredients",
-      details: `Cook ${mainIngredients} according to your preferred method.`
-    },
-    {
-      instruction: "Combine and season",
-      details: "Combine all ingredients and season to taste."
-    },
-    {
-      instruction: "Serve",
-      details: `Plate your ${recipeName} and enjoy!`
+      details: `Gather all ingredients for ${recipeName}. Wash, peel, and chop ${mainIngredients} as needed.`
     }
   ];
+  
+  // Add protein preparation step if applicable
+  if (hasProtein) {
+    steps.push({
+      instruction: "Prepare protein",
+      details: `Season the protein ingredients (${processedIngredients.filter(ing => 
+        /chicken|beef|fish|pork|tofu|meat|shrimp|lamb/i.test(ing)
+      ).join(", ")}) with salt and pepper. Set aside while preparing other ingredients.`
+    });
+  }
+  
+  // Add vegetable preparation if applicable
+  if (hasVegetables) {
+    steps.push({
+      instruction: "Prepare vegetables",
+      details: `Chop and prepare ${processedIngredients.filter(ing => 
+        /onion|garlic|carrot|potato|tomato|pepper|vegetable|broccoli|spinach|lettuce/i.test(ing)
+      ).join(", ")}. Keep them separate as they may be added at different cooking stages.`
+    });
+  }
+  
+  // Main cooking step
+  steps.push({
+    instruction: "Cook main ingredients",
+    details: `Heat cooking vessel over medium heat. ${hasProtein ? 'Add protein and cook until browned. ' : ''}Add ${mainIngredients} and cook for 5-7 minutes until tender.`
+  });
+  
+  // Add remaining ingredients step if we have more than 3
+  if (remainingIngredients) {
+    steps.push({
+      instruction: "Add remaining ingredients",
+      details: `Add ${remainingIngredients} to the mixture. Stir well to combine all flavors.`
+    });
+  }
+  
+  // Final steps
+  steps.push({
+    instruction: "Season and finish",
+    details: `Season ${recipeName} with additional spices from the ingredient list if available. Adjust taste as needed.`
+  });
+  
+  steps.push({
+    instruction: "Serve",
+    details: `Plate your ${recipeName} and serve while hot. Garnish with any remaining fresh ingredients from the list.`
+  });
+  
+  return steps;
 }
 
 // Update the handleFallbackSteps function to use the async version
