@@ -161,6 +161,11 @@ const RecipeFull = () => {
                 <span>{ing.name}</span>
               </div>
             ))}
+            {recipe.ingredients && recipe.ingredients.length > 5 && (
+              <div className="scroll-indicator" aria-hidden="true">
+                <i className="bx bx-chevron-down"></i>
+              </div>
+            )}
           </div>
         </div>
       </div>
