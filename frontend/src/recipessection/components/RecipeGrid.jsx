@@ -14,7 +14,8 @@ const RecipeGrid = ({
     gridContainerRef,
     filteredRecipes,
     handleRateClick,
-    currentMealType
+    currentMealType,
+    handleCommentClick // Add this prop
 }) => {
     return (
         <div 
@@ -95,14 +96,26 @@ const RecipeGrid = ({
                                         </div>
                                     )}
                                     
-                                    {/* Rate Button */}
-                                    <button 
-                                        className="rate-recipe-btn" 
-                                        onClick={(e) => handleRateClick(recipe, e)}
-                                    >
-                                        <i className="bx bx-star"></i>
-                                        Rate this recipe
-                                    </button>
+                                    {/* Action buttons container */}
+                                    <div className="recipe-action-buttons">
+                                        {/* Rate Button */}
+                                        <button 
+                                            className="recipe-action-btn rate-btn" 
+                                            onClick={(e) => handleRateClick(recipe, e)}
+                                        >
+                                            <i className="bx bx-star"></i>
+                                            Rate
+                                        </button>
+                                        
+                                        {/* Comment Button - New */}
+                                        <button 
+                                            className="recipe-action-btn comment-btn" 
+                                            onClick={(e) => handleCommentClick(recipe, e)}
+                                        >
+                                            <i className="bx bx-comment"></i>
+                                            Comments
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

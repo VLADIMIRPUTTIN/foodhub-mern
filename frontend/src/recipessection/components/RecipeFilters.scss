@@ -32,11 +32,13 @@
     border-radius: 50px;
     font-size: 0.9rem;
     outline: none;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgb(242, 228, 213) !important;
     transition: all 0.2s ease;
+    font-weight: bold !important;
+    color: #666 !important;
 
     &::placeholder {
-      color: #b8956a;
+      color: #4c4c4c;
       font-weight: 500;
     }
 

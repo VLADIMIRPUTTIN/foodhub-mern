@@ -15,6 +15,7 @@ import MobileIngredientSheet from './components/MobileIngredientSheet';
 import RecipeFilters from './components/RecipeFilters';
 import PaginationControls from './components/PaginationControls';
 import RatingModal from '../components/RatingModal';
+import CommentModal from './components/CommentModal';
 import { ingredientMatches, getImageUrl } from './components/utils/ingredientUtils';
 
 const RecipePage = () => {
@@ -39,6 +40,8 @@ const RecipePage = () => {
     const [ratingModalOpen, setRatingModalOpen] = useState(false);
     const [recipeToRate, setRecipeToRate] = useState(null);
     const [cameraOpen, setCameraOpen] = useState(false);
+    const [commentModalOpen, setCommentModalOpen] = useState(false);
+    const [recipeToComment, setRecipeToComment] = useState(null);
     
     // Current meal type based on time of day
     const [currentMealType, setCurrentMealType] = useState('');
@@ -382,6 +385,13 @@ const RecipePage = () => {
         }
     };
 
+    // Add this function to handle comment button click
+    const handleCommentClick = (recipe, e) => {
+        e.stopPropagation();
+        setRecipeToComment(recipe);
+        setCommentModalOpen(true);
+    };
+
     return (
         <div className="recipe-page">
             <Navbar />
@@ -473,6 +483,7 @@ const RecipePage = () => {
                         filteredRecipes={filteredRecipes}
                         handleRateClick={handleRateClick}
                         currentMealType={currentMealType} // Added to highlight time-based recipes
+                        handleCommentClick={handleCommentClick} // Add this prop
                     />
 
                     {/* Pagination controls */}
@@ -506,6 +517,13 @@ const RecipePage = () => {
                     onClose={handleRatingModalClose}
                 />
             )}
+
+            {/* Comment Modal */}
+            <CommentModal
+                isOpen={commentModalOpen}
+                onClose={() => setCommentModalOpen(false)}
+                recipe={recipeToComment}
+            />
         </div>
     );
 };

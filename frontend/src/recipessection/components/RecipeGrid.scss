@@ -288,13 +288,105 @@
   }
 }
 
-// Time-based recipe card styling
-.recipe-card.time-based-card {
-  border: 2px solid #ffc107;
-  box-shadow: 0 6px 20px rgba(255, 193, 7, 0.15);
+// Add this for the action buttons container
+.recipe-action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+  width: 100%;
+  padding-top: 0.5rem;
+  order: 5;
+}
+
+// Style for action buttons
+.recipe-action-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid;
+  border-radius: 20px;
+  padding: 0.4rem 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  gap: 0.4rem;
+  height: 32px;
   
-  &:hover {
-    box-shadow: 0 8px 28px rgba(255, 193, 7, 0.25);
+  i {
+    font-size: 0.9rem;
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  // Rate button styling
+  &.rate-btn {
+    border-color: #CF996C;
+    color: #CF996C;
+    
+    &:hover {
+      background: #CF996C;
+      color: white;
+      transform: translateY(-1px);
+    }
+  }
+  
+  // Comment button styling
+  &.comment-btn {
+    border-color: #5C73A0;
+    color: #5C73A0;
+    
+    &:hover {
+      background: #5C73A0;
+      color: white;
+      transform: translateY(-1px);
+    }
+  }
+}
+
+// Update the existing .recipe-content to include the new order
+.recipe-content {
+  // Existing styles...
+  
+  .recipe-title {
+    // Existing styles...
+    order: -1;
+  }
+  
+  .recipe-category {
+    // Existing styles...
+    order: 0;
+  }
+  
+  .recipe-desc {
+    // Existing styles...
+    order: 1;
+  }
+  
+  .recipe-meta-container {
+    // Existing styles...
+    order: 2;
+  }
+  
+  .star-rating-display {
+    // Existing styles...
+    order: 3;
+  }
+  
+  // Remove or comment out the standalone rate-recipe-btn since we now have the action buttons container
+  /*
+  .rate-recipe-btn {
+    // Existing styles...
+    order: 4;
+  }
+  */
+  
+  .recipe-action-buttons {
+    order: 4;
   }
 }
 
@@ -368,6 +460,19 @@
       i {
         font-size: 1.1rem;
       }
+    }
+  }
+  
+  .recipe-action-buttons {
+    padding-top: 0.3rem;
+  }
+  
+  .recipe-action-btn {
+    font-size: 0.7rem;
+    height: 28px;
+    
+    i {
+      font-size: 0.8rem;
     }
   }
 }
