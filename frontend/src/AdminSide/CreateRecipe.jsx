@@ -24,6 +24,7 @@ const CreateRecipe = ({ onRecipeSaved }) => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [price, setPrice] = useState('');
+    const [servings, setServings] = useState('');
     const [isGeneratingIngredients, setIsGeneratingIngredients] = useState(false);
     const [suggestionSuccess, setSuggestionSuccess] = useState("");
     const [isGeneratingSteps, setIsGeneratingSteps] = useState(false);
@@ -84,6 +85,7 @@ const CreateRecipe = ({ onRecipeSaved }) => {
         setImagePreview(null);
         setActiveTab('basic');
         setPrice('');
+        setServings('');
     };
 
     const handleSubmit = async (e) => {
@@ -103,6 +105,7 @@ const CreateRecipe = ({ onRecipeSaved }) => {
                 formData.append('image', image);
             }
             formData.append('price', price);
+            formData.append('servings', servings);
 
             const baseURL = import.meta.env.MODE === "development" 
                 ? "http://localhost:5000" 
@@ -582,21 +585,45 @@ const CreateRecipe = ({ onRecipeSaved }) => {
                                     />
                                 </div>
                                 
+                                {/* Cost field */}
                                 <div className="form-group">
-                                    <label className="form-label" htmlFor="price">
-                                        <i className="bx bx-dollar"></i>
-                                        Price (optional)
+                                    <label className="form-label">
+                                        <i className="bx bx-money-withdraw"></i>
+                                        Cost (₱)
                                     </label>
                                     <input
                                         type="number"
-                                        id="price"
                                         className="form-input"
+                                        placeholder="Enter estimated cost"
                                         value={price}
                                         onChange={(e) => setPrice(e.target.value)}
-                                        placeholder="Enter price"
-                                        step="0.01"
                                         min="0"
+                                        step="0.01"
                                     />
+                                    <p className="form-description">
+                                        <i className="bx bx-info-circle"></i>
+                                        Enter the estimated cost for this recipe
+                                    </p>
+                                </div>
+                                
+                                {/* Servings field */}
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        <i className="bx bx-group"></i>
+                                        Servings
+                                    </label>
+                                    <input
+                                        type="number"
+                                        className="form-input"
+                                        placeholder="Number of servings"
+                                        value={servings}
+                                        onChange={(e) => setServings(e.target.value)}
+                                        min="1"
+                                    />
+                                    <p className="form-description">
+                                        <i className="bx bx-info-circle"></i>
+                                        Enter how many people this recipe serves
+                                    </p>
                                 </div>
                                 
                                 <div className="form-group">

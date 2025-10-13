@@ -14,7 +14,7 @@ import IngredientsSidebar from './components/IngredientsSidebar';
 import MobileIngredientSheet from './components/MobileIngredientSheet';
 import RecipeFilters from './components/RecipeFilters';
 import PaginationControls from './components/PaginationControls';
-import RatingModal from './components/RatingModal';
+import RatingModal from '../components/RatingModal';
 import { ingredientMatches, getImageUrl } from './components/utils/ingredientUtils';
 
 const RecipePage = () => {
@@ -447,7 +447,7 @@ const RecipePage = () => {
                         </p>
                     </div>
 
-                    {/* Filter controls */}
+                    {/* Filter controls - ONLY USE THIS COMPONENT */}
                     <RecipeFilters 
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}

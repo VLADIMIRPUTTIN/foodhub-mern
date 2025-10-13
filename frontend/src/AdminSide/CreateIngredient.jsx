@@ -122,7 +122,7 @@ const CreateIngredient = ({ onCreated }) => {
                         ) : (
                             <div className="btn-content">
                                 <i className="bx bx-plus-circle"></i>
-                                <span>Create Ingredient</span>
+                                <span>Add Ingredient</span>
                             </div>
                         )}
                     </motion.button>

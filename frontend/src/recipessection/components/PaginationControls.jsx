@@ -1,3 +1,5 @@
+import './PaginationControls.scss';
+
 const PaginationControls = ({ currentPage, setCurrentPage, totalPages }) => {
     if (totalPages <= 1) return null;
     

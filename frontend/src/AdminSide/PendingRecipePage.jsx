@@ -371,7 +371,7 @@ const PendingRecipePage = ({ onRecipeModerated }) => {
                                         disabled={actionLoading}
                                     >
                                         <i className="bx bx-x"></i>
-                                        Reject
+                                        Decline
                                     </button>
                                 </div>
                             </div>
@@ -529,7 +529,7 @@ const PendingRecipePage = ({ onRecipeModerated }) => {
                                     ) : (
                                         <>
                                             <i className="bx bx-x"></i>
-                                            Reject Recipe
+                                            Decline Recipe
                                         </>
                                     )}
                                 </button>
@@ -613,7 +613,7 @@ const PendingRecipePage = ({ onRecipeModerated }) => {
                             <div className="modal__header">
                                 <h3 className="modal__title">
                                     <i className="bx bx-x-circle"></i>
-                                    Reject Recipe
+                                    Decline Recipe
                                 </h3>
                                 <button className="modal__close" onClick={closeAllModals}>
                                     <i className="bx bx-x"></i>
@@ -621,12 +621,12 @@ const PendingRecipePage = ({ onRecipeModerated }) => {
                             </div>
                             
                             <div className="modal__body">
-                                <p>Please provide a reason for rejecting "<strong>{selectedRecipe.title}</strong>" (optional):</p>
+                                <p>Please provide a reason for declining "<strong>{selectedRecipe.title}</strong>" (optional):</p>
                                 <div className="form-group">
-                                    <label className="form-label">Rejection Reason</label>
+                                    <label className="form-label">Decline Reason</label>
                                     <textarea
                                         className="form-textarea"
-                                        placeholder="Enter reason for rejection..."
+                                        placeholder="Enter reason for declining..."
                                         value={rejectionReason}
                                         onChange={(e) => setRejectionReason(e.target.value)}
                                         rows={4}
@@ -646,12 +646,12 @@ const PendingRecipePage = ({ onRecipeModerated }) => {
                                     {actionLoading ? (
                                         <span className="btn__loading">
                                             <span className="spinner"></span>
-                                            Rejecting...
+                                            Declining...
                                         </span>
                                     ) : (
                                         <>
                                             <i className="bx bx-x"></i>
-                                            Reject Recipe
+                                            Decline Recipe
                                         </>
                                     )}
                                 </button>

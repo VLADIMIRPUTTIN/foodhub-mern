@@ -1,3 +1,5 @@
+import './NoRecipesFound.scss';
+
 const NoRecipesFound = ({ selectedIngredients }) => {
     return (
         <div className="no-recipes-enhanced">

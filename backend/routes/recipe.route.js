@@ -8,7 +8,7 @@ import {
     getAllRecipesForAdmin, 
     getPendingRecipes, 
     moderateRecipe,
-    unshareRecipe // Add this import
+    unshareRecipe
 } from "../controllers/recipe.controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { Recipe } from "../models/recipe.model.js";
@@ -18,138 +18,34 @@ import mongoose from "mongoose";
 const router = express.Router();
 
 router.post("/", verifyToken, uploadMiddleware, createRecipe);
-router.get("/", getAllRecipes); // Only public recipes (admin-created)
-router.get("/admin/all", verifyToken, getAllRecipesForAdmin); // All recipes for admin dashboard
+router.get("/", getAllRecipes);
+router.get("/admin/all", verifyToken, getAllRecipesForAdmin);
 router.get("/user", verifyToken, getRecipesByUser);
 router.get("/admin/pending", verifyToken, getPendingRecipes);
 router.patch("/:id/moderate", verifyToken, moderateRecipe);
 
-// Update the shared recipes route to only show approved recipes
-router.get("/shared", async (req, res) => {
-    try {
-        const recipes = await Recipe.find({ 
-            shareStatus: 'approved',
-            isShared: true 
-        })
-            .populate('createdBy', 'name email')
-            .sort({ createdAt: -1 });
-        res.json({ success: true, recipes });
-    } catch (error) {
-        console.error('Error fetching shared recipes:', error);
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-// Update the share recipe route to set status as pending and emit socket event
-router.post("/:id/share", verifyToken, async (req, res) => {
-    try {
-        const recipe = await Recipe.findByIdAndUpdate(
-            req.params.id,
-            { 
-                shareStatus: 'pending',
-                isShared: false // Will be set to true after approval
-            },
-            { new: true }
-        ).populate('createdBy', 'name email');
-        
-        if (!recipe) {
-            return res.status(404).json({ success: false, message: "Recipe not found" });
-        }
-        
-        // Emit socket event for real-time updates
-        const io = req.app.get('io');
-        // Broadcast to all connected clients - admins will handle this event
-        io.emit('recipePending', {
-            recipeId: recipe._id,
-            title: recipe.title || recipe.name,
-            userId: recipe.createdBy,
-            description: recipe.description
-        });
-        
-        res.json({ success: true, recipe, message: "Recipe submitted for review" });
-    } catch (error) {
-        console.error('Error sharing recipe:', error);
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-router.get("/:id", async (req, res) => {
-    try {
-        const recipe = await Recipe.findById(req.params.id).populate('createdBy', 'name email');
-        if (!recipe) {
-            return res.status(404).json({ success: false, message: "Recipe not found" });
-        }
-        res.json({ success: true, recipe });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
-router.patch("/:id", verifyToken, uploadMiddleware, updateRecipe);
-router.delete("/:id", verifyToken, async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        // Validate ObjectId format
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ success: false, message: "Invalid recipe ID format" });
-        }
-        
-        // Find the recipe first
-        const recipe = await Recipe.findById(id);
-        if (!recipe) {
-            return res.status(404).json({ success: false, message: "Recipe not found" });
-        }
-        
-        // Get user info to check if admin
-        const user = await User.findById(req.userId);
-        if (!user) {
-            return res.status(401).json({ success: false, message: "User not found" });
-        }
-        
-        // Check if user owns this recipe OR is an admin
-        // Handle case where createdBy might be null/undefined
-        const isOwner = recipe.createdBy && recipe.createdBy.toString() === req.userId;
-        const isAdmin = user.role === 'admin';
-        
-        if (!isOwner && !isAdmin) {
-            return res.status(403).json({ 
-                success: false, 
-                message: "You can only delete your own recipes or must be an admin" 
-            });
-        }
-        
-        // Delete the recipe
-        await Recipe.findByIdAndDelete(id);
-        
-        res.status(200).json({ 
-            success: true, 
-            message: "Recipe deleted successfully" 
-        });
-    } catch (error) {
-        console.error('Delete recipe error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: "Server error while deleting recipe",
-            error: error.message 
-        });
-    }
-});
-
-// Add this route after the existing routes
-router.post("/:id/unshare", verifyToken, unshareRecipe);
-
-// Add this route
+// Make sure this route comes BEFORE the /:id route to avoid conflicts
 router.post("/:id/rate", verifyToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { rating } = req.body;
         const userId = req.userId;
 
+        console.log('Rating request:', { id, rating, userId }); // Debug log
+
         // Validate rating value
         if (!rating || rating < 1 || rating > 5) {
             return res.status(400).json({
                 success: false,
                 message: "Rating must be between 1 and 5"
+            });
+        }
+
+        // Validate ObjectId format
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid recipe ID format"
             });
         }
 
@@ -206,5 +102,117 @@ router.post("/:id/rate", verifyToken, async (req, res) => {
         });
     }
 });
+
+// Update the shared recipes route to only show approved recipes
+router.get("/shared", async (req, res) => {
+    try {
+        const recipes = await Recipe.find({ 
+            shareStatus: 'approved',
+            isShared: true 
+        })
+            .populate('createdBy', 'name email')
+            .sort({ createdAt: -1 });
+        res.json({ success: true, recipes });
+    } catch (error) {
+        console.error('Error fetching shared recipes:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Update the share recipe route to set status as pending and emit socket event
+router.post("/:id/share", verifyToken, async (req, res) => {
+    try {
+        const recipe = await Recipe.findByIdAndUpdate(
+            req.params.id,
+            { 
+                shareStatus: 'pending',
+                isShared: false
+            },
+            { new: true }
+        ).populate('createdBy', 'name email');
+        
+        if (!recipe) {
+            return res.status(404).json({ success: false, message: "Recipe not found" });
+        }
+        
+        const io = req.app.get('io');
+        io.emit('recipePending', {
+            recipeId: recipe._id,
+            title: recipe.title || recipe.name,
+            userId: recipe.createdBy,
+            description: recipe.description
+        });
+        
+        res.json({ success: true, recipe, message: "Recipe submitted for review" });
+    } catch (error) {
+        console.error('Error sharing recipe:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.get("/:id", async (req, res) => {
+    try {
+        const recipe = await Recipe.findById(req.params.id).populate('createdBy', 'name email');
+        if (!recipe) {
+            return res.status(404).json({ success: false, message: "Recipe not found" });
+        }
+        res.json({ success: true, recipe });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.patch("/:id", verifyToken, uploadMiddleware, updateRecipe);
+
+router.delete("/:id", verifyToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Validate ObjectId format
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ success: false, message: "Invalid recipe ID format" });
+        }
+        
+        // Find the recipe first
+        const recipe = await Recipe.findById(id);
+        if (!recipe) {
+            return res.status(404).json({ success: false, message: "Recipe not found" });
+        }
+        
+        // Get user info to check if admin
+        const user = await User.findById(req.userId);
+        if (!user) {
+            return res.status(401).json({ success: false, message: "User not found" });
+        }
+        
+        // Check if user owns this recipe OR is an admin
+        const isOwner = recipe.createdBy && recipe.createdBy.toString() === req.userId;
+        const isAdmin = user.role === 'admin';
+        
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({ 
+                success: false, 
+                message: "You can only delete your own recipes or must be an admin" 
+            });
+        }
+        
+        // Delete the recipe
+        await Recipe.findByIdAndDelete(id);
+        
+        res.status(200).json({ 
+            success: true, 
+            message: "Recipe deleted successfully" 
+        });
+    } catch (error) {
+        console.error('Delete recipe error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Server error while deleting recipe",
+            error: error.message 
+        });
+    }
+});
+
+router.post("/:id/unshare", verifyToken, unshareRecipe);
 
 export default router;

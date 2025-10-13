@@ -76,22 +76,35 @@ const RatingModal = ({ isOpen, onClose, recipe }) => {
 
     setIsSubmitting(true);
     try {
-      // Fix: Add base URL to ensure the API endpoint is correctly accessed
-      const baseURL = import.meta.env.MODE === "development"
-        ? "http://localhost:5000"
+      // Use environment-aware URL construction
+      const baseUrl = import.meta.env.MODE === "development" 
+        ? "http://localhost:5000" 
         : "";
-        
-      const response = await axios.post(`${baseURL}/api/recipes/${recipe._id}/rate`, {
-        rating,
-      }, {
-        withCredentials: true // Ensure cookies are sent with the request
+      
+      console.log(`Rating recipe ${recipe._id} with ${rating} stars`);
+      
+      const response = await fetch(`${baseUrl}/api/recipes/${recipe._id}/rate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include', // This ensures cookies are sent with the request
+        body: JSON.stringify({ rating })
       });
       
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Server responded with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("Rating response:", data);
+      
       toast.success("Your rating has been submitted successfully!");
-      onClose(response.data.recipe); // Pass updated recipe back
+      onClose(data.recipe); // Pass updated recipe back
     } catch (error) {
-      console.error("Rating error:", error);
-      toast.error(error.response?.data?.message || "Failed to submit rating");
+      console.error("Rating error:", error.message);
+      toast.error("Failed to submit rating. Please try again.");
     } finally {
       setIsSubmitting(false);
       setShowConfirmation(false);

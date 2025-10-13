@@ -11,6 +11,7 @@ import { toast } from "react-hot-toast";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Swal from 'sweetalert2';
 import { useSocket } from '../context/SocketContext';
+import SharingHistoryTab from '../components/SharingHistoryTab';
 
 const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/WvG991xq/profile-default.png";
 
@@ -430,7 +431,8 @@ const UserProfilePage = () => {
     };
 
     const handleShareRecipe = async (recipe, e) => {
-        e.stopPropagation();
+        if (e) e.preventDefault();
+        if (e) e.stopPropagation();
         
         const result = await Swal.fire({
             title: 'Share Recipe?',
@@ -493,7 +495,8 @@ const UserProfilePage = () => {
     };
 
     const handleUnshareRecipe = async (recipe, e) => {
-        e.stopPropagation();
+        if (e) e.preventDefault();
+        if (e) e.stopPropagation();
         
         const result = await Swal.fire({
             title: 'Remove from Community?',
@@ -854,6 +857,13 @@ const UserProfilePage = () => {
                                     <i className="bx bx-heart"></i> 
                                     My Favorites ({favoriteCount})
                                 </button>
+                                <button 
+                                    className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('history')}
+                                >
+                                    <i className="bx bx-history"></i> 
+                                    Sharing History
+                                </button>
                             </div>
                         </div>
                         
@@ -946,7 +956,7 @@ const UserProfilePage = () => {
                                                             ) : recipe.shareStatus === 'rejected' ? (
                                                                 <button
                                                                     className="edit-recipe-btn-mini"
-                                                                    title={`Rejected: ${recipe.rejectionReason || 'No reason provided'}`}
+                                                                    title={`Declined: ${recipe.rejectionReason || 'No reason provided'}`}
                                                                     onClick={e => handleShareRecipe(recipe, e)}
                                                                     style={{ background: "#ef4444" }}
                                                                 >
@@ -973,6 +983,13 @@ const UserProfilePage = () => {
                                                             </button>
                                                         </div>
                                                     </div>
+                                                    {/* Show only this badge on rejected recipes */}
+                                                    {recipe.shareStatus === 'rejected' && (
+                                                        <div className="recipe-status rejected">
+                                                            <i className="bx bx-x-circle"></i>
+                                                            <span>Declined</span>
+                                                        </div>
+                                                    )}
                                                 </motion.div>
                                             ))}
                                         </div>
@@ -1063,6 +1080,17 @@ const UserProfilePage = () => {
                                             </div>
                                         </div>
                                     )
+                                )}
+
+                                {/* Sharing History Tab */}
+                                {activeTab === 'history' && (
+                                    <SharingHistoryTab 
+                                        userRecipes={userRecipes}
+                                        onShareRecipe={handleShareRecipe}
+                                        onUnshareRecipe={handleUnshareRecipe}
+                                        getRecipeImageUrl={getRecipeImageUrl}
+                                        formatDate={formatDate}
+                                    />
                                 )}
                             </>
                         )}

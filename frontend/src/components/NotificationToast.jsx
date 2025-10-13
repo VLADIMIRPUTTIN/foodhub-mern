@@ -44,7 +44,7 @@ const NotificationToast = () => {
                         <div className="notification-content">
                             <h4>
                                 {notification.type === 'success' ? 'Recipe Approved!' : 
-                                 notification.type === 'error' ? 'Recipe Rejected' : 
+                                 notification.type === 'error' ? 'Recipe Declined' : 
                                  'New Pending Recipe'}
                             </h4>
                             <p>{notification.message}</p>

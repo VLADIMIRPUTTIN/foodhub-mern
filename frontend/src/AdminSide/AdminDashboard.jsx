@@ -611,7 +611,7 @@ const AdminDashboard = () => {
                         { key: 'recipes', icon: 'bx-book-open', text: 'Recipes', action: () => openModal('recipes') },
                         { key: 'pending', icon: 'bx-time-five', text: 'Pending', action: () => openModal('pending'), badge: stats.pendingRecipes },
                         { key: 'createRecipe', icon: 'bx-plus-circle', text: 'Create Recipe', action: () => openModal('createRecipe') },
-                        { key: 'createIngredient', icon: 'bx-leaf', text: 'Create Ingredient', action: () => openModal('createIngredient') }
+                        { key: 'createIngredient', icon: 'bx-leaf', text: 'Add Ingredient', action: () => openModal('createIngredient') }
                     ].map((tab, index) => (
                         <motion.button 
                             key={tab.key}
@@ -853,7 +853,7 @@ const AdminDashboard = () => {
                     >
                         <i className="bx bx-leaf"></i>
                         <div className="btn-content">
-                            <div className="btn-title">Create New Ingredient</div>
+                            <div className="btn-title">Add New Ingredient</div>
                             <div className="btn-description">
                                 Add new ingredients to expand recipe options
                             </div>
@@ -895,7 +895,7 @@ const AdminDashboard = () => {
             <QuickActionModal
                 isOpen={modalState.createIngredient}
                 onClose={() => closeModal('createIngredient')}
-                title="Create New Ingredient"
+                title="Add New Ingredient"
                 type="recipes"
                 isFullContent={true}
             >

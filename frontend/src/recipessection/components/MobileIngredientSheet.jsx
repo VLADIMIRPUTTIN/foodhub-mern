@@ -1,4 +1,5 @@
 import { Sheet, SheetContent, SheetTrigger } from "../../components/ui/sheet";
+import './MobileIngredientSheet.scss';
 
 const MobileIngredientSheet = ({
     isSheetOpen,

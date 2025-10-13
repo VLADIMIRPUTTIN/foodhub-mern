@@ -1,0 +1,134 @@
+// =============================================================================
+// MOBILE SHEET BUTTON STYLES (FAB)
+// =============================================================================
+.ingredients-fab-btn {
+  position: absolute;
+  background-color: #ffffff;
+  border: none;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  box-shadow: 0 2px 8px rgba(207,153,108,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-top: 1.2rem;
+  margin-right: 5px;
+
+  &:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  i {
+    font-family: 'boxicons' !important;
+    transition: transform 0.3s ease;
+    font-size: 1.4rem;
+    color: #CF996C;
+  }
+  
+  &.close-btn {
+    z-index: 100;
+    top: 1rem;
+    right: 1rem;
+    
+    &.rotating i {
+      animation: rotate-in 0.5s ease-out forwards;
+    }
+  }
+}
+
+// For mobile, adjust size and position
+@media (max-width: 768px) {
+  .ingredients-fab-btn {
+    z-index: 10;
+    top: 0.8rem;
+    right: 1.5rem;
+    width: 38px;
+    height: 38px;
+    font-size: 1.1rem;
+  }
+}
+
+// =============================================================================
+// SHEET CONTENT STYLES
+// =============================================================================
+.ingredients-sheet-content {
+  background: rgb(242, 228, 213);
+  padding: 2rem 1.5rem;
+  height: 100vh;
+  overflow-y: auto;
+  transform: translateX(-100%);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &.sheet-animate-in {
+    transform: translateX(0);
+  }
+  
+  &.sheet-animate-out {
+    transform: translateX(-100%);
+  }
+  
+  // Mobile animation from bottom
+  @media (max-width: 768px) {
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100vw !important;
+    height: 60vh !important;
+    max-height: 80vh !important;
+    position: fixed !important;
+    box-shadow: 0 -8px 32px rgba(207, 153, 108, 0.12);
+
+    // Animate upwards instead of from the side
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &.sheet-animate-in {
+      transform: translateY(0);
+    }
+    &.sheet-animate-out {
+      transform: translateY(100%);
+    }
+  }
+}
+
+// Mobile sheet content adjustments
+@media (max-width: 768px) {
+  .ingredients-sheet-content {
+    padding: 1rem;
+    
+    .sidebar-header {
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+      padding: 0 1rem;
+    }
+    
+    .ingredient-search {
+      padding: 0.7rem !important;
+      border-radius: 40px !important;
+      padding: 0 1rem !important;
+    }
+    
+    // Ingredient buttons in sheet
+    .ingredient-btn {
+      padding: 0.3rem 0.6rem !important;
+      font-size: 0.75rem !important;
+      border-radius: 12px !important;
+    }
+  }
+}
+
+@keyframes rotate-in {
+  0% {
+    transform: rotate(-180deg) scale(0.7);
+    opacity: 0;
+  }
+  70% {
+    transform: rotate(20deg) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}

@@ -101,7 +101,7 @@ export const SocketProvider = ({ children }) => {
                 
                 addNotification({
                     type: 'error',
-                    message: `Your recipe "${data.title}" has been rejected.`,
+                    message: `Your recipe "${data.title}" has been declined.`,
                     reason: data.reason || 'No reason provided'
                 });
                 

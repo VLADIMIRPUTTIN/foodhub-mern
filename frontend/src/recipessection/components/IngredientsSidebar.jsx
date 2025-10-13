@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import './IngredientsSidebar.scss';
 
 const IngredientsSidebar = ({ 
     ingredientSearch, 

@@ -280,9 +280,18 @@ const RecipeModal = ({ open, recipe, onClose }) => {
                                         <div className="modal-price-tag">
                                             <i className='bx bx-money'></i>
                                             <span>
-                                                Est. Price: ₱{typeof recipe.price === 'number' 
+                                                Estimated Cost: ₱{typeof recipe.price === 'number' 
                                                     ? recipe.price.toFixed(2) 
                                                     : "0.00"}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {recipe.servings && (
+                                        <div className="modal-servings-tag">
+                                            <i className='bx bx-group'></i>
+                                            <span>
+                                                Serves {recipe.servings} {recipe.servings === 1 ? 'person' : 'people'}
                                             </span>
                                         </div>
                                     )}

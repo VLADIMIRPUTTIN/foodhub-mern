@@ -322,6 +322,7 @@
     }
 }
 
+/* Modal Cost Tag (formerly price tag) styles */
 .modal-price-tag {
     background: linear-gradient(135deg, rgba(226, 106, 0, 0.1), rgba(184, 107, 27, 0.2));
     border-radius: 10px;
@@ -487,6 +488,27 @@
             background: rgba(255, 248, 238, 0.95);
             color: #e26a00;
         }
+    }
+}
+
+/* Modal Servings Tag styles */
+.modal-servings-tag {
+    background: linear-gradient(135deg, rgba(92, 115, 160, 0.1), rgba(69, 90, 143, 0.2));
+    border-radius: 10px;
+    padding: 0.55rem 0.9rem;
+    color: #455a8f;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+    border: 1px solid rgba(92, 115, 160, 0.15);
+    box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    
+    i {
+        font-size: 1.1rem;
     }
 }
 

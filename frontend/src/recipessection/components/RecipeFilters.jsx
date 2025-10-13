@@ -1,3 +1,5 @@
+import './RecipeFilters.scss';
+
 const RecipeFilters = ({
     searchTerm,
     setSearchTerm,
@@ -27,23 +29,30 @@ const RecipeFilters = ({
                 <option value="Breakfast">Breakfast</option>
                 <option value="Lunch">Lunch</option>
                 <option value="Dinner">Dinner</option>
+                <option value="Snack">Snack</option>
+                <option value="Dessert">Dessert</option>
+                <option value="Appetizer">Appetizer</option>
+                <option value="Beverage">Beverage</option>
             </select>
+            
             <div className="price-filters">
                 <input
                     type="number"
-                    className="filter-price min-price"
-                    placeholder="Min Price"
+                    id="minPrice"
+                    placeholder="Min Cost"
                     value={minPrice}
-                    onChange={e => setMinPrice(e.target.value)}
-                    min={0}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                    min="0"
+                    className="filter-price min-price"
                 />
                 <input
                     type="number"
-                    className="filter-price max-price"
-                    placeholder="Max Price"
+                    id="maxPrice"
+                    placeholder="Max Cost"
                     value={maxPrice}
-                    onChange={e => setMaxPrice(e.target.value)}
-                    min={0}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    min="0"
+                    className="filter-price max-price"
                 />
             </div>
         </div>

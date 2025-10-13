@@ -1,0 +1,172 @@
+// =============================================================================
+// RECIPE CONTROLS & FILTERS
+// =============================================================================
+.recipe-controls {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 200px;
+  max-width: 250px;
+
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #CF996C;
+    font-size: 1.2rem;
+  }
+
+  input {
+    width: 100%;
+    padding: 0.8rem 1rem 0.8rem 2.5rem;
+    border: 2px solid #CF996C;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    outline: none;
+    background: rgba(255, 255, 255, 0.9);
+    transition: all 0.2s ease;
+
+    &::placeholder {
+      color: #b8956a;
+      font-weight: 500;
+    }
+
+    &:focus {
+      border-color: #b86b1b;
+      box-shadow: 0 0 0 3px rgba(207, 153, 108, 0.2);
+    }
+  }
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.filter-btn {
+  padding: 0.5rem 1rem;
+  border: 2px solid #CF996C;
+  background: white;
+  color: #CF996C;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover,
+  &.active {
+    background: #CF996C;
+    color: white;
+  }
+}
+
+.filter-category {
+  border: 2px solid #e0e0e0;
+  border-radius: 25px;
+  padding: 0.55rem 1.2rem;
+  font-size: 0.95rem;
+  background: rgb(242, 228, 213) !important;
+  color: #666 !important;
+  font-weight: bold !important;
+  transition: border-color 0.3s;
+  min-width: 150px;
+  flex: 0 0 auto;
+  
+  &:focus {
+    outline: none;
+    border-color: #CF996C;
+  }
+
+  option {
+    font-size: 1rem;
+  }
+}
+
+// Separate styling for price filters container
+.price-filters {
+  display: flex !important;
+  gap: 1rem !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  flex: 0 0 auto;
+  
+  // Individual styling for min price input
+  .filter-price.min-price {
+    border: 2px solid #e0e0e0;
+    border-radius: 25px;
+    padding: 0.55rem 1rem;
+    font-size: 0.95rem;
+    width: 130px;
+    min-width: 130px;
+    background: rgb(242, 228, 213) !important;
+    color: #666 !important;
+    font-weight: bold !important;
+    transition: border-color 0.3s;
+    
+    &:focus {
+      outline: none !important;
+      border-color: #CF996C !important;
+    }
+    
+    &::placeholder {
+      color: #666 !important;
+      font-weight: bold !important;
+    }
+  }
+  
+  // Individual styling for max price input
+  .filter-price.max-price {
+    border: 2px solid #e0e0e0;
+    border-radius: 25px;
+    padding: 0.55rem 1rem;
+    font-size: 0.95rem;
+    width: 130px;
+    min-width: 130px;
+    background: rgb(242, 228, 213) !important;
+    color: #666 !important;
+    font-weight: bold !important;
+    transition: border-color 0.3s;
+    margin-left: 0 !important;
+    
+    &:focus {
+      outline: none !important;
+      border-color: #CF996C !important;
+    }
+    
+    &::placeholder {
+      color: #666 !important;
+      font-weight: bold !important;
+    }
+  }
+}
+
+// Media query for mobile adjustments
+@media (max-width: 768px) {
+  .recipe-controls {
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .search-box {
+    min-width: 160px;
+  }
+  
+  .filter-category,
+  .filter-price {
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+  }
+  
+  .price-filters {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

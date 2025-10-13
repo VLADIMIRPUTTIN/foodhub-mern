@@ -1,0 +1,141 @@
+// =============================================================================
+// PAGINATION CONTROLS
+// =============================================================================
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 3rem;
+  margin-bottom: 2rem;
+
+  .pagination-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #CF996C 0%, #BB8860 100%);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(207, 153, 108, 0.2);
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, #BB8860 0%, #a67a5a 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(207, 153, 108, 0.3);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    i {
+      font-size: 1.1rem;
+    }
+  }
+
+  .page-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(207, 153, 108, 0.1);
+    backdrop-filter: blur(4px);
+
+    .current-page {
+      color: #CF996C;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .page-separator {
+      color: #999;
+      font-size: 0.9rem;
+    }
+
+    .total-pages {
+      color: #666;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+  }
+}
+
+// =============================================================================
+// MOBILE PAGINATION STYLES
+// =============================================================================
+.mobile-pagination-container {
+  display: none; // Hidden by default on desktop
+
+  .mobile-pagination-swipe {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+
+    .swipe-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #999;
+      font-size: 0.85rem;
+      font-weight: 500;
+
+      i {
+        font-size: 1rem;
+        color: #CF996C;
+        animation: pulse 1.5s infinite;
+      }
+    }
+
+    .mobile-page-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 20px;
+      box-shadow: 0 2px 8px rgba(207, 153, 108, 0.1);
+
+      .current-page {
+        color: #CF996C;
+        font-size: 1.1rem;
+        font-weight: 700;
+      }
+
+      .page-separator {
+        color: #999;
+        font-size: 0.9rem;
+      }
+
+      .total-pages {
+        color: #666;
+        font-size: 1.1rem;
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+// Mobile pagination adjustments
+@media (max-width: 768px) {
+  // Hide desktop pagination controls on mobile
+  .pagination-controls {
+    display: none;
+  }
+
+  // Show mobile pagination container
+  .mobile-pagination-container {
+    display: none; // Keep hidden as requested
+  }
+}

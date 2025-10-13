@@ -33,21 +33,6 @@ i[class*=" bx-"] {
   100% { left: 100%; }
 }
 
-@keyframes rotate-in {
-  0% {
-    transform: rotate(-180deg) scale(0.7);
-    opacity: 0;
-  }
-  70% {
-    transform: rotate(20deg) scale(1.1);
-    opacity: 1;
-  }
-  100% {
-    transform: rotate(0deg) scale(1);
-    opacity: 1;
-  }
-}
-
 // =============================================================================
 // MAIN LAYOUT
 // =============================================================================
@@ -137,7 +122,7 @@ i[class*=" bx-"] {
 }
 
 // =============================================================================
-// INGREDIENT BUTTONS
+// INGREDIENT BUTTONS - Common style used across components
 // =============================================================================
 .ingredient-btn {
   background: rgba(255, 255, 255, 0.95);
@@ -185,7 +170,7 @@ i[class*=" bx-"] {
 }
 
 // =============================================================================
-// RECIPE CONTAINER & CONTROLS
+// RECIPE CONTAINER
 // =============================================================================
 .recipe-container {
   flex: 1;
@@ -196,316 +181,41 @@ i[class*=" bx-"] {
   flex-direction: column;
 }
 
-.recipe-controls {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  margin-bottom: 2rem;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.search-box {
-  position: relative;
-  flex: 0 0 auto;
-  min-width: 200px;
-  max-width: 250px;
-
-  .search-icon {
-    position: absolute;
-    left: 0.7rem; top: 50%;
-    transform: translateY(-50%);
-    color: #999;
-    font-size: 1rem;
-    pointer-events: none;
-  }
-
-  input {
-    width: 100%;
-    padding: 0.55rem 0.8rem 0.55rem 2rem;
-    border: 2px solid #e0e0e0;
-    border-radius: 25px;
-    font-size: 0.95rem;
-    transition: border-color 0.3s ease;
-    color: #666 !important;
-    font-weight: bold !important;
-    background: rgb(242, 228, 213) !important;
-
-    &:focus {
-      outline: none;
-      border-color: #CF996C;
-    }
-
-    &::placeholder {
-      color: #666 !important;
-      font-weight: bold !important;
-    }
-  }
-}
-
-.filter-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.filter-btn {
-  padding: 0.5rem 1rem;
-  border: 2px solid #CF996C;
-  background: white;
-  color: #CF996C;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover,
-  &.active {
-    background: #CF996C;
-    color: white;
-  }
-}
-
-.filter-category {
-  border: 2px solid #e0e0e0;
-  border-radius: 25px;
-  padding: 0.55rem 1.2rem;
-  font-size: 0.95rem;
-  background: rgb(242, 228, 213) !important;
-  color: #666 !important;
-  font-weight: bold !important;
-  transition: border-color 0.3s;
-  min-width: 150px;
-  flex: 0 0 auto;
-  
-  &:focus {
-    outline: none;
-    border-color: #CF996C;
-  }
-
-  option {
-    color: #666 !important;
-    font-weight: bold !important;
-  }
-}
-
-// Separate styling for price filters container
-.price-filters {
-  display: flex !important;
-  gap: 1rem !important;
-  padding: 0 !important;
-  margin-left: 0 !important;
-  flex: 0 0 auto;
-  
-  // Individual styling for min price input
-  .filter-price.min-price {
-    width: 170px !important;
-    padding: 0.55rem 1rem !important;
-    font-size: 0.95rem !important;
-    border-radius: 25px !important;
-    background-color: rgb(242, 228, 213) !important;
-    border: 2px solid #e0e0e0 !important;
-    color: #666 !important;
-    font-weight: bold !important;
-    
-    &:focus {
-      outline: none !important;
-      border-color: #CF996C !important;
-    }
-    
-    &::placeholder {
-      color: #666 !important;
-      font-weight: bold !important;
-    }
+// =============================================================================
+// RESPONSIVE INGREDIENTS STYLES - Container only
+// =============================================================================
+.ingredients-responsive {
+  .ingredients-sheet-mobile {
+    display: none; // Hide by default (desktop)
   }
   
-  // Individual styling for max price input
-  .filter-price.max-price {
-    width: 170px !important;
-    padding: 0.55rem 1rem !important;
-    font-size: 0.95rem !important;
-    border-radius: 25px !important;
-    background-color: rgb(242, 228, 213) !important;
-    border: 2px solid #e0e0e0 !important;
-    color: #666 !important;
-    font-weight: bold !important;
-    margin-left: 2.5rem !important; // Reset margin for max price input
-    &:focus {
-      outline: none !important;
-      border-color: #CF996C !important;
+  .ingredients-sidebar {
+    display: block; // Show by default (desktop)
+  }
+}
+
+// Mobile responsive - show sheet, hide sidebar
+@media (max-width: 768px) {
+  .ingredients-responsive {
+    .ingredients-sheet-mobile {
+      display: block; // Show on mobile
     }
     
-    &::placeholder {
-      color: #666 !important;
-      font-weight: bold !important;
+    .ingredients-sidebar {
+      display: none; // Hide on mobile
     }
   }
 }
 
 // =============================================================================
-// INGREDIENTS SIDEBAR
-// =============================================================================
-.ingredients-sidebar {
-  width: 200px;
-  min-width: 180px;
-  background: rgb(242, 228, 213);
-  border-radius: 24px;
-  padding: 1.8rem 1rem 1.5rem 1rem;
-  margin-top: 1rem;
-  height: fit-content;
-  max-height: calc(100vh - 2rem);
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  border: 2px solid rgba(255, 183, 122, 0.3);
-  box-shadow: 
-    0 8px 32px rgba(207, 153, 108, 0.12),
-    0 2px 8px rgba(255, 183, 122, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  position: relative;
-  overflow: hidden;
-  opacity: 0;
-  transform: translateX(-40px) scale(0.95);
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-
-  // Decorative backgrounds
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0; right: 0;
-    width: 80px; height: 80px;
-    background: radial-gradient(circle, rgba(255, 183, 122, 0.1) 0%, transparent 70%);
-    border-radius: 50%;
-    transform: translate(30px, -30px);
-    pointer-events: none;
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0;
-    width: 60px; height: 60px;
-    background: radial-gradient(circle, rgba(207, 153, 108, 0.08) 0%, transparent 70%);
-    border-radius: 50%;
-    transform: translate(-20px, 20px);
-    pointer-events: none;
-  }
-
-  &.sidebar-animate-in {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-
-  .sidebar-header {
-    margin-bottom: 1.8rem;
-    position: relative;
-    z-index: 2;
-    
-    .sidebar-title {
-      font-size: 1.45rem;
-      font-weight: 800;
-      background: linear-gradient(90deg, #f5831f 60%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: 0.5px;
-      display: block;
-      margin-bottom: 0.8rem;
-      
-      .highlight {
-        background: linear-gradient(90deg, #f5831f 60%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        font-weight: 900;
-      }
-    }
-    
-    .sidebar-underline {
-      width: 55px;
-      height: 4px;
-      background: linear-gradient(90deg, #ffb97a 60%);
-      border-radius: 4px;
-      position: relative;
-      overflow: hidden;
-      
-      &::after {
-        content: '';
-        position: absolute;
-        top: 0; left: -100%;
-        width: 100%; height: 100%;
-      }
-    }
-  }
-
-  .search-container {
-    position: relative;
-    margin-bottom: 2rem;
-  }
-
-  .ingredient-search {
-    width: 100%;
-    padding: 0.8rem 1rem !important;
-    border-radius: 50px !important;
-    border: 2px solid rgb(249, 180, 110) !important;
-    font-size: 1rem !important;
-    background: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(6px) !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    box-shadow: 
-      0 3px 8px rgba(207, 153, 108, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
-    
-    &::placeholder {
-      color: #b8956a !important;
-      font-weight: 500 !important;
-    }
-    
-    &:focus {
-      border-color: #CF996C !important;
-      outline: none !important;
-      box-shadow: 
-        0 0 0 3px rgba(207, 153, 108, 0.15),
-        0 4px 12px rgba(207, 153, 108, 0.1) !important;
-      background: rgba(255, 255, 255, 1) !important;
-      transform: translateY(-1px) !important;
-    }
-  }
-
-  .ingredient-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem 0.6rem; // Reduced from 0.6rem 0.8rem
-    max-height: 450px;
-    overflow-y: auto;
-    padding: 0.5rem;
-    position: relative;
-    z-index: 2;
-    margin-bottom: 1.5rem;
-    
-    &::-webkit-scrollbar { width: 6px; }
-    &::-webkit-scrollbar-track {
-      background: rgba(243, 209, 176, 0.2);
-      border-radius: 10px;
-    }
-    &::-webkit-scrollbar-thumb {
-      background: linear-gradient(135deg, #CF996C, #ffb97a);
-      border-radius: 10px;
-      
-      &:hover {
-        background: linear-gradient(135deg, #b86b1b, #e26a00);
-      }
-    }
-  }
-}
-
-// =============================================================================
-// MOBILE RESPONSIVE STYLES (768px and below)
+// MOBILE RESPONSIVE STYLES
 // =============================================================================
 @media (max-width: 768px) {
   // Main content adjustments
   .main-content {
     flex-direction: column;
     padding: 1rem;
-    margin-top: -1.5; // Adjusted for mobile
+    margin-top: -1.5rem; // Adjusted for mobile
   }
 
   // Recipe container adjustments
@@ -563,344 +273,7 @@ i[class*=" bx-"] {
         font-weight: 700 !important;
         text-align: center !important;
         margin: 0 !important;
-        padding: 0 1rem !important; // Add horizontal padding for better readability
       }
-    }
-  }
-
-  // Ingredient buttons in sidebar
-  .ingredient-btn {
-    padding: 0.2rem 0.4rem; // Further reduced for mobile
-    font-size: 0.7rem; // Further reduced for mobile
-  }
-
-  // Ingredient list in sidebar
-  .ingredient-list {
-    padding: 0.5rem !important;
-    max-height: calc(100vh - 380px) !important;
-    overflow-y: auto !important;
-    gap: 0.4rem !important;
-    display: flex !important;
-    flex-wrap: wrap !important;
-    position: relative;
-    z-index: 3;
-    margin-bottom: 3rem !important;
-    
-    &::-webkit-scrollbar { width: 6px; }
-    &::-webkit-scrollbar-track {
-      background: rgba(243, 209, 176, 0.2);
-      border-radius: 10px;
-    }
-    &::-webkit-scrollbar-thumb {
-      background: linear-gradient(135deg, #CF996C, #ffb97a);
-      border-radius: 10px;
-      
-      &:hover {
-        background: linear-gradient(135deg, #b86b1b, #e26a00);
-      }
-    }
-  }
-
-  // Enhanced Mobile Sheet Content
-  .ingredients-sheet-content {
-    // Ingredient List
-    .ingredient-list {
-      padding: 0.5rem !important;
-      max-height: calc(100vh - 380px) !important;
-      overflow-y: auto !important;
-      gap: 0.5rem !important; // Reduced from 0.8rem
-      display: flex !important;
-      flex-wrap: wrap !important;
-      position: relative;
-      z-index: 3;
-      margin-bottom: 3rem !important;
-      
-      // Ingredient Buttons in Sheet
-      .ingredient-btn {
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 248, 238, 0.95) 100%) !important;
-        border: 2px solid rgba(207, 153, 108, 0.35) !important;
-        color: #CF996C !important;
-        border-radius: 18px !important; // Reduced from 22px
-        padding: 0.5rem 0.9rem !important; // Reduced from 0.7rem 1.2rem
-        font-size: 0.85rem !important; // Reduced from 0.95rem
-        font-weight: 600 !important;
-        cursor: pointer !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        position: relative;
-        overflow: hidden;
-        backdrop-filter: blur(4px) !important;
-        box-shadow: 
-          0 2px 6px rgba(207, 153, 108, 0.08),
-          inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
-        
-        &::before {
-          content: '';
-          position: absolute;
-          top: 0; left: -100%;
-          width: 100%; height: 100%;
-          background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
-          transition: left 0.5s;
-        }
-
-        &:hover {
-          background: rgba(207, 153, 108, 0.1);
-          border-color: #CF996C;
-          color: #b86b1b;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(207, 153, 108, 0.2);
-          
-          &::before { left: 100%; }
-        }
-
-        &.selected {
-          background: linear-gradient(135deg, #e7b57a 0%, #CF996C 100%) !important;
-          color: #fff !important;
-          border: 2px solid #e26a00 !important;
-          box-shadow: 0 4px 15px rgba(207, 153, 108, 0.3), 0 2px 8px rgba(226, 106, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
-          font-weight: 700 !important;
-          transform: translateY(-1px) !important;
-        }
-      }
-    }
-  }
-
-  .ingredients-sheet-mobile {
-    display: block;
-  }
-
-  
-
-  // Sheet content styles
-  .ingredients-sheet-content {
-    border-radius: 24px 24px 0 0 !important; // Rounded top corners only
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    top: auto !important;
-    width: 100vw !important;
-    height: 60vh !important;
-    max-height: 80vh !important;
-    position: fixed !important;
-    box-shadow: 0 -8px 32px rgba(207, 153, 108, 0.12);
-
-    // Animate upwards instead of from the side
-    transform: translateY(100%);
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-
-    &.sheet-animate-in {
-      transform: translateY(0);
-    }
-    &.sheet-animate-out {
-      transform: translateY(100%);
-    }
-  }
-}
-
-// =============================================================================
-// MOBILE SHEET BUTTON STYLES (FAB)
-// =============================================================================
-.ingredients-fab-btn {
-  position: absolute;
-  background-color: #ffffff;
-  border: none;
-  border-radius: 50%;
-  width: 42px;
-  height: 42px;
-  box-shadow: 0 2px 8px rgba(207,153,108,0.18);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  margin-top: 1.2rem;
-  margin-right: 5px;
-
-  &:active {
-    transform: translateY(0) scale(0.98);
-  }
-
-  i {
-    font-family: 'boxicons' !important;
-    transition: transform 0.3s ease;
-    font-size: 1.4rem;
-    color: #CF996C;
-  }
-}
-
-// For mobile, you can adjust size and position if needed:
-@media (max-width: 768px) {
-  .ingredients-fab-btn {
-    z-index: 10;
-    top: 0rem;
-    right: 1rem;
-    width: 38px;
-    height: 38px;
-    font-size: 1.1rem;
-  }
-}
-
-// =============================================================================
-// SHEET CONTENT STYLES
-// =============================================================================
-.ingredients-sheet-content {
-  background: rgb(242, 228, 213);
-  padding: 2rem 1.5rem;
-  height: 100vh;
-  overflow-y: auto;
-  transform: translateX(-100%);
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-   border-radius: 0 24px 24px 0; // top-right and bottom-right corners only
-    
-  
-  
-  &.sheet-animate-in {
-    transform: translateX(0);
-  }
-  
-  &.sheet-animate-out {
-    transform: translateX(-100%);
-  }
-  
-  // Remove or override horizontal animation for mobile
-  @media (max-width: 768px) {
-    transform: translateY(100%);
-    &.sheet-animate-in {
-      transform: translateY(0);
-    }
-    &.sheet-animate-out {
-      transform: translateY(100%);
-    }
-  }
-  
-  .sidebar-header {
-    margin-bottom: 2rem;
-    
-    .sidebar-title {
-      font-size: 1.5rem;
-      font-weight: 800;
-      background: linear-gradient(90deg, #f5831f 60%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: 0.5px;
-      display: block;
-      margin-bottom: 0.8rem;
-      
-      .highlight {
-        background: linear-gradient(90deg, #f5831f 60%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        font-weight: 900;
-      }
-    }
-    
-    .sidebar-underline {
-      width: 55px;
-      height: 4px;
-      background: linear-gradient(90deg, #ffb97a 60%);
-      border-radius: 4px;
-    }
-  }
-  
-  .ingredient-search {
-    width: 100%;
-    padding: 0.8rem 1rem;
-    border-radius: 50px;
-    border: 2px solid rgb(249, 180, 110);
-    font-size: 1rem;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(6px);
-    margin-bottom: 1.5rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    
-    &::placeholder {
-      color: #b8956a;
-      font-weight: 500;
-    }
-    
-    &:focus {
-      border-color: #CF996C;
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(207, 153, 108, 0.15);
-      background: rgba(255, 255, 255, 1);
-      transform: translateY(-1px);
-    }
-  }
-  
-  .ingredient-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    max-height: calc(100vh - 300px);
-    overflow-y: auto;
-    padding: 0.5rem;
-    
-    &::-webkit-scrollbar { width: 6px; }
-    &::-webkit-scrollbar-track {
-      background: rgba(243, 209, 176, 0.2);
-      border-radius: 10px;
-    }
-    &::-webkit-scrollbar-thumb {
-      background: linear-gradient(135deg, #CF996C, #ffb97a);
-      border-radius: 10px;
-      
-      &:hover {
-        background: linear-gradient(135deg, #b86b1b, #e26a00);
-      }
-    }
-  }
-}
-
-// =============================================================================
-// RESPONSIVE INGREDIENTS STYLES
-// =============================================================================
-.ingredients-responsive {
-  .ingredients-sheet-mobile {
-    display: none; // Hide by default (desktop)
-  }
-  
-  .ingredients-sidebar {
-    display: block; // Show by default (desktop)
-  }
-}
-
-// Mobile responsive - show sheet, hide sidebar
-@media (max-width: 768px) {
-  .ingredients-responsive {
-    .ingredients-sheet-mobile {
-      display: block; // Show on mobile
-    }
-    
-    .ingredients-sidebar {
-      display: none; // Hide on mobile
-    }
-  }
-  
-  // Mobile FAB adjustments
-  
-  
-  // Mobile sheet content adjustments
-  .ingredients-sheet-content {
-    padding: 1.5rem 1rem;
-    
-    .sidebar-header {
-      margin-bottom: 2rem;
-      
-      .sidebar-title {
-        font-size: 1.3rem;
-        margin-top: 5rem;
-      }
-    }
-    
-    .ingredient-search {
-      padding: 0.7rem 0.9rem;
-      font-size: 0.9rem;
-      margin-bottom: 1rem;
-    }
-    
-    .ingredient-list {
-      gap: 0.4rem;
-      max-height: calc(100vh - 250px);
     }
   }
 }
@@ -1846,6 +1219,32 @@ i[class*=" bx-"] {
   span {
     line-height: 1;
   }
+}
+
+// =============================================================================
+// RECIPE SERVINGS & META
+// =============================================================================
+.recipe-servings {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(92, 115, 160, 0.15);
+    padding: 0.25rem 0.5rem;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #455a8f;
+    
+    i {
+        font-size: 0.8rem;
+    }
+}
+
+.recipe-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.7rem;
 }
   }
 }
