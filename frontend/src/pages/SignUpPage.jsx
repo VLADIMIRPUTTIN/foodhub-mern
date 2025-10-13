@@ -6,12 +6,14 @@ import PasswordStrengthMeter from "../components/PasswordStrengthMeter";
 import { useAuthStore } from "../store/authStore";
 import { GoogleLogin } from '@react-oauth/google';
 import axios from "axios";
+import TermsAndConditionsModal from "./TermsAndConditionsModal";
 import './SignUpPage.scss'; // Import the SCSS file for styling
 
 const SignUpPage = () => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showTerms, setShowTerms] = useState(false);
     const navigate = useNavigate();
 
     const { signup, isLoading, error, setUser } = useAuthStore();
@@ -164,6 +166,25 @@ const SignUpPage = () => {
                         </motion.button>
                     </form>
 
+                    {/* Terms and Conditions Button */}
+                    <button
+                        type="button"
+                        className="terms-link"
+                        style={{ 
+                            background: "none", 
+                            border: "none", 
+                            color: "#F8F1E5",
+                            cursor: "pointer", 
+                            fontSize: "0.9em",
+                            marginTop: "1rem",
+                            textDecoration: "underline",
+                            opacity: "0.9"
+                        }}
+                        onClick={() => setShowTerms(true)}
+                    >
+                        Terms & Conditions
+                    </button>
+
                     {/* Social Login Section */}
                     <div className="social-signup">
                         <p className="or-divider">OR</p>
@@ -184,6 +205,12 @@ const SignUpPage = () => {
                     </div>
                 </motion.div>
             </div>
+
+            {/* Terms and Conditions Modal */}
+            <TermsAndConditionsModal 
+                isOpen={showTerms} 
+                onClose={() => setShowTerms(false)} 
+            />
         </div>
     );
 };

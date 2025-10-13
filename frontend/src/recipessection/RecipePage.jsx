@@ -4,64 +4,22 @@ import Navbar from '../pages/NavbarPage';
 import RecipeModal from './RecipeModal';
 import SelectedIngredients from './SelectedIngredients';
 import './RecipePage.scss';
-import { Sheet, SheetContent, SheetTrigger } from "../components/ui/sheet";
 import { useAuthStore } from '../store/authStore';
 import LoginPromptModal from '../components/ui/login-prompt-modal';
-import { toast } from "react-hot-toast";
-import RatingModal from "../components/RatingModal"; // Import the RatingModal at the top
-import RateButton from '../components/RateButton'; // Add this import
-import BottomNavbar from "../components/BottomNavbar";
-import CameraModal from "../components/CameraModal";
+import { useToast } from '../components/ui/toast';
 
-// Add this helper function above your component
-const ingredientMatches = (recipeIngredient, selectedIngredient) => {
-    // Normalize selected ingredient
-    const selectedLower = selectedIngredient.toLowerCase().trim();
-    
-    // Handle pluralization
-    const singularSelected = selectedLower.endsWith('s') ? selectedLower.slice(0, -1) : selectedLower;
-    const pluralSelected = selectedLower.endsWith('s') ? selectedLower : selectedLower + 's';
-    
-    // Recipe ingredient might be an object or string
-    if (typeof recipeIngredient === 'string') {
-        const ingredientLower = recipeIngredient.toLowerCase();
-        return ingredientLower.includes(selectedLower) || 
-               ingredientLower.includes(singularSelected) || 
-               ingredientLower.includes(pluralSelected);
-    }
-    
-    // If it's an object with name property
-    if (recipeIngredient && recipeIngredient.name) {
-        const ingredientName = recipeIngredient.name.toLowerCase();
-        
-        // Direct match (including pluralization)
-        if (ingredientName === selectedLower || 
-            ingredientName === singularSelected || 
-            ingredientName === pluralSelected) {
-            return true;
-        }
-        
-        // Check if name contains the selected ingredient
-        if (ingredientName.includes(selectedLower) ||
-            ingredientName.includes(singularSelected) ||
-            ingredientName.includes(pluralSelected)) {
-            return true;
-        }
-        
-        // Check full ingredient string with amount and unit
-        const fullIngredient = `${recipeIngredient.amount || ''} ${recipeIngredient.unit || ''} ${recipeIngredient.name}`.toLowerCase();
-        if (fullIngredient.includes(selectedLower) ||
-            fullIngredient.includes(singularSelected) ||
-            fullIngredient.includes(pluralSelected)) {
-            return true;
-        }
-    }
-    
-    return false;
-}
+// Import our components
+import RecipeGrid from './components/RecipeGrid';
+import IngredientsSidebar from './components/IngredientsSidebar';
+import MobileIngredientSheet from './components/MobileIngredientSheet';
+import RecipeFilters from './components/RecipeFilters';
+import PaginationControls from './components/PaginationControls';
+import RatingModal from './components/RatingModal';
+import { ingredientMatches, getImageUrl } from './components/utils/ingredientUtils';
 
 const RecipePage = () => {
     const { user } = useAuthStore();
+    const { toast } = useToast();
     const [recipes, setRecipes] = useState([]);
     const [ingredients, setIngredients] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -76,11 +34,14 @@ const RecipePage = () => {
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [sheetAnimate, setSheetAnimate] = useState(false);
     const [sheetOut, setSheetOut] = useState(false);
-    const [favoriteRecipes, setFavoriteRecipes] = useState([]); // New state for favorites
-    const [showLoginPrompt, setShowLoginPrompt] = useState(false); // New state for login prompt
-    const [ratingModalOpen, setRatingModalOpen] = useState(false); // Add to the state variables
-    const [recipeToRate, setRecipeToRate] = useState(null); // Add to the state variables
+    const [favoriteRecipes, setFavoriteRecipes] = useState([]);
+    const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+    const [ratingModalOpen, setRatingModalOpen] = useState(false);
+    const [recipeToRate, setRecipeToRate] = useState(null);
     const [cameraOpen, setCameraOpen] = useState(false);
+    
+    // Current meal type based on time of day
+    const [currentMealType, setCurrentMealType] = useState('');
 
     // Touch/swipe handling refs and states
     const gridContainerRef = useRef(null);
@@ -90,8 +51,6 @@ const RecipePage = () => {
     const [isMobile, setIsMobile] = useState(false);
     
     const sidebarRef = useRef(null);
-
-    // Add ref for the recipe container to scroll to top
     const recipeContainerRef = useRef(null);
 
     // Function to scroll to top of recipe container
@@ -102,15 +61,10 @@ const RecipePage = () => {
                 behavior: 'smooth'
             });
         }
-        // Fallback: scroll the main window if container scroll doesn't work
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
     };
 
-    // UPDATED PAGINATION LOGIC - 8 recipes per page (2 rows × 4 columns)
-    const RECIPES_PER_PAGE = 8; // Changed from 16 to 8
+    // PAGINATION LOGIC - 8 recipes per page (2 rows × 4 columns)
+    const RECIPES_PER_PAGE = 8;
 
     // Detect mobile device
     useEffect(() => {
@@ -122,6 +76,25 @@ const RecipePage = () => {
         window.addEventListener('resize', checkMobile);
         
         return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+    
+    // Determine current meal type based on time
+    useEffect(() => {
+        const getCurrentMealType = () => {
+            const currentHour = new Date().getHours();
+            
+            if (currentHour >= 5 && currentHour < 11) {
+                return 'Breakfast';
+            } else if (currentHour >= 11 && currentHour < 15) {
+                return 'Lunch';
+            } else if (currentHour >= 15 && currentHour < 18) {
+                return 'Snack';
+            } else {
+                return 'Dinner';
+            }
+        };
+        
+        setCurrentMealType(getCurrentMealType());
     }, []);
 
     // Touch handling functions
@@ -148,15 +121,11 @@ const RecipePage = () => {
         const isRightSwipe = distance < -50;
         
         if (isLeftSwipe && currentPage < totalPages) {
-            // Swipe left - next page
             setCurrentPage(prev => prev + 1);
-            scrollToTop(); // Auto-scroll to top
         }
         
         if (isRightSwipe && currentPage > 1) {
-            // Swipe right - previous page
             setCurrentPage(prev => prev - 1);
-            scrollToTop(); // Auto-scroll to top
         }
         
         setIsSwiping(false);
@@ -164,37 +133,25 @@ const RecipePage = () => {
         setTouchEnd(null);
     };
 
-    // Helper function to construct proper image URL
-    const getImageUrl = (recipe) => {
-        if (!recipe.imageUrl) {
-            // Return a default placeholder image if no image URL
-            return 'https://via.placeholder.com/300x200?text=No+Image';
-        }
-        // If imageUrl is already a full URL (starts with http), use it as is
-        if (recipe.imageUrl.startsWith('http')) {
-            return recipe.imageUrl;
-        }
-        // If imageUrl is a relative path, construct the full URL
-        const cleanPath = recipe.imageUrl.startsWith('/') ? recipe.imageUrl.slice(1) : recipe.imageUrl;
-        const baseURL = import.meta.env.MODE === "development"
-            ? "http://localhost:5000"
-            : "";
-        return `${baseURL}/${cleanPath}`;
-    };
-
+    // Fetch recipes
     useEffect(() => {
         const baseURL = import.meta.env.MODE === "development"
             ? "http://localhost:5000"
             : "";
         const fetchRecipes = async () => {
             try {
-                // Only display admin-created (public) recipes
                 const response = await axios.get(`${baseURL}/api/recipes`);
+                let allRecipes = [];
+                
                 if (response.data.success && response.data.recipes) {
-                    setRecipes(response.data.recipes);
+                    allRecipes = response.data.recipes;
+                } else if (Array.isArray(response.data)) {
+                    allRecipes = response.data;
                 } else {
-                    setRecipes(response.data || []);
+                    allRecipes = [];
                 }
+                
+                setRecipes(allRecipes);
             } catch (error) {
                 console.error('Error fetching recipes:', error);
                 setRecipes([]);
@@ -203,6 +160,7 @@ const RecipePage = () => {
         fetchRecipes();
     }, []);
 
+    // Fetch ingredients
     useEffect(() => {
         const baseURL = import.meta.env.MODE === "development"
             ? "http://localhost:5000"
@@ -215,6 +173,7 @@ const RecipePage = () => {
             .catch(() => setIngredients([]));
     }, []);
 
+    // Filter ingredients based on search
     useEffect(() => {
         setFilteredIngredients(
             ingredients.filter(ing =>
@@ -223,53 +182,37 @@ const RecipePage = () => {
         );
     }, [ingredientSearch, ingredients]);
 
-    // Update the filtered recipes logic with more robust ingredient matching
-    const filteredRecipes = recipes.filter(recipe => {
-        // Handle both 'name' and 'title' fields for backward compatibility
-        const recipeName = recipe.title || recipe.name || '';
-        const matchesSearch = recipeName.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        const matchesIngredients =
-            selectedIngredients.length === 0 ||
-            (recipe.ingredients &&
-                selectedIngredients.every(selIng =>
-                    recipe.ingredients.some(ri => ingredientMatches(ri, selIng))
-                )
-            );
-        
-        const matchesCategory = !categoryFilter || recipe.category === categoryFilter;
-        
-        // Enhanced price filtering with more careful parsing
-        // Convert recipe price to number and handle edge cases
-        const recipePrice = typeof recipe.price === 'number' 
-            ? recipe.price 
-            : recipe.price 
-                ? parseFloat(recipe.price) 
-                : 0;
-                
-        // Parse min price - if empty string or invalid, set to null (no minimum filter)
-        const minPriceNum = minPrice !== '' && !isNaN(parseFloat(minPrice)) 
-            ? parseFloat(minPrice) 
-            : null;
+    // Update the filtered recipes logic with time-based recipes first
+    const filteredRecipes = recipes
+        .filter(recipe => {
+            const recipeName = recipe.title || recipe.name || '';
+            const matchesSearch = recipeName.toLowerCase().includes(searchTerm.toLowerCase());
             
-        // Parse max price - if empty string or invalid, set to null (no maximum filter)
-        const maxPriceNum = maxPrice !== '' && !isNaN(parseFloat(maxPrice)) 
-            ? parseFloat(maxPrice) 
-            : null;
-        
-        // Apply min price filter if set, otherwise pass all recipes
-        // Example: if min price is 500, only show recipes with price >= 500
-        const matchesMinPrice = minPriceNum === null || recipePrice >= minPriceNum;
-        
-        // Apply max price filter if set, otherwise pass all recipes
-        // Example: if max price is 1000, only show recipes with price <= 1000
-        const matchesMaxPrice = maxPriceNum === null || recipePrice <= maxPriceNum;
-        
-        // Recipe passes if it matches BOTH the min and max conditions
-        return matchesSearch && matchesIngredients && matchesCategory && matchesMinPrice && matchesMaxPrice;
-    });
+            const matchesIngredients =
+                selectedIngredients.length === 0 ||
+                (recipe.ingredients &&
+                    selectedIngredients.every(selIng =>
+                        recipe.ingredients.some(ri => ingredientMatches(ri, selIng))
+                    )
+                );
+                
+            const matchesCategoryFilter = !categoryFilter || recipe.category === categoryFilter;
+            const matchesMinPrice = !minPrice || (recipe.price && recipe.price >= Number(minPrice));
+            const matchesMaxPrice = !maxPrice || (recipe.price && recipe.price <= Number(maxPrice));
+            
+            return matchesSearch && matchesIngredients && matchesCategoryFilter && matchesMinPrice && matchesMaxPrice;
+        })
+        .sort((a, b) => {
+            // Sort by time-based first
+            const aIsTimeBased = a.category && a.category.toLowerCase() === currentMealType.toLowerCase();
+            const bIsTimeBased = b.category && b.category.toLowerCase() === currentMealType.toLowerCase();
+            
+            if (aIsTimeBased && !bIsTimeBased) return -1;
+            if (!aIsTimeBased && bIsTimeBased) return 1;
+            return 0;
+        });
 
-    // UPDATED PAGINATION LOGIC
+    // PAGINATION LOGIC
     const totalPages = Math.ceil(filteredRecipes.length / RECIPES_PER_PAGE);
     const paginatedRecipes = filteredRecipes.slice(
         (currentPage - 1) * RECIPES_PER_PAGE,
@@ -285,7 +228,8 @@ const RecipePage = () => {
     // Reset to page 1 if filters change and current page is out of range
     useEffect(() => {
         if (currentPage > totalPages && totalPages > 0) setCurrentPage(1);
-    }, [filteredRecipes, totalPages, currentPage]);
+        scrollToTop();
+    }, [filteredRecipes.length, totalPages, currentPage]);
 
     const handleIngredientClick = (ing) => {
         setSelectedIngredients(selected =>
@@ -298,15 +242,6 @@ const RecipePage = () => {
     const handleRemoveIngredient = (ingredientToRemove) => {
         setSelectedIngredients(selectedIngredients.filter(ing => ing !== ingredientToRemove));
     };
-
-    useEffect(() => {
-        // Add animation class after mount
-        if (sidebarRef.current) {
-            setTimeout(() => {
-                sidebarRef.current.classList.add('sidebar-animate-in');
-            }, 80); // slight delay for effect
-        }
-    }, []);
 
     // Handle open/close with animation
     const handleSheetOpenChange = (open) => {
@@ -340,107 +275,94 @@ const RecipePage = () => {
 
     // Update all axios requests for favorites to use relative URLs and always send the JWT token
     const fetchFavoriteRecipes = async () => {
-        if (!user) return;
-    
         try {
-            const baseURL = import.meta.env.MODE === "development" 
-                ? "http://localhost:5000" 
+            const baseURL = import.meta.env.MODE === "development"
+                ? "http://localhost:5000"
                 : "";
-            
-            const response = await axios.get(`${baseURL}/api/favorites`, {
-                withCredentials: true
-            });
-            
+                
+            const response = await axios.get(
+                `${baseURL}/api/favorites`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`
+                    },
+                    withCredentials: true
+                }
+            );
             if (response.data.success) {
-                // Extract just the recipe IDs from the favorites data
-                const favoriteIds = response.data.favorites.map(fav => fav.recipe._id);
-                setFavoriteRecipes(favoriteIds);
+                setFavoriteRecipes(response.data.favorites.map(fav => fav.recipe._id));
             }
         } catch (error) {
-            console.error("Error fetching favorites:", error);
+            console.error('Error fetching favorites:', error);
         }
     };
 
     const handleFavoriteToggle = async (recipeId, event) => {
         event.stopPropagation();
-
         if (!user) {
             setShowLoginPrompt(true);
             return;
         }
-
         try {
-            const baseURL = import.meta.env.MODE === "development" 
-                ? "http://localhost:5000" 
+            const baseURL = import.meta.env.MODE === "development"
+                ? "http://localhost:5000"
                 : "";
+                
+            const isFavorited = favoriteRecipes.includes(recipeId);
+            const recipe = recipes.find(r => r._id === recipeId);
+            const recipeName = recipe?.title || recipe?.name || 'Recipe';
             
-            if (favoriteRecipes.includes(recipeId)) {
-                // Remove from favorites
-                const response = await axios.delete(`${baseURL}/api/favorites/${recipeId}`, {
-                    withCredentials: true
-                });
-                
-                if (response.data.success) {
-                    setFavoriteRecipes(prevFavorites => 
-                        prevFavorites.filter(id => id !== recipeId)
-                    );
-                    // Fixed toast call - message as first parameter, options as second
-                    toast.success("Recipe removed from favorites!", {
-                        style: {
-                            borderRadius: "8px",
-                            background: "#fff",
-                            color: "#222",
-                            boxShadow: "0 4px 16px rgba(239,68,68,0.15)",
-                            fontWeight: 600,
+            if (isFavorited) {
+                await axios.delete(
+                    `${baseURL}/api/favorites/${recipeId}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem('token')}`
                         },
-                        iconTheme: {
-                            primary: "#ef4444",
-                            secondary: "#fff",
-                        },
-                    });
-                }
+                        withCredentials: true
+                    }
+                );
+                setFavoriteRecipes(prev => prev.filter(id => id !== recipeId));
+                toast.info(
+                    'Removed from Favorites',
+                    `${recipeName} has been removed from your favorites`,
+                    3000
+                );
             } else {
-                // Add to favorites
-                const response = await axios.post(`${baseURL}/api/favorites`, {
-                    recipeId
-                }, {
-                    withCredentials: true
-                });
-                
-                if (response.data.success) {
-                    setFavoriteRecipes(prevFavorites => [...prevFavorites, recipeId]);
-                    // Fixed toast call - message as first parameter, options as second
-                    toast.success("Added to favorites! ❤️", {
-                        duration: 4000,
-                        style: {
-                            borderRadius: "8px",
-                            background: "#fff",
-                            color: "#222",
-                            boxShadow: "0 4px 16px rgba(16,185,129,0.15)",
-                            fontWeight: 600,
+                await axios.post(
+                    `${baseURL}/api/favorites`,
+                    { recipeId },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem('token')}`
                         },
-                    });
-                }
+                        withCredentials: true
+                    }
+                );
+                setFavoriteRecipes(prev => [...prev, recipeId]);
+                toast.favorite(
+                    'Added to Favorites! ❤️',
+                    `${recipeName} has been saved to your collection`,
+                    4000
+                );
             }
         } catch (error) {
-            console.error("Error toggling favorite:", error);
-            // Fixed toast call - message as first parameter, options as second
-            toast.error("Failed to update favorites. Please try again.", {
-                duration: 4000,
-                style: {
-                    borderRadius: "8px",
-                    background: "#fff",
-                    color: "#222",
-                    boxShadow: "0 4px 16px rgba(239,68,68,0.15)",
-                    fontWeight: 600,
-                },
-            });
+            console.error('Error toggling favorite:', error);
+            toast.error(
+                'Something went wrong',
+                'Failed to update favorite. Please try again.',
+                4000
+            );
         }
     };
 
     // Add this function to handle rating button click
     const handleRateClick = (recipe, e) => {
-        e.stopPropagation(); // Prevent opening the recipe modal
+        e.stopPropagation();
+        if (!user) {
+            setShowLoginPrompt(true);
+            return;
+        }
         setRecipeToRate(recipe);
         setRatingModalOpen(true);
     };
@@ -448,36 +370,16 @@ const RecipePage = () => {
     // Add this function to handle rating modal close
     const handleRatingModalClose = (updatedRecipe) => {
         setRatingModalOpen(false);
-        
-        // If the recipe was updated, update it in the recipes list
-        if (updatedRecipe) {
-            // Update in the main recipes list
-            const updatedRecipes = recipes.map(r => 
-                r._id === updatedRecipe._id ? updatedRecipe : r
-            );
-            setRecipes(updatedRecipes);
-            
-            // No need to update filteredRecipes as it's automatically 
-            // recalculated when recipes changes
-        }
-        
         setRecipeToRate(null);
-    };
-
-    const handleCameraClick = () => {
-        setCameraOpen(true);
-    };
-
-    const handleCameraClose = () => {
-        setCameraOpen(false);
-    };
-
-    const handleCapture = async (imageBase64) => {
-        // imageBase64 is a data URL (e.g. "data:image/jpeg;base64,/...")
-        // TODO: send it to your backend for ingredient detection / AI recipe suggestion
-        console.log("Captured image length:", imageBase64?.length);
-        // Example placeholder: send to API
-        // await axios.post("/api/vision/scan", { image: imageBase64 });
+        
+        // Update the recipe in the list if it was rated
+        if (updatedRecipe) {
+            setRecipes(prevRecipes => 
+                prevRecipes.map(r => 
+                    r._id === updatedRecipe._id ? updatedRecipe : r
+                )
+            );
+        }
     };
 
     return (
@@ -487,91 +389,28 @@ const RecipePage = () => {
                 {/* Responsive Ingredients Sidebar */}
                 <div className="ingredients-responsive">
                     {/* Mobile: Sheet Button */}
-                    <div className="ingredients-sheet-mobile">
-                        <Sheet open={isSheetOpen} onOpenChange={handleSheetOpenChange}>
-                            <SheetTrigger asChild>
-                                {!isSheetOpen && (
-                                    <button
-                                        className="ingredients-fab-btn"
-                                        aria-label="Select Ingredients"
-                                    >
-                                        <i className="bx bx-bowl-hot"></i>
-                                    </button>
-                                )}
-                            </SheetTrigger>
-                            <SheetContent
-                                side={isMobile ? "bottom" : "left"} // Show from bottom on mobile, left on desktop
-                                className={
-                                    `ingredients-sheet-content` +
-                                    (sheetAnimate && !sheetOut ? ' sheet-animate-in' : '') +
-                                    (sheetOut ? ' sheet-animate-out' : '')
-                                }
-                            >
-                                <button
-                                    className={`ingredients-fab-btn close-btn${isSheetOpen ? ' rotating' : ''}`}
-                                    aria-label="Close Ingredients"
-                                    onClick={() => handleSheetOpenChange(false)}
-                                >
-                                    <i className="bx bx-x"></i>
-                                </button>
-                                <div className="sidebar-header">
-                                    <span className="sidebar-title">Select <span className="highlight">Ingredients</span></span>
-                                    <div className="sidebar-underline"></div>
-                                </div>
-                                <input
-                                    type="text"
-                                    className="ingredient-search"
-                                    placeholder="Search ingredients..."
-                                    value={ingredientSearch}
-                                    onChange={e => setIngredientSearch(e.target.value)}
-                                />
-                                <div className="ingredient-list">
-                                    {filteredIngredients.map((ing, idx) => (
-                                        <button
-                                            key={idx}
-                                            className={`ingredient-btn${selectedIngredients.includes(ing) ? " selected" : ""}`}
-                                            onClick={() => handleIngredientClick(ing)}
-                                            type="button"
-                                        >
-                                            {ing}
-                                        </button>
-                                    ))}
-                                </div>
-                            </SheetContent>
-                        </Sheet>
-                    </div>
+                    <MobileIngredientSheet 
+                        isSheetOpen={isSheetOpen}
+                        setIsSheetOpen={setIsSheetOpen}
+                        sheetAnimate={sheetAnimate}
+                        sheetOut={sheetOut}
+                        handleSheetOpenChange={handleSheetOpenChange}
+                        ingredientSearch={ingredientSearch}
+                        setIngredientSearch={setIngredientSearch}
+                        filteredIngredients={filteredIngredients}
+                        selectedIngredients={selectedIngredients}
+                        handleIngredientClick={handleIngredientClick}
+                        isMobile={isMobile}
+                    />
                     
                     {/* Desktop: Sidebar */}
-                    <aside
-                        className="ingredients-sidebar"
-                        ref={sidebarRef}
-                    >
-                        <div className="sidebar-header">
-                            <span className="sidebar-title">Select <span className="highlight">Ingredients</span></span>
-                            <div className="sidebar-underline"></div>
-                        </div>
-                        <div className="search-container">
-                            <input
-                                type="text"
-                                className="ingredient-search"
-                                placeholder="Search ingredients..."
-                                value={ingredientSearch}
-                                onChange={e => setIngredientSearch(e.target.value)}
-                            />
-                        </div>
-                        <div className="ingredient-list">
-                            {filteredIngredients.map((ing, idx) => (
-                                <button
-                                    key={idx}
-                                    className={`ingredient-btn${selectedIngredients.includes(ing) ? " selected" : ""}`}
-                                    onClick={() => handleIngredientClick(ing)}
-                                    type="button"
-                                >
-                                    {ing}
-                                </button>
-                            ))}
-                        </div>
-                    </aside>
+                    <IngredientsSidebar 
+                        ingredientSearch={ingredientSearch}
+                        setIngredientSearch={setIngredientSearch}
+                        filteredIngredients={filteredIngredients}
+                        selectedIngredients={selectedIngredients}
+                        handleIngredientClick={handleIngredientClick}
+                    />
                 </div>
                 
                 {/* Main Recipe Content */}
@@ -596,6 +435,7 @@ const RecipePage = () => {
                         onRemoveIngredient={handleRemoveIngredient}
                     />
 
+                    {/* Regular recipes section header */}
                     <div className="recipe-header">
                         <p>
                             Available Recipes
@@ -607,233 +447,49 @@ const RecipePage = () => {
                         </p>
                     </div>
 
-                    <div className="recipe-controls">
-                        <div className="search-box">
-                            <input
-                                type="text"
-                                placeholder="Search recipes..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                        <select
-                            className="filter-category"
-                            value={categoryFilter}
-                            onChange={e => setCategoryFilter(e.target.value)}
-                        >
-                            <option value="">Filter by Category</option>
-                            <option value="Appetizer">Appetizer</option>
-                            <option value="Breakfast">Breakfast</option>
-                            <option value="Lunch">Lunch</option>
-                            <option value="Dinner">Dinner</option>
-                            <option value="Main Course">Main Course</option>
-                            <option value="Snack">Snack</option>
-                            <option value="Beverage">Beverage</option>
-                            <option value="Soup">Soup</option>
-                            <option value="Salad">Salad</option>
-                        </select>
-                        <div className="price-filters">
-                            <input
-                                type="number"
-                                className="filter-price min-price"
-                                placeholder="Min Price"
-                                value={minPrice}
-                                onChange={e => {
-                                    // Only allow positive numbers
-                                    const value = e.target.value;
-                                    if (value === '' || parseFloat(value) >= 0) {
-                                        setMinPrice(value);
-                                    }
-                                }}
-                                min="0"
-                                step="any"
-                            />
-                            <input
-                                type="number"
-                                className="filter-price max-price"
-                                placeholder="Max Price"
-                                value={maxPrice}
-                                onChange={e => {
-                                    // Only allow positive numbers
-                                    const value = e.target.value;
-                                    if (value === '' || parseFloat(value) >= 0) {
-                                        setMaxPrice(value);
-                                    }
-                                }}
-                                min="0"
-                                step="any"
-                            />
-                        </div>
-                    </div>
+                    {/* Filter controls */}
+                    <RecipeFilters 
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        categoryFilter={categoryFilter}
+                        setCategoryFilter={setCategoryFilter}
+                        minPrice={minPrice}
+                        setMinPrice={setMinPrice}
+                        maxPrice={maxPrice}
+                        setMaxPrice={setMaxPrice}
+                    />
 
-                    {/* Swipeable Recipes Grid Container */}
-                    <div 
-                        className="recipes-grid-container"
-                        ref={gridContainerRef}
-                        onTouchStart={handleTouchStart}
-                        onTouchMove={handleTouchMove}
-                        onTouchEnd={handleTouchEnd}
-                    >
-                        <div className={`recipes-grid ${isSwiping ? 'swiping' : ''}`}>
-                            {gridRecipes.map((recipe, idx) =>
-                                recipe ? (
-                                    <div
-                                        key={recipe._id}
-                                        className="recipe-card"
-                                        onClick={() => setSelectedRecipe(recipe)}
-                                        style={{ cursor: "pointer" }}
-                                    >
-                                        <div className="recipe-image">
-                                            <img 
-                                                src={getImageUrl(recipe)} 
-                                                alt={recipe.title || recipe.name}
-                                                onError={(e) => {
-                                                    e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
-                                                }}
-                                            />
-                                            <button
-                                                className={`favorite-btn${favoriteRecipes.includes(recipe._id) ? ' favorited' : ''}`}
-                                                onClick={e => handleFavoriteToggle(recipe._id, e)}
-                                                aria-label={favoriteRecipes.includes(recipe._id) ? "Unfavorite" : "Favorite"}
-                                                tabIndex={0}
-                                            >
-                                                <i className={favoriteRecipes.includes(recipe._id) ? "bx bxs-heart" : "bx bx-heart"}></i>
-                                            </button>
-                                        </div>
-                                        <div className="recipe-content">
-                                            <h3 className="recipe-title">{recipe.title || recipe.name}</h3>
-                                            <p className="recipe-desc">{recipe.description}</p>
-                                            
-                                            <div className="recipe-meta">
-                                                <div className="category-rating-row">
-                                                    <div className="recipe-category">{recipe.category}</div>
-                                                    <RateButton 
-                                                        recipe={recipe} 
-                                                        onRateClick={handleRateClick} 
-                                                    />
-                                                </div>
-                                                
-                                                {recipe.averageRating > 0 && (
-                                                    <div className="star-rating-display">
-                                                        {[1, 2, 3, 4, 5].map((star) => (
-                                                            <i
-                                                                key={star}
-                                                                className={`bx ${
-                                                                    star <= Math.round(recipe.averageRating) 
-                                                                        ? "bxs-star text-yellow-400" 
-                                                                        : "bx-star text-gray-300"
-                                                                }`}
-                                                            ></i>
-                                                        ))}
-                                                        <span className="star-rating-value">
-                                                            {recipe.averageRating.toFixed(1)} ({recipe.ratings?.length || 0})
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            
-                                            <div className="recipe-price">
-                                                <i className='bx bx-money'></i>
-                                                Estimated Price: ₱
-                                                {typeof recipe.price === 'number' 
-                                                    ? recipe.price.toFixed(2)
-                                                    : "0.00"
-                                                }
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    // Empty grid cell for consistent layout
-                                    <div key={`empty-${idx}`} className="recipe-card" style={{ visibility: "hidden" }} />
-                                )
-                            )}
-                            {filteredRecipes.length === 0 && (
-                                <div className="no-recipes-enhanced">
-                                    <div className="no-recipes-animation">
-                                        <div className="chef-hat">
-                                            <i className="bx bx-restaurant"></i>
-                                        </div>
-                                        
-                                    </div>
-                                    
-                                    <div className="no-recipes-content">
-                                        <h3 className="no-recipes-title">No Delicious Recipes Found</h3>
-                                        <p className="no-recipes-subtitle">
-                                            {selectedIngredients.length > 0 
-                                                ? "Try adjusting your ingredient selection or search filters"
-                                                : "Looks like our kitchen is empty right now"
-                                            }
-                                        </p>
-                                        
-                                       
-                                        
-                                        
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    {/* Recipe grid - now with time-based recipes appearing first */}
+                    <RecipeGrid 
+                        gridRecipes={gridRecipes}
+                        isSwiping={isSwiping}
+                        setSelectedRecipe={setSelectedRecipe}
+                        handleFavoriteToggle={handleFavoriteToggle}
+                        favoriteRecipes={favoriteRecipes}
+                        handleTouchStart={handleTouchStart}
+                        handleTouchMove={handleTouchMove}
+                        handleTouchEnd={handleTouchEnd}
+                        gridContainerRef={gridContainerRef}
+                        filteredRecipes={filteredRecipes}
+                        handleRateClick={handleRateClick}
+                        currentMealType={currentMealType} // Added to highlight time-based recipes
+                    />
 
-                    {/* Desktop Pagination Controls - Only show on desktop */}
-                    {totalPages > 1 && !isMobile && (
-                        <div className="pagination-controls">
-                            <button
-                                onClick={() => {
-                                    setCurrentPage(p => Math.max(1, p - 1));
-                                    scrollToTop(); // Auto-scroll to top
-                                }}
-                                disabled={currentPage === 1}
-                                className="pagination-btn"
-                            >
-                                <i className="bx bx-chevron-left"></i>
-                                Previous
-                            </button>
-                            <div className="page-info">
-                                <span className="current-page">{currentPage}</span>
-                                <span className="page-separator">of</span>
-                                <span className="total-pages">{totalPages}</span>
-                            </div>
-                            <button
-                                onClick={() => {
-                                    setCurrentPage(p => Math.min(totalPages, p + 1));
-                                    scrollToTop(); // Auto-scroll to top
-                                }}
-                                disabled={currentPage === totalPages}
-                                className="pagination-btn"
-                            >
-                                Next
-                                <i className="bx bx-chevron-right"></i>
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Mobile Swipe Pagination Indicator - Only show on mobile */}
-                    {totalPages > 1 && isMobile && (
-                        <div className="mobile-pagination-container">
-                            <div className="mobile-pagination-swipe">
-                                <div className="swipe-indicator">
-                                    <i className="bx bx-chevrons-left"></i>
-                                    <span>Swipe to navigate</span>
-                                    <i className="bx bx-chevrons-right"></i>
-                                </div>
-                                <div className="mobile-page-info">
-                                    <span className="current-page">{currentPage}</span>
-                                    <span className="page-separator">of</span>
-                                    <span className="total-pages">{totalPages}</span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {/* Pagination controls */}
+                    <PaginationControls 
+                        currentPage={currentPage}
+                        setCurrentPage={setCurrentPage}
+                        totalPages={totalPages}
+                    />
                 </div>
             </div>
             
-            {/* Add the login prompt modal before the closing div */}
+            {/* Modals */}
             <LoginPromptModal 
                 isOpen={showLoginPrompt}
                 onClose={() => setShowLoginPrompt(false)}
             />
             
-            {/* Existing RecipeModal */}
             <RecipeModal
                 open={!!selectedRecipe}
                 recipe={selectedRecipe}
@@ -843,21 +499,13 @@ const RecipePage = () => {
                 }}
             />
             
-            {/* Add the RatingModal component here */}
-            <RatingModal 
-                isOpen={ratingModalOpen}
-                onClose={handleRatingModalClose}
-                recipe={recipeToRate}
-            />
-
-            {/* Place BottomNavbar at the end so it's always on top of content */}
-            <BottomNavbar onCameraClick={handleCameraClick} />
-
-            <CameraModal
-                isOpen={cameraOpen}
-                onClose={handleCameraClose}
-                onCapture={handleCapture}
-            />
+            {ratingModalOpen && recipeToRate && (
+                <RatingModal 
+                    isOpen={ratingModalOpen}
+                    recipe={recipeToRate}
+                    onClose={handleRatingModalClose}
+                />
+            )}
         </div>
     );
 };

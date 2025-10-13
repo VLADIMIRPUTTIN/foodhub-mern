@@ -1626,413 +1626,225 @@ i[class*=" bx-"] {
 }
 
 // =============================================================================
-// RECIPE RATING STYLES
+// TIME-BASED RECIPES SECTION
 // =============================================================================
-.recipe-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 0.75rem;
-  width: 100%;
-  gap: 8px;
-  
-  // Make category and rating appear on the same row
-  .category-rating-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 0.5rem;
-    flex-wrap: nowrap; // Prevent wrapping to next line
-  }
+.time-based-section {
+  margin-bottom: 1.5rem;
+  padding: 0.5rem 0;
 }
 
-.recipe-category {
-  display: inline-block;
-  background: #CF996C;
-  color: white;
-  padding: 0.25rem 0.6rem; // Slightly reduced padding
-  border-radius: 12px;
-  font-size: 0.7rem; // Slightly smaller text
-  font-weight: 600;
-  max-width: 60%; // Limit width
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-// Fix the star rating display size
-.star-rating-display {
+.time-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 2px; // Reduced gap between stars
-  font-size: 0.75rem; // Smaller overall size
-  margin-top: 2px;
-  max-width: 100%;
-  overflow: hidden;
+  margin-bottom: 1.5rem;
   
-  i {
-    font-size: 0.85rem; // Smaller star icons
-    flex-shrink: 0; // Prevent stars from shrinking
-  }
-  
-  .star-rating-value {
-    font-size: 0.7rem; // Smaller text
-    color: #666;
-    margin-left: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
-
-// Improve spacing in recipe meta
-.recipe-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 0.5rem; // Reduced margin
-  width: 100%;
-  gap: 4px; // Reduced gap
-  
-  .category-rating-row {
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0;
+    color: #3a3a3a;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 0.2rem; // Smaller margin
-    flex-wrap: nowrap;
-  }
-}
+    flex-direction: column;
+    gap: 0.3rem;
 
-// Make sure recipe content has proper spacing
-.recipe-content {
-  padding: 1rem; // Slightly reduced padding
-  // ... other existing styles
-}
+    .greeting {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #666;
+    }
 
-// Make rate button smaller and consistent
-.rate-button {
-  flex-shrink: 0;
-  margin-left: auto;
-  white-space: nowrap;
-  padding: 0.2rem 0.6rem; // Smaller padding
-  font-size: 0.7rem; // Smaller text
-}
+    .meal-suggestion {
+      font-size: 1.3rem;
+    }
 
-// =============================================================================
-// RECIPE META SECTION - RESPONSIVE FIX FOR BOTH DESKTOP AND MOBILE
-// =============================================================================
-.recipe-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 0.5rem;
-  width: 100%;
-  gap: 4px;
-  
-  // Make category and rating appear on the same row consistently
-  .category-rating-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 0.2rem;
-    flex-wrap: nowrap; // Prevent wrapping to next line
-  }
-}
-
-.recipe-category {
-  display: inline-block;
-  background: #CF996C;
-  color: white;
-  padding: 0.25rem 0.6rem;
-  border-radius: 12px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  max-width: 60%; // Limit width to prevent pushing rate button down
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-// Style the Rate button consistently
-.rate-button {
-  flex-shrink: 0; // Prevent the button from shrinking
-  margin-left: auto; // Push to the right side
-  padding: 0.25rem 0.6rem;
-  background: #F2E4D5;
-  border: 1px solid rgba(207, 153, 108, 0.3);
-  color: #BB8860;
-  border-radius: 12px;
-  font-size: 0.7rem;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    background: rgba(207, 153, 108, 0.1);
-    border-color: #BB8860;
-  }
-  
-  i {
-    margin-right: 3px;
-  }
-}
-
-// Fix the star rating display for all screen sizes
-.star-rating-display {
-  display: flex;
-  align-items: center;
-  gap: 1px; // Very small gap between stars
-  font-size: 0.7rem; 
-  margin-top: 2px;
-  max-width: 100%;
-  overflow: hidden;
-  
-  i {
-    font-size: 0.8rem; // Smaller star icons
-    flex-shrink: 0; // Prevent stars from shrinking
-    color: #F7BD57; // Golden color for filled stars
-    &.text-gray-300 {
-      color: #D1D5DB; // Light gray for empty stars
+    .highlight {
+      color: #CF996C;
     }
   }
-  
-  .star-rating-value {
-    font-size: 0.7rem;
-    color: #666;
-    margin-left: 3px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
 
-// =============================================================================
-// RESPONSIVE ADAPTATIONS - ENSURE CONSISTENCY ACROSS ALL SCREEN SIZES
-// =============================================================================
-
-// Desktop specific adjustments (larger screens)
-@media (min-width: 1200px) {
-  .recipe-meta {
-    .category-rating-row {
-      gap: 8px; // More space between elements on larger screens
-    }
-  }
-  
-  .recipe-category {
-    max-width: 70%; // Allow more space for category text on desktop
-  }
-  
-  .rate-button {
-    padding: 0.25rem 0.7rem; // Slightly larger on desktop
-    font-size: 0.75rem;
-  }
-  
-  .star-rating-display {
-    gap: 2px;
+  .time-header-icon {
+    width: 54px;
+    height: 54px;
+    background: rgba(207, 153, 108, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     
     i {
-      font-size: 0.85rem;
-    }
-    
-    .star-rating-value {
-      font-size: 0.75rem;
+      font-size: 1.8rem;
+      color: #CF996C;
     }
   }
 }
 
-// Tablet adaptations (medium screens)
-@media (min-width: 769px) and (max-width: 1199px) {
-  .recipe-meta {
-    .category-rating-row {
-      gap: 6px;
-    }
-  }
-}
-
-// Mobile adaptations (smaller screens)
-@media (max-width: 768px) {
-  .recipe-meta {
-    margin-bottom: 0.3rem;
-    gap: 2px;
-    
-    .category-rating-row {
-      margin-bottom: 0.1rem;
-    }
-  }
+.time-recipes-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-top: 1.2rem;
   
-  .recipe-category {
-    font-size: 0.65rem;
-    padding: 0.2rem 0.5rem;
-    max-width: 58%;
-  }
-  
-  .rate-button {
-    padding: 0.2rem 0.5rem;
-    font-size: 0.65rem;
-  }
-  
-  .star-rating-display {
-    i {
-      font-size: 0.75rem;
-    }
-    
-    .star-rating-value {
-      font-size: 0.65rem;
-    }
-  }
-}
-
-// =============================================================================
-// ENHANCED STAR RATING DISPLAY - MATCHES COMMUNITY PAGE STYLE
-// =============================================================================
-.star-rating-display {
-  display: flex;
-  align-items: center;
-  gap: 0.05rem; // Ultra compact spacing between stars
-  margin: 0.2rem 0; // Reduced margin
-  padding: 0.1rem 0; // Minimal padding
-  max-width: 100%;
-  overflow: hidden;
-  
-  i {
-    font-size: 0.7rem !important; // SMALLER STARS - matching community page
-    color: #CF996C !important; // Consistent gold color
-    flex-shrink: 0; // Prevent stars from shrinking
-    
-    &.text-gray-300 {
-      color: #D1D5DB !important; // Light gray for empty stars
-    }
-    
-    &.text-yellow-400 {
-      color: #CF996C !important; // Override any other colors
-    }
-  }
-  
-  .star-rating-value {
-    font-size: 0.6rem !important; // SMALLER TEXT - matching community page
-    color: #666;
-    margin-left: 3px;
-    white-space: nowrap;
+  .time-recipe-card {
+    background: #fff;
+    border-radius: 12px;
     overflow: hidden;
-    text-overflow: ellipsis;
-    font-weight: 500;
-  }
-}
-
-// =============================================================================
-// RECIPE META SECTION - ENHANCED COMPACT LAYOUT
-// =============================================================================
-.recipe-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 0.4rem !important; // Reduced margin
-  width: 100%;
-  gap: 0.1rem !important; // Tighter gap between elements
-  
-  // Make category and rating appear on the same row consistently
-  .category-rating-row {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 0.1rem !important; // Minimal margin
-    flex-wrap: nowrap; // Prevent wrapping to next line
+    flex-direction: column;
+    position: relative;
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(207, 153, 108, 0.2);
+    }
+
+    .time-recipe-image {
+      height: 140px;
+      width: 100%;
+      position: relative;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .time-recipe-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom, rgba(0,0,0,0) 60%, rgba(0,0,0,0.6) 100%);
+      }
+      
+      .favorite-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 32px;
+        height: 32px;
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 5;
+        cursor: pointer;
+        transition: transform 0.2s ease, background-color 0.2s ease;
+        
+        &:hover {
+          transform: scale(1.1);
+        }
+        
+        &.favorited {
+          background: rgba(255, 107, 107, 0.9);
+          
+          i {
+            color: white;
+          }
+        }
+        
+        i {
+          color: #FF6B6B;
+          font-size: 1.2rem;
+        }
+      }
+    }
+
+    .time-recipe-content {
+      padding: 1rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+
+      h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0 0 0.5rem 0;
+        color: #333;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+      }
+
+      .time-recipe-desc {
+        font-size: 0.85rem;
+        color: #666;
+        margin: 0 0 0.8rem 0;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+        flex: 1;
+      }
+      
+      .time-recipe-meta {
+        display: flex;
+        align-items: center;
+        font-size: 0.8rem;
+        color: #CF996C;
+        
+        i {
+          margin-right: 0.25rem;
+        }
+      }
+    }
   }
 }
 
-.recipe-category {
-  display: inline-block;
-  background: #CF996C;
-  color: white;
-  padding: 0.2rem 0.5rem !important; // SMALLER PADDING - matching community page
-  border-radius: 8px !important; // Smaller border radius
-  font-size: 0.65rem !important; // SMALLER FONT - matching community page
-  font-weight: 600;
-  max-width: 60%; // Limit width to prevent pushing rate button down
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  letter-spacing: 0.2px;
-  height: 20px; // Fixed height for consistency
-  line-height: 20px; // Match height for vertical centering
-  display: flex;
-  align-items: center;
-}
-
-// Style the Rate button consistently with community style
-.rate-button {
-  flex-shrink: 0; // Prevent the button from shrinking
-  margin-left: auto; // Push to the right side
-  padding: 0.2rem 0.5rem !important; // SMALLER PADDING
-  background: rgba(207, 153, 108, 0.06);
-  border: 1px solid rgba(207, 153, 108, 0.2);
-  color: #CF996C;
-  border-radius: 8px !important; // Smaller border radius
-  font-size: 0.65rem !important; // SMALLER FONT - matching community page
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  height: 20px; // Fixed height to match category
-  display: flex;
-  align-items: center;
+// Time-based recipe card styling
+.recipe-card.time-based-card {
+  border: 2px solid rgba(207, 153, 108, 0.5);
+  box-shadow: 0 8px 24px rgba(207, 153, 108, 0.15);
+  position: relative;
   
   &:hover {
-    background: rgba(207, 153, 108, 0.1);
-    border-color: #CF996C;
+    transform: translateY(-6px);
+    box-shadow: 0 12px 30px rgba(207, 153, 108, 0.25);
   }
   
-  i {
-    margin-right: 3px;
-    font-size: 0.7rem !important; // Smaller icon
+  .recipe-image::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg, #CF996C, #e7b57a);
   }
 }
 
-// Ensure consistent styling on mobile devices
-@media (max-width: 768px) {
-  .recipe-content {
-    padding: 0.6rem !important; // Smaller padding on mobile
-    
-    .recipe-meta {
-      margin-bottom: 0.3rem !important;
-      
-      .category-rating-row {
-        margin-bottom: 0.1rem !important;
-      }
-    }
-    
-    .recipe-category {
-      font-size: 0.6rem !important; // Even smaller on mobile
-      padding: 0.15rem 0.4rem !important;
-      height: 18px !important;
-      line-height: 18px !important;
-    }
-    
-    .rate-button {
-      font-size: 0.6rem !important; // Even smaller on mobile
-      padding: 0.15rem 0.4rem !important;
-      height: 18px !important;
-      
-      i {
-        font-size: 0.65rem !important;
-      }
-    }
-    
-    .star-rating-display {
-      i {
-        font-size: 0.65rem !important;
-      }
-      
-      .star-rating-value {
-        font-size: 0.55rem !important;
-      }
-    }
+// Badge for time-based recipes
+.time-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(207, 153, 108, 0.9);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  
+  i {
+    font-size: 0.85rem;
+  }
+  
+  span {
+    line-height: 1;
   }
 }
   }

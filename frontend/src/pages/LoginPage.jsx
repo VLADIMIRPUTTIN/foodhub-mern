@@ -6,6 +6,7 @@ import { useAuthStore } from "../store/authStore";
 import { GoogleLogin } from '@react-oauth/google';
 import axios from "axios";
 import AccountStatusModal from "../components/AccountStatusModal";
+import TermsAndConditionsModal from "./TermsAndConditionsModal";
 import './LoginPage.scss';
 
 const LoginPage = () => {
@@ -15,6 +16,7 @@ const LoginPage = () => {
     const [forgotEmail, setForgotEmail] = useState("");
     const [forgotSubmitted, setForgotSubmitted] = useState(false);
     const [showStatusModal, setShowStatusModal] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
 
     const { login, isLoading, error, setUser, forgotPassword, accountStatus, clearAccountStatus } = useAuthStore();
     const navigate = useNavigate();
@@ -215,6 +217,25 @@ const LoginPage = () => {
                         </motion.button>
                     </form>
 
+                    {/* Terms and Conditions Button */}
+                    <button
+                        type="button"
+                        className="terms-link"
+                        style={{ 
+                            background: "none", 
+                            border: "none", 
+                            color: "#F8F1E5",
+                            cursor: "pointer", 
+                            fontSize: "0.9em",
+                            marginTop: "1rem",
+                            textDecoration: "underline",
+                            opacity: "0.9"
+                        }}
+                        onClick={() => setShowTerms(true)}
+                    >
+                        Terms & Conditions
+                    </button>
+
                     {/* Social Login Section */}
                     <div className="social-login">
                         <p className="or-divider">OR</p>
@@ -285,37 +306,14 @@ const LoginPage = () => {
                             </div>
                         )}
                     </motion.div>
-                    <style>{`
-                        .modal-overlay {
-                            position: fixed;
-                            top: 0; left: 0; right: 0; bottom: 0;
-                            background: rgba(0,0,0,0.4);
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            z-index: 1000;
-                        }
-                        .forgot-modal {
-                            background: #fff;
-                            border-radius: 1rem;
-                            padding: 2rem 2.5rem;
-                            box-shadow: 0 8px 32px 0 rgba(0,0,0,0.18);
-                            min-width: 320px;
-                            position: relative;
-                        }
-                        .close-modal {
-                            position: absolute;
-                            top: 12px;
-                            right: 18px;
-                            background: none;
-                            border: none;
-                            font-size: 2rem;
-                            color: #888;
-                            cursor: pointer;
-                        }
-                    `}</style>
                 </div>
             )}
+
+            {/* Import Terms and Conditions Modal Component */}
+            <TermsAndConditionsModal 
+                isOpen={showTerms} 
+                onClose={() => setShowTerms(false)} 
+            />
         </div>
     );
 };
