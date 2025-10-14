@@ -15,7 +15,9 @@ const RecipeGrid = ({
     filteredRecipes,
     handleRateClick,
     currentMealType,
-    handleCommentClick // Add this prop
+    handleCommentClick,
+    currentPage,
+    userPreferences
 }) => {
     return (
         <div 
@@ -30,7 +32,7 @@ const RecipeGrid = ({
                     recipe ? (
                         <div key={recipe._id} className="recipe-card-wrapper">
                             <div
-                                className={`recipe-card ${recipe.category && recipe.category.toLowerCase() === currentMealType.toLowerCase() ? 'time-based-card' : ''}`}
+                                className={`recipe-card ${recipe.priority === 'time-and-preference' ? 'highlight-card' : ''}`}
                                 onClick={() => setSelectedRecipe(recipe)}
                                 style={{ cursor: "pointer" }}
                             >
@@ -42,6 +44,21 @@ const RecipeGrid = ({
                                             e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
                                         }}
                                     />
+                                    {/* Priority badges */}
+                                    {recipe.priority && (
+                                        <div className="recipe-badges">
+                                            {recipe.priority === 'time-and-preference' && (
+                                                <span className="time-badge">{currentMealType}</span>
+                                            )}
+                                            {recipe.priority === 'preference-only' && userPreferences && (
+                                                <span className="preference-badge">Recommended</span>
+                                            )}
+                                            {recipe.priority === 'time-based' && (
+                                                <span className="time-badge">{currentMealType}</span>
+                                            )}
+                                        </div>
+                                    )}
+                                    
                                     <button
                                         className={`favorite-btn${favoriteRecipes.includes(recipe._id) ? ' favorited' : ''}`}
                                         onClick={e => handleFavoriteToggle(recipe._id, e)}
@@ -52,7 +69,10 @@ const RecipeGrid = ({
                                     </button>
                                 </div>
                                 <div className="recipe-content">
-                                    <h3 className="recipe-title">{recipe.title || recipe.name}</h3>
+                                    {/* Fix: Make sure recipe title shows properly */}
+                                    <h3 className="recipe-title">
+                                        {recipe.title || recipe.name || 'Untitled Recipe'}
+                                    </h3>
                                     
                                     {/* Category Badge */}
                                     {recipe.category && (
@@ -62,7 +82,10 @@ const RecipeGrid = ({
                                         </div>
                                     )}
                                     
-                                    <p className="recipe-desc">{recipe.description?.substring(0, 100) || ""}...</p>
+                                    {/* Fix: Make sure description shows properly */}
+                                    <p className="recipe-desc">
+                                        {recipe.description ? `${recipe.description.substring(0, 100)}...` : "No description available"}
+                                    </p>
                                     
                                     {/* Group meta items in container */}
                                     <div className="recipe-meta-container">
@@ -107,7 +130,7 @@ const RecipeGrid = ({
                                             Rate
                                         </button>
                                         
-                                        {/* Comment Button - New */}
+                                        {/* Comment Button */}
                                         <button 
                                             className="recipe-action-btn comment-btn" 
                                             onClick={(e) => handleCommentClick(recipe, e)}
@@ -126,7 +149,22 @@ const RecipeGrid = ({
                         </div>
                     )
                 )}
-                {filteredRecipes.length === 0 && <NoRecipesFound selectedIngredients={[]} />}
+            </div>
+            
+            <div className="mobile-pagination-container">
+                <div className="mobile-pagination-swipe">
+                    <div className="swipe-indicator">
+                        <i className='bx bx-chevrons-left'></i>
+                        <span>Swipe to browse recipes</span>
+                        <i className='bx bx-chevrons-right'></i>
+                    </div>
+                    
+                    <div className="mobile-page-info">
+                        <span className="current-page">{currentPage}</span>
+                        <span className="page-separator">of</span>
+                        <span className="total-pages">{Math.ceil(filteredRecipes.length / gridRecipes.length) || 1}</span>
+                    </div>
+                </div>
             </div>
         </div>
     );

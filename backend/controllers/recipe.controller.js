@@ -37,7 +37,12 @@ export const uploadMiddleware = upload.single('image');
 
 export const createRecipe = async (req, res) => {
     try {
-        const { title, description, ingredients, instructions, category, cookingTime, servings, difficulty, price } = req.body;
+        const { 
+            title, description, ingredients, instructions, category, 
+            cookingTime, servings, difficulty, price,
+            // Add new preference fields
+            dietaryTags, cuisine, allergens
+        } = req.body;
         
         console.log("Recipe creation request received:", {
             userId: req.userId,
@@ -69,6 +74,18 @@ export const createRecipe = async (req, res) => {
                 success: false, 
                 message: "Invalid ingredients or instructions format." 
             });
+        }
+
+        // Parse the new JSON fields
+        let parsedDietaryTags = [];
+        let parsedAllergens = [];
+        
+        try {
+            parsedDietaryTags = dietaryTags ? JSON.parse(dietaryTags) : [];
+            parsedAllergens = allergens ? JSON.parse(allergens) : [];
+        } catch (parseError) {
+            console.log("Optional fields parsing error:", parseError);
+            // Continue with empty arrays if parsing fails
         }
 
         // Handle image upload
@@ -118,7 +135,11 @@ export const createRecipe = async (req, res) => {
             imageUrl,
             createdBy: req.userId,
             isPublic: isPublic,
-            price: price ? parseFloat(price) : 0
+            price: price ? parseFloat(price) : 0,
+            // Add new preference fields
+            dietaryTags: parsedDietaryTags,
+            cuisine: cuisine || 'Filipino',
+            allergens: parsedAllergens
         });
 
         await recipe.save();

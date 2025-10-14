@@ -164,60 +164,23 @@ export const useAuthStore = create((set, get) => ({
 
     checkAuth: async () => {
         try {
-            set({ isCheckingAuth: true });
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
             
-            // Check if user intentionally logged out
-            const loggedOut = localStorage.getItem('loggedOut');
-            
-            if (loggedOut === 'true') {
-                // User logged out, don't try to authenticate
-                localStorage.removeItem('loggedOut');
-                set({ 
-                    user: null, 
-                    isAuthenticated: false, 
-                    isCheckingAuth: false,
-                    error: null,
-                    accountStatus: null
-                });
-                return;
-            }
-            
-            const response = await axios.get(`${API_URL}/check-auth`, {
-                withCredentials: true
+            const response = await axios.get(`${baseURL}/api/auth/check-auth`, {
+                withCredentials: true,
             });
             
             if (response.data.success) {
-                set({ 
-                    user: response.data.user, 
-                    isAuthenticated: true, 
-                    isCheckingAuth: false,
-                    error: null,
-                    accountStatus: null
-                });
+                console.log('Auth check - user data:', response.data.user);
+                set({ user: response.data.user, isAuthenticated: true, isCheckingAuth: false });
             } else {
-                set({ 
-                    user: null, 
-                    isAuthenticated: false, 
-                    isCheckingAuth: false,
-                    error: null,
-                    accountStatus: null
-                });
+                set({ user: null, isAuthenticated: false, isCheckingAuth: false });
             }
         } catch (error) {
-            console.log("Auth check failed:", error.response?.status);
-            
-            set({ 
-                user: null, 
-                isAuthenticated: false, 
-                isCheckingAuth: false,
-                error: null,
-                accountStatus: null
-            });
-            
-            // If server says unauthorized, user needs to login again
-            if (error.response?.status === 401 || error.response?.status === 403) {
-                localStorage.setItem('loggedOut', 'true');
-            }
+            console.error("Auth check error:", error);
+            set({ user: null, isAuthenticated: false, isCheckingAuth: false });
         }
     },
 

@@ -1089,3 +1089,85 @@ i[class^="bx-"], i[class*=" bx-"] {
 .ingredient-name {
   flex: 1;
 }
+
+// Dietary Tags Container
+.dietary-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.dietary-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #e2e8f0;
+  
+  &:hover {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+  }
+  
+  &.active {
+    background: #CF996C;
+    color: white;
+    border-color: #BB8860;
+    box-shadow: 0 2px 8px rgba(207, 153, 108, 0.2);
+    
+    i {
+      font-size: 0.9rem;
+    }
+  }
+}
+
+// Allergens Container
+.allergens-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.allergen-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 16px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid #fecaca;
+}
+
+.remove-allergen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #b91c1c;
+  color: white;
+  font-size: 0.7rem;
+  border: none;
+  cursor: pointer;
+  margin-left: 0.2rem;
+  padding: 0;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: #991b1b;
+    transform: scale(1.1);
+  }
+}

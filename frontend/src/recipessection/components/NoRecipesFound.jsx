@@ -19,9 +19,12 @@ const NoRecipesFound = ({ selectedIngredients = [] }) => {
                 const response = await axios.get(`${baseURL}/api/recipes`);
                 if (response.data.success && response.data.recipes) {
                     setAllRecipes(response.data.recipes);
+                } else {
+                    setAllRecipes(response.data.recipes || []);
                 }
             } catch (error) {
                 console.error('Error fetching recipes:', error);
+                setAllRecipes([]);
             } finally {
                 setLoading(false);
             }

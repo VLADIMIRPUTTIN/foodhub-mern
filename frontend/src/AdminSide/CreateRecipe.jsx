@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import './CreateRecipe.scss';
 
+// Categories and options arrays remain unchanged
 const categories = [
     'Appetizer', 'Main Course', 'Dessert', 'Breakfast', 
     'Lunch', 'Dinner', 'Snack', 'Beverage', 'Soup', 'Salad'
@@ -10,7 +11,18 @@ const categories = [
 
 const units = ['cups', 'tbsp', 'tsp', 'oz', 'lbs', 'g', 'kg', 'ml', 'l', 'pieces'];
 
+const dietaryOptions = [
+    'vegetarian', 'vegan', 'gluten-free', 'dairy-free', 
+    'keto', 'paleo', 'halal', 'kosher', 'low-carb', 'high-protein'
+];
+
+const cuisineOptions = [
+    'Filipino', 'Italian', 'Chinese', 'Japanese', 'Korean', 
+    'Mexican', 'Indian', 'Thai', 'American', 'French', 'Mediterranean'
+];
+
 const CreateRecipe = ({ onRecipeSaved }) => {
+    // All your existing state variables
     const [image, setImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [name, setName] = useState('');
@@ -20,7 +32,7 @@ const CreateRecipe = ({ onRecipeSaved }) => {
     const [steps, setSteps] = useState([{ instruction: '', details: '' }]);
     const [isLoading, setIsLoading] = useState(false);
     const [allIngredients, setAllIngredients] = useState([]);
-    const [activeTab, setActiveTab] = useState('basic');
+    const [activeTab, setActiveTab] = useState('basic'); 
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [price, setPrice] = useState('');
@@ -29,6 +41,13 @@ const CreateRecipe = ({ onRecipeSaved }) => {
     const [suggestionSuccess, setSuggestionSuccess] = useState("");
     const [isGeneratingSteps, setIsGeneratingSteps] = useState(false);
     const [stepSuggestionSuccess, setStepSuggestionSuccess] = useState("");
+
+    // New state variables for preferences
+    const [dietaryTags, setDietaryTags] = useState([]);
+    const [cuisine, setCuisine] = useState('Filipino'); // Default to Filipino
+    const [allergens, setAllergens] = useState([]);
+    const [cookingTime, setCookingTime] = useState('');
+    const [difficulty, setDifficulty] = useState('Easy');
 
     useEffect(() => {
         const fetchIngredients = async () => {
@@ -75,6 +94,27 @@ const CreateRecipe = ({ onRecipeSaved }) => {
     const addStep = () => setSteps([...steps, { instruction: '', details: '' }]);
     const removeStep = (idx) => setSteps(steps.filter((_, i) => i !== idx));
 
+    // Add these handler functions HERE, inside the component:
+    const handleDietaryTagToggle = (tag) => {
+        setDietaryTags(prev => 
+            prev.includes(tag)
+                ? prev.filter(t => t !== tag)
+                : [...prev, tag]
+        );
+    };
+
+    const handleAddAllergen = (e) => {
+        if (e.key === 'Enter' && e.target.value.trim()) {
+            setAllergens(prev => [...prev, e.target.value.trim()]);
+            e.target.value = '';
+            e.preventDefault();
+        }
+    };
+
+    const handleRemoveAllergen = (allergen) => {
+        setAllergens(prev => prev.filter(a => a !== allergen));
+    };
+
     const resetForm = () => {
         setName('');
         setCategory('');
@@ -86,8 +126,15 @@ const CreateRecipe = ({ onRecipeSaved }) => {
         setActiveTab('basic');
         setPrice('');
         setServings('');
+        // Reset the new preference fields
+        setDietaryTags([]);
+        setCuisine('Filipino');
+        setAllergens([]);
+        setCookingTime('');
+        setDifficulty('Easy');
     };
 
+    // Handle form submission - update to include new fields
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
@@ -95,33 +142,42 @@ const CreateRecipe = ({ onRecipeSaved }) => {
         setSuccess('');
 
         try {
+            // Validate required fields
+            // ...existing validation code...
+            
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+
+            // Create FormData
             const formData = new FormData();
             formData.append('title', name);
             formData.append('category', category);
             formData.append('description', description);
-            formData.append('ingredients', JSON.stringify(ingredients));
-            formData.append('instructions', JSON.stringify(steps));
-            if (image) {
-                formData.append('image', image);
-            }
-            formData.append('price', price);
-            formData.append('servings', servings);
-
-            const baseURL = import.meta.env.MODE === "development" 
-                ? "http://localhost:5000" 
-                : "";
+            formData.append('ingredients', JSON.stringify(ingredients.filter(i => i.name)));
+            formData.append('instructions', JSON.stringify(steps.filter(s => s.instruction)));
+            if (image) formData.append('image', image);
+            if (price) formData.append('price', price);
+            if (servings) formData.append('servings', servings);
+            if (cookingTime) formData.append('cookingTime', cookingTime);
+            formData.append('difficulty', difficulty);
+            
+            // Add preference-based fields
+            formData.append('dietaryTags', JSON.stringify(dietaryTags));
+            formData.append('cuisine', cuisine);
+            formData.append('allergens', JSON.stringify(allergens));
             
             const response = await axios.post(
-                `${baseURL}/api/recipes`,
+                `${baseURL}/api/recipes`, 
                 formData,
-                {
+                { 
+                    withCredentials: true,
                     headers: {
                         'Content-Type': 'multipart/form-data'
-                    },
-                    withCredentials: true
+                    }
                 }
             );
-
+            
             if (response.data.success) {
                 setSuccess('Recipe created successfully!');
                 resetForm();
@@ -847,7 +903,103 @@ const CreateRecipe = ({ onRecipeSaved }) => {
                         </div>
                     </motion.div>
                 );
-
+                
+            case 'preferences':
+                return (
+                    <div className="tab-content-wrapper">
+                        <div className="form-card">
+                            <h3 className="card-title">
+                                <i className="bx bx-dish"></i>
+                                Recipe Preferences & Dietary Information
+                            </h3>
+                            <div className="form-content">
+                                <div className="form-group">
+                                    <label className="form-label">Cuisine</label>
+                                    <select 
+                                        className="form-select" 
+                                        value={cuisine} 
+                                        onChange={(e) => setCuisine(e.target.value)}
+                                    >
+                                        {cuisineOptions.map(option => (
+                                            <option key={option} value={option}>{option}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label className="form-label">Cooking Time (minutes)</label>
+                                    <input
+                                        type="number"
+                                        className="form-input"
+                                        value={cookingTime}
+                                        onChange={(e) => setCookingTime(e.target.value)}
+                                        placeholder="e.g. 30"
+                                        min="1"
+                                    />
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label className="form-label">Difficulty Level</label>
+                                    <select 
+                                        className="form-select" 
+                                        value={difficulty} 
+                                        onChange={(e) => setDifficulty(e.target.value)}
+                                    >
+                                        <option value="Easy">Easy</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="Hard">Hard</option>
+                                    </select>
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label className="form-label">Dietary Tags</label>
+                                    <div className="dietary-tags-container">
+                                        {dietaryOptions.map(tag => (
+                                            <button
+                                                type="button"
+                                                key={tag}
+                                                onClick={() => handleDietaryTagToggle(tag)}
+                                                className={`dietary-tag ${dietaryTags.includes(tag) ? 'active' : ''}`}
+                                            >
+                                                {dietaryTags.includes(tag) && <i className="bx bx-check"></i>}
+                                                {tag}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <p className="form-description">
+                                        <i className="bx bx-info-circle"></i>
+                                        Select all tags that apply to this recipe
+                                    </p>
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label className="form-label">Allergens</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        placeholder="Type and press Enter to add allergens"
+                                        onKeyDown={handleAddAllergen}
+                                    />
+                                    <div className="allergens-container">
+                                        {allergens.map(allergen => (
+                                            <div key={allergen} className="allergen-tag">
+                                                {allergen}
+                                                <button 
+                                                    type="button" 
+                                                    className="remove-allergen" 
+                                                    onClick={() => handleRemoveAllergen(allergen)}
+                                                >
+                                                    <i className="bx bx-x"></i>
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            
             default:
                 return null;
         }
@@ -862,6 +1014,7 @@ const CreateRecipe = ({ onRecipeSaved }) => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.1 }}
                 >
+                    {/* Existing tabs */}
                     <button
                         type="button"
                         className={`tab-button ${activeTab === 'basic' ? 'active' : ''}`}
@@ -885,6 +1038,16 @@ const CreateRecipe = ({ onRecipeSaved }) => {
                     >
                         <i className="bx bx-list-ol"></i>
                         Steps
+                    </button>
+                    
+                    {/* New preferences tab */}
+                    <button
+                        type="button"
+                        className={`tab-button ${activeTab === 'preferences' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('preferences')}
+                    >
+                        <i className="bx bx-food-menu"></i>
+                        Preferences
                     </button>
                 </motion.div>
 
@@ -1092,3 +1255,4 @@ const processIngredientsResponse = async (ingredientsList) => {
   
   // Your existing code...
 };
+

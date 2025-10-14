@@ -10,8 +10,7 @@ import IngredientsSidebar from './components/IngredientsSidebar';
 import RecipeGrid from './components/RecipeGrid';
 import PaginationControls from './components/PaginationControls';
 import NoRecipesFound from './components/NoRecipesFound';
-import TimeBasedRecipes from './components/TimeBasedRecipes';
-import { useToast } from "../components/ui/toast";
+import { useToast } from '../components/ui/toast';
 import { useAuthStore } from '../store/authStore';
 import './RecipePage.scss';
 import RatingModal from '../components/RatingModal';
@@ -48,11 +47,6 @@ const RecipePage = () => {
     
     // Current meal type based on time of day
     const [currentMealType, setCurrentMealType] = useState('');
-
-    // Recipe sections based on preferences
-    const [timeAndPreferenceRecipes, setTimeAndPreferenceRecipes] = useState([]);
-    const [preferenceOnlyRecipes, setPreferenceOnlyRecipes] = useState([]);
-    const [otherRecipes, setOtherRecipes] = useState([]);
     
     // Touch/swipe handling refs and states
     const gridContainerRef = useRef(null);
@@ -81,12 +75,27 @@ const RecipePage = () => {
     const matchesUserPreferences = (recipe) => {
         if (!user || !user.hasCompletedOnboarding) return true;
 
+        console.log('User preferences:', {
+            dietaryPreferences: user.dietaryPreferences,
+            allergies: user.allergies,
+            preferredCuisines: user.preferredCuisines
+        });
+        
+        console.log('Recipe data:', {
+            dietaryTags: recipe.dietaryTags,
+            allergens: recipe.allergens,
+            cuisine: recipe.cuisine
+        });
+
         // Check dietary preferences
         if (user.dietaryPreferences && user.dietaryPreferences.length > 0) {
             const hasMatchingDietary = user.dietaryPreferences.some(pref => 
                 recipe.dietaryTags && recipe.dietaryTags.includes(pref)
             );
-            if (!hasMatchingDietary) return false;
+            if (!hasMatchingDietary) {
+                console.log('Recipe excluded: no matching dietary preference');
+                return false;
+            }
         }
 
         // Check allergies - exclude recipes containing user's allergens
@@ -95,21 +104,28 @@ const RecipePage = () => {
                 recipe.allergens && recipe.allergens.some(allergen => 
                     allergen.toLowerCase().includes(allergy.toLowerCase())
                 ) ||
-                recipe.ingredients && recipe.ingredients.some(ingredient => 
-                    typeof ingredient === 'string' && 
-                    ingredient.toLowerCase().includes(allergy.toLowerCase())
-                )
+                recipe.ingredients && recipe.ingredients.some(ingredient => {
+                    const ingredientName = typeof ingredient === 'string' 
+                        ? ingredient 
+                        : ingredient.name || '';
+                    return ingredientName.toLowerCase().includes(allergy.toLowerCase());
+                })
             );
-            if (hasAllergen) return false;
+            if (hasAllergen) {
+                console.log('Recipe excluded: contains allergen');
+                return false;
+            }
         }
 
         // Check preferred cuisines
         if (user.preferredCuisines && user.preferredCuisines.length > 0) {
             if (recipe.cuisine && !user.preferredCuisines.includes(recipe.cuisine)) {
+                console.log('Recipe excluded: cuisine not preferred');
                 return false;
             }
         }
 
+        console.log('Recipe matches user preferences');
         return true;
     };
 
@@ -240,10 +256,10 @@ const RecipePage = () => {
         );
     }, [ingredientSearch, ingredients]);
 
-    // Filter recipes based on search, ingredients, category, price, and user preferences
-    useEffect(() => {
-        // Apply basic filters (search, ingredients, category, price)
-        const basicFilteredRecipes = recipes.filter(recipe => {
+    // Apply all filters and sort recipes by priority
+    const allFilteredRecipes = recipes
+        .filter(recipe => {
+            // First apply basic filters
             const recipeName = recipe.title || recipe.name || '';
             const matchesSearch = recipeName.toLowerCase().includes(searchTerm.toLowerCase());
             
@@ -264,43 +280,38 @@ const RecipePage = () => {
             const matchesMaxPrice = !maxPrice || (recipe.price && recipe.price <= Number(maxPrice));
             
             return matchesSearch && matchesIngredients && matchesCategoryFilter && 
-                   matchesMinPrice && matchesMaxPrice;
+                matchesMinPrice && matchesMaxPrice;
+        })
+        .map(recipe => {
+            // Add priority flag to each recipe
+            const isTimeMatch = matchesTimeOfDay(recipe);
+            const isPrefMatch = user?.hasCompletedOnboarding ? matchesUserPreferences(recipe) : true;
+            
+            let priority;
+            if (isTimeMatch && isPrefMatch) {
+                priority = 'time-and-preference';
+            } else if (!isTimeMatch && isPrefMatch) {
+                priority = 'preference-only';
+            } else if (isTimeMatch && !isPrefMatch) {
+                priority = 'time-only';
+            } else {
+                priority = 'other';
+            }
+            
+            return { ...recipe, priority };
+        })
+        .sort((a, b) => {
+            // Sort by priority
+            const priorityOrder = {
+                'time-and-preference': 0,
+                'preference-only': 1,
+                'time-only': 2,
+                'other': 3
+            };
+            
+            return priorityOrder[a.priority] - priorityOrder[b.priority];
         });
 
-        // If user is logged in and has completed onboarding, categorize recipes
-        if (user && user.hasCompletedOnboarding) {
-            // 1. Time-based + Preference-based
-            const timeAndPref = basicFilteredRecipes.filter(recipe => 
-                matchesTimeOfDay(recipe) && matchesUserPreferences(recipe)
-            );
-            
-            // 2. Preference-based but not time-based
-            const prefOnly = basicFilteredRecipes.filter(recipe => 
-                !matchesTimeOfDay(recipe) && matchesUserPreferences(recipe)
-            );
-            
-            // 3. All others
-            const others = basicFilteredRecipes.filter(recipe => 
-                !matchesUserPreferences(recipe)
-            );
-            
-            setTimeAndPreferenceRecipes(timeAndPref);
-            setPreferenceOnlyRecipes(prefOnly);
-            setOtherRecipes(others);
-        } else {
-            // For users without preferences, just show all with time-based first
-            const timeBasedRecipes = basicFilteredRecipes.filter(matchesTimeOfDay);
-            const nonTimeBasedRecipes = basicFilteredRecipes.filter(recipe => !matchesTimeOfDay(recipe));
-            
-            setTimeAndPreferenceRecipes(timeBasedRecipes);
-            setPreferenceOnlyRecipes([]);
-            setOtherRecipes(nonTimeBasedRecipes);
-        }
-        
-    }, [recipes, searchTerm, selectedIngredients, categoryFilter, minPrice, maxPrice, user, currentMealType]);
-
-    // Combine all filtered recipes in the right order
-    const allFilteredRecipes = [...timeAndPreferenceRecipes, ...preferenceOnlyRecipes, ...otherRecipes];
     const totalPages = Math.ceil(allFilteredRecipes.length / RECIPES_PER_PAGE);
     
     // Get current page of recipes
@@ -321,7 +332,7 @@ const RecipePage = () => {
             setCurrentPage(1);
         }
         scrollToTop();
-    }, [timeAndPreferenceRecipes.length, preferenceOnlyRecipes.length, otherRecipes.length, totalPages]);
+    }, [allFilteredRecipes.length, totalPages]);
 
     const handleIngredientClick = (ing) => {
         setSelectedIngredients(selected =>
@@ -390,50 +401,52 @@ const RecipePage = () => {
         }
     };
 
+    // Corrected handleFavoriteToggle function for RecipePage.jsx
     const handleFavoriteToggle = async (recipeId, event) => {
         event.stopPropagation();
         if (!user) {
             setShowLoginPrompt(true);
             return;
         }
-        
         try {
+            const isFavorited = favoriteRecipes.includes(recipeId);
+            const recipe = recipes.find(r => r._id === recipeId);
+            const recipeName = recipe?.title || recipe?.name || 'Recipe';
+            
             const baseURL = import.meta.env.MODE === "development"
                 ? "http://localhost:5000"
                 : "";
                 
-            const isFavorited = favoriteRecipes.some(fav => fav === recipeId);
-            
-            const response = await axios({
-                method: isFavorited ? 'delete' : 'post',
-                url: `${baseURL}/api/favorites/${recipeId}`,
-                withCredentials: true
-            });
-            
-            if (response.data.success) {
-                if (isFavorited) {
-                    setFavoriteRecipes(favoriteRecipes.filter(id => id !== recipeId));
-                    toast({
-                        title: "Removed from favorites",
-                        description: "Recipe removed from your favorites",
-                        duration: 2000
-                    });
-                } else {
-                    setFavoriteRecipes([...favoriteRecipes, recipeId]);
-                    toast({
-                        title: "Added to favorites",
-                        description: "Recipe added to your favorites",
-                        duration: 2000
-                    });
-                }
+            if (isFavorited) {
+                // Use DELETE method for removing favorites
+                await axios.delete(
+                    `${baseURL}/api/favorites/${recipeId}`,
+                    { withCredentials: true }
+                );
+                setFavoriteRecipes(prev => prev.filter(id => id !== recipeId));
+                toast.info(
+                    'Removed from Favorites',
+                    `${recipeName} has been removed from your favorites`
+                );
+            } else {
+                // Use POST method for adding favorites
+                await axios.post(
+                    `${baseURL}/api/favorites`,
+                    { recipeId },
+                    { withCredentials: true }
+                );
+                setFavoriteRecipes(prev => [...prev, recipeId]);
+                toast.favorite(
+                    'Added to Favorites! ❤️',
+                    `${recipeName} has been saved to your collection`
+                );
             }
         } catch (error) {
-            console.error("Error toggling favorite:", error);
-            toast({
-                title: "Error",
-                description: "Failed to update favorites",
-                variant: "destructive"
-            });
+            console.error('Error toggling favorite:', error);
+            toast.error(
+                'Something went wrong',
+                'Failed to update favorite. Please try again.'
+            );
         }
     };
 
@@ -467,16 +480,26 @@ const RecipePage = () => {
         setRecipeToComment(recipe);
         setCommentModalOpen(true);
     };
-
-    // Helper function to check if a recipe matches ingredients
-    const ingredientMatches = (recipeIngredient, selectedIngredient) => {
-        if (typeof recipeIngredient === 'string') {
-            return recipeIngredient.toLowerCase().includes(selectedIngredient.toLowerCase());
-        } else if (recipeIngredient.name) {
-            return recipeIngredient.name.toLowerCase().includes(selectedIngredient.toLowerCase());
+    
+    // Add this useEffect to debug user data:
+    useEffect(() => {
+        console.log('Current user data:', user);
+        if (user) {
+            console.log('User preferences:', {
+                hasCompletedOnboarding: user.hasCompletedOnboarding,
+                dietaryPreferences: user.dietaryPreferences,
+                allergies: user.allergies,
+                preferredCuisines: user.preferredCuisines
+            });
         }
-        return false;
-    };
+    }, [user]);
+
+    // Add this useEffect to debug filtered recipes:
+    useEffect(() => {
+        console.log('Total recipes:', recipes.length);
+        console.log('Filtered recipes:', allFilteredRecipes.length);
+        console.log('User preferences applied:', user?.hasCompletedOnboarding);
+    }, [recipes, allFilteredRecipes, user]);
 
     return (
         <div className="recipe-page">
@@ -485,10 +508,20 @@ const RecipePage = () => {
                 {/* Show personalization notice if user hasn't completed onboarding */}
                 {user && !user.hasCompletedOnboarding && (
                     <div className="personalization-notice">
-                        <p>💡 Complete your profile setup to see personalized recipe recommendations!</p>
-                        <button onClick={() => navigate('/onboarding')}>
-                            Personalize Now
-                        </button>
+                        <div className="personalization-content">
+                            <i className="bx bx-bulb"></i>
+                            <div className="personalization-text">
+                                <h3>Get Personalized Recommendations!</h3>
+                                <p>Complete your profile setup to see recipes tailored to your taste and dietary preferences.</p>
+                            </div>
+                            <button 
+                                className="personalize-btn"
+                                onClick={() => navigate('/onboarding')}
+                            >
+                                <i className="bx bx-user-plus"></i>
+                                Set Up Now
+                            </button>
+                        </div>
                     </div>
                 )}
 
@@ -532,18 +565,12 @@ const RecipePage = () => {
                         <div className="header-bg-text">
                             <h1>
                                 {user && user.hasCompletedOnboarding ? 
-                                    `Personalized ${currentMealType} Recipes` : 
-                                    `${currentMealType} Recipes`
+                                    `Perfect ${currentMealType} for You` : 
+                                    `Delicious ${currentMealType} Recipes`
                                 }
                             </h1>
-                            {user && user.hasCompletedOnboarding && (
-                                <p>Tailored to your dietary preferences</p>
-                            )}
                         </div>
                     </div>
-
-                    {/* Time-based recommended recipes */}
-                    <TimeBasedRecipes />
 
                     {/* Selected ingredients display */}
                     <SelectedIngredients 
@@ -563,136 +590,40 @@ const RecipePage = () => {
                         setMaxPrice={setMaxPrice}
                     />
 
-                    {/* Recipe Section Headers based on user preferences */}
-                    {user && user.hasCompletedOnboarding && (
-                        <>
-                            {/* Time-based preferred recipes */}
-                            {timeAndPreferenceRecipes.length > 0 && (
-                                <div className="recipe-section">
-                                    <h2 className="section-title">
-                                        <i className="bx bx-time"></i> {currentMealType} Recommendations
-                                        <span className="recipe-count">({timeAndPreferenceRecipes.length})</span>
-                                    </h2>
-                                    <div className="recipe-section-grid">
-                                        {timeAndPreferenceRecipes.slice(0, 4).map(recipe => (
-                                            <div 
-                                                key={recipe._id} 
-                                                className="recipe-card highlight-card"
-                                                onClick={() => setSelectedRecipe(recipe)}
-                                            >
-                                                <div className="recipe-image">
-                                                    <img 
-                                                        src={recipe.imageUrl || "https://via.placeholder.com/300x200?text=No+Image"} 
-                                                        alt={recipe.title} 
-                                                        onError={(e) => {
-                                                            e.target.src = "https://via.placeholder.com/300x200?text=No+Image";
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div className="recipe-content">
-                                                    <h3>{recipe.title}</h3>
-                                                    <p>{recipe.description?.substring(0, 60)}...</p>
-                                                    <div className="recipe-meta">
-                                                        <span><i className="bx bx-time"></i> {recipe.cookingTime || 30} min</span>
-                                                        <span><i className="bx bx-bowl-hot"></i> {recipe.difficulty || 'Easy'}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="recipe-badges">
-                                                    <span className="time-badge">{currentMealType}</span>
-                                                    {recipe.dietaryTags?.map((tag, i) => (
-                                                        <span key={i} className="dietary-badge">{tag}</span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {timeAndPreferenceRecipes.length > 4 && (
-                                        <button 
-                                            className="view-more-btn"
-                                            onClick={() => {/* Handle view more logic */}}
-                                        >
-                                            View More {currentMealType} Recipes
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Other preferred recipes not based on time */}
-                            {preferenceOnlyRecipes.length > 0 && (
-                                <div className="recipe-section">
-                                    <h2 className="section-title">
-                                        <i className="bx bx-like"></i> Other Recommended Recipes
-                                        <span className="recipe-count">({preferenceOnlyRecipes.length})</span>
-                                    </h2>
-                                    <div className="recipe-section-grid">
-                                        {preferenceOnlyRecipes.slice(0, 4).map(recipe => (
-                                            <div 
-                                                key={recipe._id} 
-                                                className="recipe-card"
-                                                onClick={() => setSelectedRecipe(recipe)}
-                                            >
-                                                <div className="recipe-image">
-                                                    <img 
-                                                        src={recipe.imageUrl || "https://via.placeholder.com/300x200?text=No+Image"} 
-                                                        alt={recipe.title} 
-                                                        onError={(e) => {
-                                                            e.target.src = "https://via.placeholder.com/300x200?text=No+Image";
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div className="recipe-content">
-                                                    <h3>{recipe.title}</h3>
-                                                    <p>{recipe.description?.substring(0, 60)}...</p>
-                                                    <div className="recipe-meta">
-                                                        <span><i className="bx bx-time"></i> {recipe.cookingTime || 30} min</span>
-                                                        <span><i className="bx bx-bowl-hot"></i> {recipe.difficulty || 'Easy'}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            
-                            {/* Other recipes section */}
-                            {otherRecipes.length > 0 && (
-                                <div className="recipe-section">
-                                    <h2 className="section-title">
-                                        <i className="bx bx-food-menu"></i> All Other Recipes
-                                        <span className="recipe-count">({otherRecipes.length})</span>
-                                    </h2>
-                                </div>
-                            )}
-                        </>
-                    )}
-
-                    {/* Main recipe grid - fallback for all cases */}
+                    {/* Single grid showing all recipes in prioritized order */}
                     <div className="recipe-grid-container">
-                        <h2 className="section-title">All Recipes</h2>
-                        <RecipeGrid 
-                            gridRecipes={gridRecipes}
-                            isSwiping={isSwiping}
-                            setSelectedRecipe={setSelectedRecipe}
-                            handleFavoriteToggle={handleFavoriteToggle}
-                            favoriteRecipes={favoriteRecipes}
-                            handleTouchStart={handleTouchStart}
-                            handleTouchMove={handleTouchMove}
-                            handleTouchEnd={handleTouchEnd}
-                            gridContainerRef={gridContainerRef}
-                            filteredRecipes={allFilteredRecipes}
-                            handleRateClick={handleRateClick}
-                            currentMealType={currentMealType}
-                            handleCommentClick={handleCommentClick}
-                        />
+                        
+                        {allFilteredRecipes.length === 0 ? (
+                            <NoRecipesFound selectedIngredients={selectedIngredients} />
+                        ) : (
+                            <>
+                                {/* Main Recipe Grid */}
+                                <RecipeGrid 
+                                    gridRecipes={gridRecipes}
+                                    isSwiping={isSwiping}
+                                    setSelectedRecipe={setSelectedRecipe}
+                                    handleFavoriteToggle={handleFavoriteToggle}
+                                    favoriteRecipes={favoriteRecipes}
+                                    handleTouchStart={handleTouchStart}
+                                    handleTouchMove={handleTouchMove}
+                                    handleTouchEnd={handleTouchEnd}
+                                    gridContainerRef={gridContainerRef}
+                                    filteredRecipes={allFilteredRecipes}
+                                    handleRateClick={handleRateClick}
+                                    currentMealType={currentMealType}
+                                    handleCommentClick={handleCommentClick}
+                                    currentPage={currentPage}
+                                    userPreferences={user?.hasCompletedOnboarding}
+                                />
 
-                        {allFilteredRecipes.length === 0 && <NoRecipesFound />}
-
-                        {/* Pagination controls */}
-                        <PaginationControls 
-                            currentPage={currentPage}
-                            setCurrentPage={setCurrentPage}
-                            totalPages={totalPages}
-                        />
+                                {/* Pagination controls */}
+                                <PaginationControls 
+                                    currentPage={currentPage}
+                                    setCurrentPage={setCurrentPage}
+                                    totalPages={totalPages}
+                                />
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

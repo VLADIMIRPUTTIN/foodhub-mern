@@ -1002,6 +1002,65 @@
         0%, 100% { transform: translateY(0px); }
         50% { transform: translateY(-10px); }
     }
+
+    // New styles for tags and meta information
+    .cuisine-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.25rem 0.5rem;
+        background: rgba(207, 153, 108, 0.1);
+        border-radius: 20px;
+        color: #CF996C;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 0.5rem;
+        border: 1px solid rgba(207, 153, 108, 0.2);
+        
+        i {
+            font-size: 0.85rem;
+        }
+    }
+
+    .dietary-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        margin-top: 0.3rem;
+    }
+
+    .dietary-tag-small {
+        display: inline-block;
+        padding: 0.2rem 0.4rem;
+        background: rgba(79, 70, 229, 0.1);
+        border-radius: 12px;
+        color: #4f46e5;
+        font-size: 0.7rem;
+        font-weight: 600;
+        border: 1px solid rgba(79, 70, 229, 0.2);
+    }
+
+    .cooking-time, .difficulty {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        margin-right: 1rem;
+        color: #64748b;
+        font-size: 0.8rem;
+        
+        i {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+    }
+
+    .meta-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
 }
 
 // Boxicons font family rule

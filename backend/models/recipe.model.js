@@ -31,12 +31,10 @@ const recipeSchema = new mongoose.Schema({
     
     dietaryTags: {
         type: [String],
-        enum: ['vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'keto', 'paleo', 'halal', 'kosher', 'low-carb', 'high-protein'],
         default: []
     },
     cuisine: {
         type: String,
-        enum: ['Filipino', 'Italian', 'Chinese', 'Japanese', 'Korean', 'Mexican', 'Indian', 'Thai', 'American', 'French', 'Mediterranean'],
         default: 'Filipino'
     },
     allergens: {

@@ -46,18 +46,117 @@ const ManageRecipeAndIngredientsPage = ({
         setIngredientSearch('');
     };
 
+    const renderRecipeItem = (recipe) => (
+        <div className="list-item recipe-item" key={recipe._id}>
+            <div className="item-image">
+                {recipe.imageUrl ? (
+                    <img
+                        src={
+                            recipe.imageUrl.startsWith('http')
+                                ? recipe.imageUrl
+                                : `${import.meta.env.MODE === 'development' ? 'http://localhost:5000' : ''}/${
+                                      recipe.imageUrl.startsWith('/') ? recipe.imageUrl.slice(1) : recipe.imageUrl
+                                  }`
+                        }
+                        alt={recipe.title || recipe.name}
+                        onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/150?text=No+Image';
+                        }}
+                    />
+                ) : (
+                    <div className="placeholder-image">
+                        <i className="bx bx-image"></i>
+                    </div>
+                )}
+            </div>
+            <div className="item-content">
+                <div className="item-header">
+                    <h3 className="item-title">{recipe.title || recipe.name}</h3>
+                    <div className="item-category">{recipe.category}</div>
+                </div>
+
+                <div className="item-meta">
+                    <div className="meta-row">
+                        <span className="creator">
+                            <i className="bx bx-user"></i>
+                            {recipe.createdBy?.name || 'Unknown User'}
+                        </span>
+                        <span className="timestamp">
+                            <i className="bx bx-calendar"></i>
+                            {new Date(recipe.createdAt).toLocaleDateString()}
+                        </span>
+
+                        {/* Add cooking time */}
+                        {recipe.cookingTime && (
+                            <span className="cooking-time">
+                                <i className="bx bx-time"></i>
+                                {recipe.cookingTime} min
+                            </span>
+                        )}
+
+                        {/* Add difficulty */}
+                        {recipe.difficulty && (
+                            <span className="difficulty">
+                                <i className="bx bx-line-chart"></i>
+                                {recipe.difficulty}
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Add cuisine */}
+                    {recipe.cuisine && (
+                        <div className="cuisine-tag">
+                            <i className="bx bx-world"></i>
+                            {recipe.cuisine}
+                        </div>
+                    )}
+
+                    {/* Add dietary tags */}
+                    {recipe.dietaryTags && recipe.dietaryTags.length > 0 && (
+                        <div className="dietary-tags">
+                            {recipe.dietaryTags.map((tag) => (
+                                <span key={tag} className="dietary-tag-small">
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="item-description">{recipe.description}</div>
+            </div>
+
+            <div className="item-actions">
+                <button
+                    className="btn btn--secondary btn--sm"
+                    onClick={() => setEditingRecipe(recipe)}
+                >
+                    <i className="bx bx-edit"></i>
+                    Edit
+                </button>
+                <button
+                    className="btn btn--destructive btn--sm"
+                    onClick={() => handleDeleteRecipe(recipe._id)}
+                >
+                    <i className="bx bx-trash"></i>
+                    Delete
+                </button>
+            </div>
+        </div>
+    );
+
     return (
         <div className="manage-recipes-ingredients">
             {/* Mobile Tab Navigation */}
             <div className="mobile-tabs">
-                <button 
+                <button
                     className={`tab-button ${activeTab === 'recipes' ? 'active' : ''}`}
                     onClick={() => setActiveTab('recipes')}
                 >
                     <i className="bx bx-bowl-hot"></i>
                     Recipes ({filteredRecipes.length})
                 </button>
-                <button 
+                <button
                     className={`tab-button ${activeTab === 'ingredients' ? 'active' : ''}`}
                     onClick={() => setActiveTab('ingredients')}
                 >
@@ -76,7 +175,7 @@ const ManageRecipeAndIngredientsPage = ({
                             All Recipes
                             <span className="count">({filteredRecipes.length})</span>
                         </h2>
-                        
+
                         <div className="search-container">
                             <div className="search-wrapper">
                                 <i className="bx bx-search search-icon"></i>
@@ -85,10 +184,10 @@ const ManageRecipeAndIngredientsPage = ({
                                     className="search-input"
                                     placeholder="Search recipes by title, category, creator..."
                                     value={recipeSearch}
-                                    onChange={e => setRecipeSearch(e.target.value)}
+                                    onChange={(e) => setRecipeSearch(e.target.value)}
                                 />
                                 {recipeSearch && (
-                                    <button 
+                                    <button
                                         className="clear-search"
                                         onClick={clearRecipeSearch}
                                         title="Clear search"
@@ -99,7 +198,8 @@ const ManageRecipeAndIngredientsPage = ({
                             </div>
                             {recipeSearch && (
                                 <div className="search-results">
-                                    Found {filteredRecipes.length} recipe{filteredRecipes.length !== 1 ? 's' : ''}
+                                    Found {filteredRecipes.length} recipe
+                                    {filteredRecipes.length !== 1 ? 's' : ''}
                                 </div>
                             )}
                         </div>
@@ -112,13 +212,12 @@ const ManageRecipeAndIngredientsPage = ({
                                     <i className="bx bx-bowl-hot empty-icon"></i>
                                     <h3>No recipes found</h3>
                                     <p>
-                                        {recipeSearch 
+                                        {recipeSearch
                                             ? `No recipes match your search for "${recipeSearch}"`
-                                            : "No recipes available in the system"
-                                        }
+                                            : 'No recipes available in the system'}
                                     </p>
                                     {recipeSearch && (
-                                        <button 
+                                        <button
                                             className="btn btn--primary"
                                             onClick={clearRecipeSearch}
                                         >
@@ -138,129 +237,7 @@ const ManageRecipeAndIngredientsPage = ({
                                         whileHover={{ y: -4, scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                     >
-                                        <div className="item-image">
-                                            {recipe.imageUrl ? (
-                                                <img 
-                                                    src={recipe.imageUrl.startsWith('http') 
-                                                        ? recipe.imageUrl 
-                                                        : `${import.meta.env.MODE === "development" ? "http://localhost:5000" : ""}/${recipe.imageUrl.startsWith('/') ? recipe.imageUrl.slice(1) : recipe.imageUrl}`
-                                                    }
-                                                    alt={recipe.title || recipe.name}
-                                                    onError={(e) => {
-                                                        e.target.src = 'https://via.placeholder.com/120x80/CF996C/ffffff?text=Recipe';
-                                                    }}
-                                                />
-                                            ) : (
-                                                <div className="placeholder-image">
-                                                    <i className="bx bx-bowl-hot"></i>
-                                                </div>
-                                            )}
-                                        </div>
-                                        
-                                        <div className="item-content">
-                                            <div className="item-header">
-                                                <h4 className="item-title">
-                                                    {recipe.title || recipe.name}
-                                                </h4>
-                                                <span className="item-category">
-                                                    <i className="bx bx-category"></i>
-                                                    {recipe.category}
-                                                </span>
-                                            </div>
-                                            
-                                            <div className="item-meta">
-                                                <span className="creator">
-                                                    <i className="bx bx-user"></i>
-                                                    Created by: {recipe.createdBy?.name || 'Unknown'}
-                                                </span>
-                                                {recipe.createdAt && (
-                                                    <span className="date">
-                                                        <i className="bx bx-calendar"></i>
-                                                        {new Date(recipe.createdAt).toLocaleDateString()}
-                                                    </span>
-                                                )}
-                                                {recipe.ingredients && (
-                                                    <span className="ingredients-count">
-                                                        <i className="bx bx-list-ul"></i>
-                                                        {recipe.ingredients.length} ingredient{recipe.ingredients.length !== 1 ? 's' : ''}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            
-                                            {recipe.description && (
-                                                <div className="item-description">
-                                                    <p>{recipe.description.length > 100 
-                                                        ? `${recipe.description.substring(0, 100)}...` 
-                                                        : recipe.description}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            
-                                            {recipe.ingredients && recipe.ingredients.length > 0 && (
-                                                <div className="recipe-preview">
-                                                    <div className="preview-section">
-                                                        <h5>
-                                                            <i className="bx bx-list-ul"></i>
-                                                            Ingredients
-                                                        </h5>
-                                                        <div className="ingredients-preview">
-                                                            {recipe.ingredients.slice(0, 3).map((ing, idx) => (
-                                                                <span key={idx} className="ingredient-tag">
-                                                                    {ing.amount && `${ing.amount} `}
-                                                                    {ing.unit && `${ing.unit} `}
-                                                                    {ing.name}
-                                                                </span>
-                                                            ))}
-                                                            {recipe.ingredients.length > 3 && (
-                                                                <span className="more-ingredients">
-                                                                    +{recipe.ingredients.length - 3} more
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    {(recipe.instructions || recipe.steps) && (
-                                                        <div className="preview-section">
-                                                            <h5>
-                                                                <i className="bx bx-list-ol"></i>
-                                                                Instructions ({(recipe.instructions || recipe.steps).length} steps)
-                                                            </h5>
-                                                            <div className="instructions-preview">
-                                                                <p>
-                                                                    {typeof (recipe.instructions || recipe.steps)[0] === 'string' 
-                                                                        ? (recipe.instructions || recipe.steps)[0].substring(0, 80) + '...'
-                                                                        : (recipe.instructions || recipe.steps)[0].instruction?.substring(0, 80) + '...'
-                                                                    }
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                        
-                                        <div className="item-actions">
-                                            <motion.button 
-                                                className="btn btn--secondary btn--sm"
-                                                onClick={() => setEditingRecipe(recipe)}
-                                                title="Edit Recipe"
-                                                whileHover={{ scale: 1.05 }}
-                                                whileTap={{ scale: 0.95 }}
-                                            >
-                                                <i className="bx bx-edit"></i>
-                                                <span>Edit</span>
-                                            </motion.button>
-                                            <motion.button 
-                                                className="btn btn--destructive btn--sm"
-                                                onClick={() => handleDeleteRecipe(recipe._id)}
-                                                title="Delete Recipe"
-                                                whileHover={{ scale: 1.05 }}
-                                                whileTap={{ scale: 0.95 }}
-                                            >
-                                                <i className="bx bx-trash"></i>
-                                                <span>Delete</span>
-                                            </motion.button>
-                                        </div>
+                                        {renderRecipeItem(recipe)}
                                     </motion.div>
                                 ))
                             )}
@@ -276,7 +253,7 @@ const ManageRecipeAndIngredientsPage = ({
                             All Ingredients
                             <span className="count">({filteredIngredients.length})</span>
                         </h2>
-                        
+
                         <div className="search-container">
                             <div className="search-wrapper">
                                 <i className="bx bx-search search-icon"></i>
@@ -285,10 +262,10 @@ const ManageRecipeAndIngredientsPage = ({
                                     className="search-input"
                                     placeholder="Search ingredients by name..."
                                     value={ingredientSearch}
-                                    onChange={e => setIngredientSearch(e.target.value)}
+                                    onChange={(e) => setIngredientSearch(e.target.value)}
                                 />
                                 {ingredientSearch && (
-                                    <button 
+                                    <button
                                         className="clear-search"
                                         onClick={clearIngredientSearch}
                                         title="Clear search"
@@ -299,7 +276,8 @@ const ManageRecipeAndIngredientsPage = ({
                             </div>
                             {ingredientSearch && (
                                 <div className="search-results">
-                                    Found {filteredIngredients.length} ingredient{filteredIngredients.length !== 1 ? 's' : ''}
+                                    Found {filteredIngredients.length} ingredient
+                                    {filteredIngredients.length !== 1 ? 's' : ''}
                                 </div>
                             )}
                         </div>
@@ -312,13 +290,12 @@ const ManageRecipeAndIngredientsPage = ({
                                     <i className="bx bx-leaf empty-icon"></i>
                                     <h3>No ingredients found</h3>
                                     <p>
-                                        {ingredientSearch 
+                                        {ingredientSearch
                                             ? `No ingredients match your search for "${ingredientSearch}"`
-                                            : "No ingredients available in the system"
-                                        }
+                                            : 'No ingredients available in the system'}
                                     </p>
                                     {ingredientSearch && (
-                                        <button 
+                                        <button
                                             className="btn btn--primary"
                                             onClick={clearIngredientSearch}
                                         >
@@ -350,7 +327,7 @@ const ManageRecipeAndIngredientsPage = ({
                                             )}
                                         </div>
                                         <div className="item-actions">
-                                            <button 
+                                            <button
                                                 className="btn btn--secondary btn--sm"
                                                 onClick={() => openEditModal(ingredient)}
                                                 title="Edit Ingredient"
@@ -358,7 +335,7 @@ const ManageRecipeAndIngredientsPage = ({
                                                 <i className="bx bx-edit"></i>
                                                 <span>Edit</span>
                                             </button>
-                                            <button 
+                                            <button
                                                 className="btn btn--destructive btn--sm"
                                                 onClick={() => handleDeleteIngredient(ingredient._id)}
                                                 title="Delete Ingredient"
@@ -404,7 +381,7 @@ const ManageRecipeAndIngredientsPage = ({
                     </motion.div>
                 )}
             </AnimatePresence>
-            
+
             {/* Edit Ingredient Modal */}
             <EditIngredientModal
                 ingredient={editingIngredient}

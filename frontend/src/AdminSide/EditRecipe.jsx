@@ -2,11 +2,24 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import './EditRecipeModal.scss';
 
+// Add these arrays for options (same as CreateRecipe)
 const categories = [
     'Appetizer', 'Main Course', 'Dessert', 'Breakfast',
     'Lunch', 'Dinner', 'Snack', 'Beverage', 'Soup', 'Salad'
 ];
+
 const units = ['cups', 'tbsp', 'tsp', 'oz', 'lbs', 'g', 'kg', 'ml', 'l', 'pieces'];
+
+// Add these new arrays for preferences
+const dietaryOptions = [
+    'vegetarian', 'vegan', 'gluten-free', 'dairy-free', 
+    'keto', 'paleo', 'halal', 'kosher', 'low-carb', 'high-protein'
+];
+
+const cuisineOptions = [
+    'Filipino', 'Italian', 'Chinese', 'Japanese', 'Korean', 
+    'Mexican', 'Indian', 'Thai', 'American', 'French', 'Mediterranean'
+];
 
 const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
     const [image, setImage] = useState(null);
@@ -23,6 +36,13 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
     const [activeTab, setActiveTab] = useState('basic');
     const [price, setPrice] = useState(recipe?.price || '');
     const [isLoadingIngredients, setIsLoadingIngredients] = useState(true);
+
+    // Add new state variables for preferences (initialized from recipe data)
+    const [dietaryTags, setDietaryTags] = useState(recipe?.dietaryTags || []);
+    const [cuisine, setCuisine] = useState(recipe?.cuisine || 'Filipino');
+    const [allergens, setAllergens] = useState(recipe?.allergens || []);
+    const [cookingTime, setCookingTime] = useState(recipe?.cookingTime || '');
+    const [difficulty, setDifficulty] = useState(recipe?.difficulty || 'Easy');
 
     useEffect(() => {
         const fetchIngredients = async () => {
@@ -93,6 +113,29 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
     
     const removeStep = (idx) => setSteps(steps.filter((_, i) => i !== idx));
 
+    // Handle dietary tag selection
+    const handleDietaryTagToggle = (tag) => {
+        setDietaryTags(prev => 
+            prev.includes(tag)
+                ? prev.filter(t => t !== tag)
+                : [...prev, tag]
+        );
+    };
+    
+    // Handle allergen addition
+    const handleAddAllergen = (e) => {
+        if (e.key === 'Enter' && e.target.value.trim()) {
+            setAllergens(prev => [...prev, e.target.value.trim()]);
+            e.target.value = '';
+            e.preventDefault();
+        }
+    };
+    
+    // Handle allergen removal
+    const handleRemoveAllergen = (allergen) => {
+        setAllergens(prev => prev.filter(a => a !== allergen));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
@@ -140,7 +183,13 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
                     ingredients: validIngredients,
                     steps: validSteps,
                     imageUrl,
-                    price
+                    price,
+                    // Add preference fields
+                    dietaryTags,
+                    cuisine,
+                    allergens,
+                    cookingTime,
+                    difficulty
                 },
                 { withCredentials: true }
             );
@@ -391,6 +440,99 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
                         </div>
                     </div>
                 );
+            case 'preferences':
+                return (
+                    <div className="form-card">
+                        <h3 className="card-title">
+                            <i className="bx bx-dish"></i>
+                            Recipe Preferences & Dietary Information
+                        </h3>
+                        <div className="form-content">
+                            <div className="form-group">
+                                <label className="form-label">Cuisine</label>
+                                <select 
+                                    className="form-select" 
+                                    value={cuisine} 
+                                    onChange={(e) => setCuisine(e.target.value)}
+                                >
+                                    {cuisineOptions.map(option => (
+                                        <option key={option} value={option}>{option}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            
+                            <div className="form-group">
+                                <label className="form-label">Cooking Time (minutes)</label>
+                                <input
+                                    type="number"
+                                    className="form-input"
+                                    value={cookingTime}
+                                    onChange={(e) => setCookingTime(e.target.value)}
+                                    placeholder="e.g., 30"
+                                    min="1"
+                                />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label className="form-label">Difficulty Level</label>
+                                <select 
+                                    className="form-select" 
+                                    value={difficulty} 
+                                    onChange={(e) => setDifficulty(e.target.value)}
+                                >
+                                    <option value="Easy">Easy</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Hard">Hard</option>
+                                </select>
+                            </div>
+                            
+                            <div className="form-group">
+                                <label className="form-label">Dietary Tags</label>
+                                <div className="dietary-tags-container">
+                                    {dietaryOptions.map(tag => (
+                                        <button
+                                            type="button"
+                                            key={tag}
+                                            onClick={() => handleDietaryTagToggle(tag)}
+                                            className={`dietary-tag ${dietaryTags.includes(tag) ? 'active' : ''}`}
+                                        >
+                                            {dietaryTags.includes(tag) && <i className="bx bx-check"></i>}
+                                            {tag}
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="form-description">
+                                    <i className="bx bx-info-circle"></i>
+                                    Select all tags that apply to this recipe
+                                </p>
+                            </div>
+                            
+                            <div className="form-group">
+                                <label className="form-label">Allergens</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="Type and press Enter to add allergens"
+                                    onKeyDown={handleAddAllergen}
+                                />
+                                <div className="allergens-container">
+                                    {allergens.map(allergen => (
+                                        <div key={allergen} className="allergen-tag">
+                                            {allergen}
+                                            <button 
+                                                type="button" 
+                                                className="remove-allergen" 
+                                                onClick={() => handleRemoveAllergen(allergen)}
+                                            >
+                                                <i className="bx bx-x"></i>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
             default:
                 return null;
         }
@@ -433,6 +575,16 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
                     >
                         <i className="bx bx-list-ol"></i>
                         Steps
+                    </button>
+                    
+                    {/* New preferences tab */}
+                    <button
+                        type="button"
+                        className={`tab-button ${activeTab === 'preferences' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('preferences')}
+                    >
+                        <i className="bx bx-food-menu"></i>
+                        Preferences
                     </button>
                 </div>
                 <form onSubmit={handleSubmit} className="modal__form">
