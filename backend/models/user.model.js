@@ -9,21 +9,10 @@ const userSchema = new mongoose.Schema(
 		},
 		password: {
 			type: String,
-			required: true,
 		},
 		name: {
 			type: String,
 			required: true,
-		},
-		role: {
-			type: String,
-			enum: ["user", "admin"],
-			default: "user",
-		},
-		status: {
-			type: String,
-			enum: ["active", "suspended", "banned"],
-			default: "active",
 		},
 		lastLogin: {
 			type: Date,
@@ -37,10 +26,72 @@ const userSchema = new mongoose.Schema(
 		resetPasswordExpiresAt: Date,
 		verificationToken: String,
 		verificationTokenExpiresAt: Date,
-		banReason: { type: String, default: null },
-		suspendedUntil: { type: Date, default: null },
 		profileImage: { type: String, default: null },
-		bio: { type: String, default: "" }, // <-- this line must exist
+		bio: { type: String, default: "" },
+
+		// User status for admin management
+		status: {
+			type: String,
+			enum: ["active", "suspended", "banned"],
+			default: "active",
+		},
+		suspendedUntil: { type: Date },
+		banReason: { type: String },
+
+		// User role
+		role: {
+			type: String,
+			enum: ["user", "admin"],
+			default: "user",
+		},
+
+		// Google OAuth fields
+		googleId: { type: String, sparse: true },
+
+		// ADD: Onboarding completion flag
+		hasCompletedOnboarding: {
+			type: Boolean,
+			default: false,
+		},
+
+		// User Preferences for personalized recipes
+		dietaryPreferences: {
+			type: [String],
+			enum: [
+				"vegetarian",
+				"vegan",
+				"gluten-free",
+				"dairy-free",
+				"keto",
+				"paleo",
+				"halal",
+				"kosher",
+				"low-carb",
+				"high-protein",
+			],
+			default: [],
+		},
+		allergies: {
+			type: [String],
+			default: [],
+		},
+		preferredCuisines: {
+			type: [String],
+			enum: [
+				"Filipino",
+				"Italian",
+				"Chinese",
+				"Japanese",
+				"Korean",
+				"Mexican",
+				"Indian",
+				"Thai",
+				"American",
+				"French",
+				"Mediterranean",
+			],
+			default: [],
+		},
 	},
 	{ timestamps: true }
 );

@@ -1,0 +1,215 @@
+.onboarding-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.onboarding-card {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 600px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.step-content {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.step h2 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 28px;
+}
+
+.step p {
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 30px;
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.option-card {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.option-card:hover {
+    transform: translateY(-2px);
+    border-color: #667eea;
+}
+
+.option-card.selected {
+    background: #667eea;
+    border-color: #667eea;
+    color: white;
+}
+
+.option-icon {
+    font-size: 24px;
+}
+
+.option-label {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.allergies-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.allergy-tag {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 25px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.allergy-tag:hover {
+    border-color: #dc3545;
+}
+
+.allergy-tag.selected {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.cuisines-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.cuisine-card {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.cuisine-card:hover {
+    transform: translateY(-2px);
+    border-color: #28a745;
+}
+
+.cuisine-card.selected {
+    background: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.cuisine-icon {
+    font-size: 20px;
+}
+
+.cuisine-label {
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.step-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.skip-btn, .next-btn {
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    font-size: 16px;
+}
+
+.skip-btn {
+    background: #f8f9fa;
+    color: #6c757d;
+}
+
+.skip-btn:hover {
+    background: #e9ecef;
+}
+
+.next-btn {
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    color: white;
+    flex: 1;
+}
+
+.next-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.next-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+@media (max-width: 768px) {
+    .onboarding-card {
+        padding: 20px;
+        margin: 10px;
+    }
+    
+    .options-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+    
+    .step h2 {
+        font-size: 24px;
+    }
+}

@@ -68,3 +68,32 @@ export const updateProfile = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
+
+// Add new function for updating preferences
+export const updatePreferences = async (req, res) => {
+    try {
+        const { dietaryPreferences, allergies, preferredCuisines, hasCompletedOnboarding } = req.body;
+        
+        const user = await User.findById(req.userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        // Update preferences
+        user.dietaryPreferences = dietaryPreferences || [];
+        user.allergies = allergies || [];
+        user.preferredCuisines = preferredCuisines || [];
+        user.hasCompletedOnboarding = hasCompletedOnboarding !== undefined ? hasCompletedOnboarding : user.hasCompletedOnboarding;
+
+        await user.save();
+
+        res.json({ 
+            success: true, 
+            message: "Preferences updated successfully",
+            user: { ...user._doc, password: undefined } 
+        });
+    } catch (error) {
+        console.error('updatePreferences error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

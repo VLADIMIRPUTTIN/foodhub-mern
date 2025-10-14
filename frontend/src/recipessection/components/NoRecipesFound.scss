@@ -85,6 +85,45 @@
   }
 }
 
+// New styles for all recipes section
+.all-recipes-section {
+  grid-column: 1 / -1;
+  margin-top: 2rem;
+  width: 100%;
+}
+
+.all-recipes-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 1.5rem;
+  padding-left: 0.5rem;
+  border-left: 4px solid #CF996C;
+}
+
+// Re-use existing grid styles for consistency
+.all-recipes-section .recipes-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+// Mobile adjustments
+@media (max-width: 768px) {
+  .all-recipes-section .recipes-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.8rem;
+  }
+  
+  .all-recipes-title {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+  }
+}
+
+// Extend existing animations
 @keyframes bob {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-12px); }

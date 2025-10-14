@@ -482,7 +482,6 @@ export const googleLogin = async (req, res) => {
         const payload = ticket.getPayload();
         console.log("Google auth successful for email:", payload.email);
         
-        // Extract profile image from Google payload
         const googleProfileImage = payload.picture;
 
         // Check if user exists
@@ -575,7 +574,9 @@ export const googleLogin = async (req, res) => {
                 user: {
                     ...user._doc,
                     password: undefined
-                }
+                },
+                // Add flag to indicate if user needs onboarding
+                needsOnboarding: !user.hasCompletedOnboarding && user.role !== 'admin'
             });
         } else {
             // Create new user with Google data
@@ -605,7 +606,8 @@ export const googleLogin = async (req, res) => {
                 verificationToken: verificationToken,
                 verificationTokenExpiresAt: !isVerified ? Date.now() + 15 * 60 * 1000 : undefined,
                 isVerified: isVerified,
-                profileImage: googleProfileImage
+                profileImage: googleProfileImage,
+                hasCompletedOnboarding: role === 'admin' // Admin doesn't need onboarding
             });
             
             await user.save();
@@ -629,7 +631,9 @@ export const googleLogin = async (req, res) => {
                 user: {
                     ...user._doc,
                     password: undefined
-                }
+                },
+                // New users always need onboarding (except admin)
+                needsOnboarding: role !== 'admin'
             });
         }
     } catch (error) {
@@ -688,6 +692,68 @@ export const resendVerification = async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: "Server error" 
+        });
+    }
+};
+
+export const setPreferences = async (req, res) => {
+    try {
+        const { preferences } = req.body;
+        const userId = req.userId;
+
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { 
+                preferences: {
+                    ...preferences,
+                    isPreferencesSet: true
+                }
+            },
+            { new: true }
+        ).select("-password");
+
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "User not found" 
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Preferences saved successfully",
+            user
+        });
+    } catch (error) {
+        console.error("Set preferences error:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Internal server error" 
+        });
+    }
+};
+
+export const getPreferences = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const user = await User.findById(userId).select("preferences");
+        
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "User not found" 
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            preferences: user.preferences
+        });
+    } catch (error) {
+        console.error("Get preferences error:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Internal server error" 
         });
     }
 };

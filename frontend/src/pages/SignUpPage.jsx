@@ -58,9 +58,14 @@ const SignUpPage = () => {
             }
 
             if (response.data.user && response.data.user.isVerified) {
-                navigate("/");
-                // Force a reload only if needed
-                setTimeout(() => window.location.reload(), 100);
+                // Check if user needs onboarding
+                if (response.data.needsOnboarding || (!response.data.user.hasCompletedOnboarding && response.data.user.role !== 'admin')) {
+                    navigate("/onboarding");
+                } else {
+                    navigate("/");
+                    // Force a reload only if needed
+                    setTimeout(() => window.location.reload(), 100);
+                }
             } else {
                 navigate("/verify-email");
             }

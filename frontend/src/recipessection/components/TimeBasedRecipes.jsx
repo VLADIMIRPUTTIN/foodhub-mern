@@ -4,13 +4,51 @@ import axios from 'axios';
 import { motion } from 'framer-motion';
 import './TimeBasedRecipes.scss';
 import { getImageUrl } from './utils/ingredientUtils';
+import { useAuthStore } from '../../store/authStore';
 
 const TimeBasedRecipes = () => {
     const [recipes, setRecipes] = useState([]);
     const [mealType, setMealType] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const { user } = useAuthStore();
     const navigate = useNavigate();
+
+    // Function to check if recipe matches user's dietary preferences and allergies
+    const matchesUserPreferences = (recipe) => {
+        if (!user || !user.hasCompletedOnboarding) return true;
+
+        // Check dietary preferences
+        if (user.dietaryPreferences && user.dietaryPreferences.length > 0) {
+            const hasMatchingDietary = user.dietaryPreferences.some(pref => 
+                recipe.dietaryTags && recipe.dietaryTags.includes(pref)
+            );
+            if (!hasMatchingDietary) return false;
+        }
+
+        // Check allergies - exclude recipes containing user's allergens
+        if (user.allergies && user.allergies.length > 0) {
+            const hasAllergen = user.allergies.some(allergy => 
+                recipe.allergens && recipe.allergens.some(allergen => 
+                    allergen.toLowerCase().includes(allergy.toLowerCase())
+                ) ||
+                recipe.ingredients && recipe.ingredients.some(ingredient => 
+                    typeof ingredient === 'string' && 
+                    ingredient.toLowerCase().includes(allergy.toLowerCase())
+                )
+            );
+            if (hasAllergen) return false;
+        }
+
+        // Check preferred cuisines
+        if (user.preferredCuisines && user.preferredCuisines.length > 0) {
+            if (recipe.cuisine && !user.preferredCuisines.includes(recipe.cuisine)) {
+                return false;
+            }
+        }
+
+        return true;
+    };
 
     useEffect(() => {
         // Determine meal type based on current time
@@ -32,7 +70,7 @@ const TimeBasedRecipes = () => {
         const determinedMealType = getCurrentMealType();
         setMealType(determinedMealType);
 
-        // Fetch recipes filtered by the meal type
+        // Fetch recipes filtered by the meal type and user preferences
         const fetchRecipesByMealType = async () => {
             setLoading(true);
             setError(null);
@@ -53,16 +91,54 @@ const TimeBasedRecipes = () => {
                 }
                 
                 // Filter recipes by category (meal type) - case insensitive match
-                const filteredRecipes = allRecipes.filter(recipe => 
+                let filteredRecipes = allRecipes.filter(recipe => 
                     recipe.category && recipe.category.toLowerCase() === determinedMealType.toLowerCase()
                 );
-                
-                // If no recipes for current meal type, try to get any recipes as fallback
-                if (filteredRecipes.length === 0) {
-                    setRecipes(allRecipes.slice(0, 4));
+
+                // Apply user preferences filtering
+                if (user && user.hasCompletedOnboarding) {
+                    // First, try to find recipes that match both time and preferences
+                    let preferredRecipes = filteredRecipes.filter(matchesUserPreferences);
+                    
+                    // Sort by user's preferred cuisines
+                    preferredRecipes.sort((a, b) => {
+                        const aMatchesPreferredCuisine = user.preferredCuisines && 
+                            user.preferredCuisines.includes(a.cuisine);
+                        const bMatchesPreferredCuisine = user.preferredCuisines && 
+                            user.preferredCuisines.includes(b.cuisine);
+                        
+                        if (aMatchesPreferredCuisine && !bMatchesPreferredCuisine) return -1;
+                        if (!aMatchesPreferredCuisine && bMatchesPreferredCuisine) return 1;
+                        return 0;
+                    });
+                    
+                    // If we have enough matching recipes, use those
+                    if (preferredRecipes.length >= 4) {
+                        setRecipes(preferredRecipes.slice(0, 4));
+                    } 
+                    // Otherwise, include some non-preferred recipes to fill the spots
+                    else {
+                        const nonPreferredTimeBasedRecipes = filteredRecipes.filter(
+                            recipe => !matchesUserPreferences(recipe)
+                        );
+                        
+                        setRecipes([
+                            ...preferredRecipes, 
+                            ...nonPreferredTimeBasedRecipes
+                        ].slice(0, 4));
+                    }
                 } else {
-                    // Limit to 4 recipes
+                    // For users without preferences, just show time-based recipes
                     setRecipes(filteredRecipes.slice(0, 4));
+                }
+                
+                // If we still don't have enough recipes, use any recipes as fallback
+                if (recipes.length === 0) {
+                    let fallbackRecipes = allRecipes;
+                    if (user && user.hasCompletedOnboarding) {
+                        fallbackRecipes = allRecipes.filter(matchesUserPreferences);
+                    }
+                    setRecipes(fallbackRecipes.slice(0, 4));
                 }
             } catch (error) {
                 console.error('Error fetching time-based recipes:', error);
@@ -74,7 +150,7 @@ const TimeBasedRecipes = () => {
         };
 
         fetchRecipesByMealType();
-    }, []);
+    }, [user]);
 
     const handleRecipeClick = (recipeId) => {
         navigate(`/recipe/${recipeId}`);
@@ -113,7 +189,12 @@ const TimeBasedRecipes = () => {
                     transition={{ duration: 0.6 }}
                 >
                     <span className="greeting">{getGreeting()}!</span> 
-                    <span className="meal-suggestion">Here are some <span className="highlight">{mealType}</span> ideas</span>
+                    <span className="meal-suggestion">
+                        {user && user.hasCompletedOnboarding 
+                            ? `Here are personalized ${mealType} ideas` 
+                            : `Here are ${mealType} ideas for you`
+                        }
+                    </span>
                 </motion.h2>
                 <motion.div 
                     className="time-header-icon"
@@ -165,6 +246,14 @@ const TimeBasedRecipes = () => {
                                     <div className="time-recipe-meta">
                                         <i className="bx bx-time"></i>
                                         <span>{recipe.cookingTime} mins</span>
+                                    </div>
+                                )}
+                                
+                                {/* Show preference match indicators */}
+                                {user && user.hasCompletedOnboarding && matchesUserPreferences(recipe) && (
+                                    <div className="preference-match">
+                                        <i className="bx bx-check-circle"></i> 
+                                        <span>Matches your preferences</span>
                                     </div>
                                 )}
                             </div>

@@ -44,6 +44,13 @@ const LoginPage = () => {
                     return;
                 }
                 
+                // Check if user needs onboarding
+                if (!userdata.hasCompletedOnboarding && userdata.role !== 'admin') {
+                    console.log("User needs onboarding, redirecting to onboarding");
+                    navigate('/onboarding');
+                    return;
+                }
+                
                 // Check user role and redirect accordingly
                 if (userdata.role === 'admin') {
                     console.log("Admin user detected, redirecting to admin dashboard");
@@ -92,7 +99,14 @@ const LoginPage = () => {
                     return;
                 }
                 
-                // User is verified, check role for redirect
+                // Check if user needs onboarding
+                if (response.data.needsOnboarding || (!user.hasCompletedOnboarding && user.role !== 'admin')) {
+                    console.log("User needs onboarding, redirecting to onboarding page");
+                    navigate('/onboarding');
+                    return;
+                }
+                
+                // User is verified and completed onboarding, check role for redirect
                 if (user.role === 'admin') {
                     console.log("Admin user logged in with Google, redirecting to admin dashboard");
                     navigate('/admin-dashboard');

@@ -1,0 +1,219 @@
+.preferences-setup {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+
+    .preferences-container {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        width: 100%;
+        max-width: 800px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+
+        .preferences-header {
+            text-align: center;
+            margin-bottom: 40px;
+
+            h1 {
+                font-size: 2.5rem;
+                color: #333;
+                margin-bottom: 20px;
+                font-weight: 700;
+            }
+
+            .progress-bar {
+                width: 100%;
+                height: 8px;
+                background: #f0f0f0;
+                border-radius: 4px;
+                margin-bottom: 10px;
+                overflow: hidden;
+
+                .progress-fill {
+                    height: 100%;
+                    background: linear-gradient(90deg, #667eea, #764ba2);
+                    border-radius: 4px;
+                    transition: width 0.3s ease;
+                }
+            }
+
+            .step-counter {
+                color: #666;
+                font-size: 0.9rem;
+            }
+        }
+
+        .step-content {
+            h2 {
+                font-size: 2rem;
+                color: #333;
+                text-align: center;
+                margin-bottom: 10px;
+            }
+
+            p {
+                text-align: center;
+                color: #666;
+                margin-bottom: 30px;
+                font-size: 1.1rem;
+            }
+
+            .options-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin-bottom: 30px;
+
+                &.spice-grid {
+                    grid-template-columns: repeat(3, 1fr);
+                    max-width: 600px;
+                    margin: 0 auto 30px;
+                }
+
+                .option-card {
+                    background: #f8f9fa;
+                    border: 2px solid #e9ecef;
+                    border-radius: 15px;
+                    padding: 20px;
+                    text-align: center;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    user-select: none;
+
+                    &:hover {
+                        border-color: #667eea;
+                        transform: translateY(-2px);
+                        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+                    }
+
+                    &.selected {
+                        border-color: #667eea;
+                        background: linear-gradient(135deg, #667eea, #764ba2);
+                        color: white;
+                        transform: translateY(-2px);
+                        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+                    }
+
+                    .option-icon {
+                        font-size: 2.5rem;
+                        margin-bottom: 10px;
+                    }
+
+                    .option-label {
+                        font-weight: 600;
+                        font-size: 1rem;
+                    }
+                }
+            }
+        }
+
+        .preferences-footer {
+            .button-group {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 15px;
+
+                button {
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    border: none;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    font-size: 1rem;
+
+                    &:disabled {
+                        opacity: 0.6;
+                        cursor: not-allowed;
+                    }
+
+                    &.btn-primary {
+                        background: linear-gradient(135deg, #667eea, #764ba2);
+                        color: white;
+                        flex: 1;
+                        max-width: 200px;
+
+                        &:hover:not(:disabled) {
+                            transform: translateY(-2px);
+                            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+                        }
+                    }
+
+                    &.btn-secondary {
+                        background: #f8f9fa;
+                        color: #333;
+                        border: 2px solid #e9ecef;
+
+                        &:hover:not(:disabled) {
+                            background: #e9ecef;
+                        }
+                    }
+
+                    &.btn-skip {
+                        background: transparent;
+                        color: #666;
+                        text-decoration: underline;
+
+                        &:hover:not(:disabled) {
+                            color: #333;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @media (max-width: 768px) {
+        padding: 10px;
+
+        .preferences-container {
+            padding: 20px;
+
+            .preferences-header h1 {
+                font-size: 2rem;
+            }
+
+            .step-content {
+                h2 {
+                    font-size: 1.5rem;
+                }
+
+                .options-grid {
+                    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                    gap: 10px;
+
+                    &.spice-grid {
+                        grid-template-columns: 1fr;
+                        max-width: none;
+                    }
+
+                    .option-card {
+                        padding: 15px;
+
+                        .option-icon {
+                            font-size: 2rem;
+                        }
+
+                        .option-label {
+                            font-size: 0.9rem;
+                        }
+                    }
+                }
+            }
+
+            .preferences-footer .button-group {
+                flex-direction: column;
+
+                button {
+                    width: 100%;
+                    max-width: none;
+                }
+            }
+        }
+    }
+}

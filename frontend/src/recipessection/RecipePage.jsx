@@ -1,26 +1,29 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from '../pages/NavbarPage';
 import RecipeModal from './RecipeModal';
-import SelectedIngredients from './SelectedIngredients';
-import './RecipePage.scss';
-import { useAuthStore } from '../store/authStore';
-import LoginPromptModal from '../components/ui/login-prompt-modal';
-import { useToast } from '../components/ui/toast';
-
-// Import our components
-import RecipeGrid from './components/RecipeGrid';
-import IngredientsSidebar from './components/IngredientsSidebar';
-import MobileIngredientSheet from './components/MobileIngredientSheet';
 import RecipeFilters from './components/RecipeFilters';
+import SelectedIngredients from './SelectedIngredients';
+import MobileIngredientSheet from './components/MobileIngredientSheet';
+import IngredientsSidebar from './components/IngredientsSidebar';
+import RecipeGrid from './components/RecipeGrid';
 import PaginationControls from './components/PaginationControls';
+import NoRecipesFound from './components/NoRecipesFound';
+import TimeBasedRecipes from './components/TimeBasedRecipes';
+import { useToast } from "../components/ui/toast";
+import { useAuthStore } from '../store/authStore';
+import './RecipePage.scss';
 import RatingModal from '../components/RatingModal';
+import LoginPromptModal from '../components/ui/login-prompt-modal';
 import CommentModal from './components/CommentModal';
-import { ingredientMatches, getImageUrl } from './components/utils/ingredientUtils';
+import CameraModal from '../components/CameraModal';
 
 const RecipePage = () => {
     const { user } = useAuthStore();
     const { toast } = useToast();
+    const navigate = useNavigate();
+    
     const [recipes, setRecipes] = useState([]);
     const [ingredients, setIngredients] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -46,6 +49,11 @@ const RecipePage = () => {
     // Current meal type based on time of day
     const [currentMealType, setCurrentMealType] = useState('');
 
+    // Recipe sections based on preferences
+    const [timeAndPreferenceRecipes, setTimeAndPreferenceRecipes] = useState([]);
+    const [preferenceOnlyRecipes, setPreferenceOnlyRecipes] = useState([]);
+    const [otherRecipes, setOtherRecipes] = useState([]);
+    
     // Touch/swipe handling refs and states
     const gridContainerRef = useRef(null);
     const [touchStart, setTouchStart] = useState(null);
@@ -69,10 +77,51 @@ const RecipePage = () => {
     // PAGINATION LOGIC - 8 recipes per page (2 rows × 4 columns)
     const RECIPES_PER_PAGE = 8;
 
+    // Function to check if recipe matches user's dietary preferences and allergies
+    const matchesUserPreferences = (recipe) => {
+        if (!user || !user.hasCompletedOnboarding) return true;
+
+        // Check dietary preferences
+        if (user.dietaryPreferences && user.dietaryPreferences.length > 0) {
+            const hasMatchingDietary = user.dietaryPreferences.some(pref => 
+                recipe.dietaryTags && recipe.dietaryTags.includes(pref)
+            );
+            if (!hasMatchingDietary) return false;
+        }
+
+        // Check allergies - exclude recipes containing user's allergens
+        if (user.allergies && user.allergies.length > 0) {
+            const hasAllergen = user.allergies.some(allergy => 
+                recipe.allergens && recipe.allergens.some(allergen => 
+                    allergen.toLowerCase().includes(allergy.toLowerCase())
+                ) ||
+                recipe.ingredients && recipe.ingredients.some(ingredient => 
+                    typeof ingredient === 'string' && 
+                    ingredient.toLowerCase().includes(allergy.toLowerCase())
+                )
+            );
+            if (hasAllergen) return false;
+        }
+
+        // Check preferred cuisines
+        if (user.preferredCuisines && user.preferredCuisines.length > 0) {
+            if (recipe.cuisine && !user.preferredCuisines.includes(recipe.cuisine)) {
+                return false;
+            }
+        }
+
+        return true;
+    };
+
+    // Helper function to check if recipe matches current time of day
+    const matchesTimeOfDay = (recipe) => {
+        return recipe.category && recipe.category.toLowerCase() === currentMealType.toLowerCase();
+    };
+
     // Detect mobile device
     useEffect(() => {
         const checkMobile = () => {
-            setIsMobile(window.innerWidth <= 768);
+            setIsMobile(window.innerWidth < 768);
         };
         
         checkMobile();
@@ -143,25 +192,28 @@ const RecipePage = () => {
             : "";
         const fetchRecipes = async () => {
             try {
-                const response = await axios.get(`${baseURL}/api/recipes`);
-                let allRecipes = [];
+                const res = await axios.get(`${baseURL}/api/recipes`);
                 
-                if (response.data.success && response.data.recipes) {
-                    allRecipes = response.data.recipes;
-                } else if (Array.isArray(response.data)) {
-                    allRecipes = response.data;
-                } else {
-                    allRecipes = [];
+                let recipesData = [];
+                
+                if (res.data.success && res.data.recipes) {
+                    recipesData = res.data.recipes;
+                } else if (Array.isArray(res.data)) {
+                    recipesData = res.data;
                 }
                 
-                setRecipes(allRecipes);
+                setRecipes(recipesData);
             } catch (error) {
-                console.error('Error fetching recipes:', error);
-                setRecipes([]);
+                console.error("Failed to fetch recipes", error);
+                toast({
+                    title: "Error",
+                    description: "Failed to load recipes. Please try again.",
+                    variant: "destructive"
+                });
             }
         };
         fetchRecipes();
-    }, []);
+    }, [toast]);
 
     // Fetch ingredients
     useEffect(() => {
@@ -170,8 +222,11 @@ const RecipePage = () => {
             : "";
         axios.get(`${baseURL}/api/ingredients`)
             .then(res => {
-                setIngredients(res.data.ingredients.map(i => i.name));
-                setFilteredIngredients(res.data.ingredients.map(i => i.name));
+                if (res.data.success && res.data.ingredients) {
+                    setIngredients(res.data.ingredients.map(ing => ing.name));
+                } else if (Array.isArray(res.data)) {
+                    setIngredients(res.data);
+                }
             })
             .catch(() => setIngredients([]));
     }, []);
@@ -185,9 +240,10 @@ const RecipePage = () => {
         );
     }, [ingredientSearch, ingredients]);
 
-    // Update the filtered recipes logic with time-based recipes first
-    const filteredRecipes = recipes
-        .filter(recipe => {
+    // Filter recipes based on search, ingredients, category, price, and user preferences
+    useEffect(() => {
+        // Apply basic filters (search, ingredients, category, price)
+        const basicFilteredRecipes = recipes.filter(recipe => {
             const recipeName = recipe.title || recipe.name || '';
             const matchesSearch = recipeName.toLowerCase().includes(searchTerm.toLowerCase());
             
@@ -195,7 +251,11 @@ const RecipePage = () => {
                 selectedIngredients.length === 0 ||
                 (recipe.ingredients &&
                     selectedIngredients.every(selIng =>
-                        recipe.ingredients.some(ri => ingredientMatches(ri, selIng))
+                        recipe.ingredients.some(ri => 
+                            typeof ri === 'string' 
+                                ? ri.toLowerCase().includes(selIng.toLowerCase())
+                                : (ri.name && ri.name.toLowerCase().includes(selIng.toLowerCase()))
+                        )
                     )
                 );
                 
@@ -203,36 +263,65 @@ const RecipePage = () => {
             const matchesMinPrice = !minPrice || (recipe.price && recipe.price >= Number(minPrice));
             const matchesMaxPrice = !maxPrice || (recipe.price && recipe.price <= Number(maxPrice));
             
-            return matchesSearch && matchesIngredients && matchesCategoryFilter && matchesMinPrice && matchesMaxPrice;
-        })
-        .sort((a, b) => {
-            // Sort by time-based first
-            const aIsTimeBased = a.category && a.category.toLowerCase() === currentMealType.toLowerCase();
-            const bIsTimeBased = b.category && b.category.toLowerCase() === currentMealType.toLowerCase();
-            
-            if (aIsTimeBased && !bIsTimeBased) return -1;
-            if (!aIsTimeBased && bIsTimeBased) return 1;
-            return 0;
+            return matchesSearch && matchesIngredients && matchesCategoryFilter && 
+                   matchesMinPrice && matchesMaxPrice;
         });
 
-    // PAGINATION LOGIC
-    const totalPages = Math.ceil(filteredRecipes.length / RECIPES_PER_PAGE);
-    const paginatedRecipes = filteredRecipes.slice(
+        // If user is logged in and has completed onboarding, categorize recipes
+        if (user && user.hasCompletedOnboarding) {
+            // 1. Time-based + Preference-based
+            const timeAndPref = basicFilteredRecipes.filter(recipe => 
+                matchesTimeOfDay(recipe) && matchesUserPreferences(recipe)
+            );
+            
+            // 2. Preference-based but not time-based
+            const prefOnly = basicFilteredRecipes.filter(recipe => 
+                !matchesTimeOfDay(recipe) && matchesUserPreferences(recipe)
+            );
+            
+            // 3. All others
+            const others = basicFilteredRecipes.filter(recipe => 
+                !matchesUserPreferences(recipe)
+            );
+            
+            setTimeAndPreferenceRecipes(timeAndPref);
+            setPreferenceOnlyRecipes(prefOnly);
+            setOtherRecipes(others);
+        } else {
+            // For users without preferences, just show all with time-based first
+            const timeBasedRecipes = basicFilteredRecipes.filter(matchesTimeOfDay);
+            const nonTimeBasedRecipes = basicFilteredRecipes.filter(recipe => !matchesTimeOfDay(recipe));
+            
+            setTimeAndPreferenceRecipes(timeBasedRecipes);
+            setPreferenceOnlyRecipes([]);
+            setOtherRecipes(nonTimeBasedRecipes);
+        }
+        
+    }, [recipes, searchTerm, selectedIngredients, categoryFilter, minPrice, maxPrice, user, currentMealType]);
+
+    // Combine all filtered recipes in the right order
+    const allFilteredRecipes = [...timeAndPreferenceRecipes, ...preferenceOnlyRecipes, ...otherRecipes];
+    const totalPages = Math.ceil(allFilteredRecipes.length / RECIPES_PER_PAGE);
+    
+    // Get current page of recipes
+    const currentRecipes = allFilteredRecipes.slice(
         (currentPage - 1) * RECIPES_PER_PAGE,
         currentPage * RECIPES_PER_PAGE
     );
-
-    // Create grid with exactly 8 slots (2 rows × 4 columns)
+    
+    // Fill grid with exact number of slots
     const gridRecipes = Array(RECIPES_PER_PAGE).fill(null);
-    paginatedRecipes.forEach((recipe, index) => {
+    currentRecipes.forEach((recipe, index) => {
         gridRecipes[index] = recipe;
     });
 
     // Reset to page 1 if filters change and current page is out of range
     useEffect(() => {
-        if (currentPage > totalPages && totalPages > 0) setCurrentPage(1);
+        if (currentPage > totalPages && totalPages > 0) {
+            setCurrentPage(1);
+        }
         scrollToTop();
-    }, [filteredRecipes.length, totalPages, currentPage]);
+    }, [timeAndPreferenceRecipes.length, preferenceOnlyRecipes.length, otherRecipes.length, totalPages]);
 
     const handleIngredientClick = (ing) => {
         setSelectedIngredients(selected =>
@@ -249,54 +338,55 @@ const RecipePage = () => {
     // Handle open/close with animation
     const handleSheetOpenChange = (open) => {
         if (!open) {
-            setSheetOut(true); // trigger slide out
+            setSheetOut(true);
             setTimeout(() => {
-                setIsSheetOpen(false);
                 setSheetOut(false);
+                setIsSheetOpen(false);
                 setSheetAnimate(false);
-            }, 450); // match your CSS transition duration
+            }, 300);
         } else {
             setIsSheetOpen(true);
-            setTimeout(() => setSheetAnimate(true), 10);
+            setTimeout(() => {
+                setSheetAnimate(true);
+            }, 10);
         }
     };
 
     useEffect(() => {
         if (isSheetOpen) {
-            setSheetAnimate(true);
+            document.body.style.overflow = "hidden";
         } else {
-            setSheetAnimate(false);
+            document.body.style.overflow = "";
         }
+        return () => {
+            document.body.style.overflow = "";
+        };
     }, [isSheetOpen]);
 
     // Fetch user's favorite recipes
     useEffect(() => {
         if (user) {
             fetchFavoriteRecipes();
+        } else {
+            setFavoriteRecipes([]);
         }
     }, [user]);
 
-    // Update all axios requests for favorites to use relative URLs and always send the JWT token
     const fetchFavoriteRecipes = async () => {
         try {
             const baseURL = import.meta.env.MODE === "development"
                 ? "http://localhost:5000"
                 : "";
                 
-            const response = await axios.get(
-                `${baseURL}/api/favorites`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    },
-                    withCredentials: true
-                }
-            );
-            if (response.data.success) {
-                setFavoriteRecipes(response.data.favorites.map(fav => fav.recipe._id));
+            const response = await axios.get(`${baseURL}/api/favorites`, {
+                withCredentials: true
+            });
+            
+            if (response.data.success && response.data.favorites) {
+                setFavoriteRecipes(response.data.favorites.map(fav => fav.recipe));
             }
         } catch (error) {
-            console.error('Error fetching favorites:', error);
+            console.error("Error fetching favorites:", error);
         }
     };
 
@@ -306,60 +396,48 @@ const RecipePage = () => {
             setShowLoginPrompt(true);
             return;
         }
+        
         try {
             const baseURL = import.meta.env.MODE === "development"
                 ? "http://localhost:5000"
                 : "";
                 
-            const isFavorited = favoriteRecipes.includes(recipeId);
-            const recipe = recipes.find(r => r._id === recipeId);
-            const recipeName = recipe?.title || recipe?.name || 'Recipe';
+            const isFavorited = favoriteRecipes.some(fav => fav === recipeId);
             
-            if (isFavorited) {
-                await axios.delete(
-                    `${baseURL}/api/favorites/${recipeId}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem('token')}`
-                        },
-                        withCredentials: true
-                    }
-                );
-                setFavoriteRecipes(prev => prev.filter(id => id !== recipeId));
-                toast.info(
-                    'Removed from Favorites',
-                    `${recipeName} has been removed from your favorites`,
-                    3000
-                );
-            } else {
-                await axios.post(
-                    `${baseURL}/api/favorites`,
-                    { recipeId },
-                    {
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem('token')}`
-                        },
-                        withCredentials: true
-                    }
-                );
-                setFavoriteRecipes(prev => [...prev, recipeId]);
-                toast.favorite(
-                    'Added to Favorites! ❤️',
-                    `${recipeName} has been saved to your collection`,
-                    4000
-                );
+            const response = await axios({
+                method: isFavorited ? 'delete' : 'post',
+                url: `${baseURL}/api/favorites/${recipeId}`,
+                withCredentials: true
+            });
+            
+            if (response.data.success) {
+                if (isFavorited) {
+                    setFavoriteRecipes(favoriteRecipes.filter(id => id !== recipeId));
+                    toast({
+                        title: "Removed from favorites",
+                        description: "Recipe removed from your favorites",
+                        duration: 2000
+                    });
+                } else {
+                    setFavoriteRecipes([...favoriteRecipes, recipeId]);
+                    toast({
+                        title: "Added to favorites",
+                        description: "Recipe added to your favorites",
+                        duration: 2000
+                    });
+                }
             }
         } catch (error) {
-            console.error('Error toggling favorite:', error);
-            toast.error(
-                'Something went wrong',
-                'Failed to update favorite. Please try again.',
-                4000
-            );
+            console.error("Error toggling favorite:", error);
+            toast({
+                title: "Error",
+                description: "Failed to update favorites",
+                variant: "destructive"
+            });
         }
     };
 
-    // Add this function to handle rating button click
+    // Handle rating button click
     const handleRateClick = (recipe, e) => {
         e.stopPropagation();
         if (!user) {
@@ -370,32 +448,50 @@ const RecipePage = () => {
         setRatingModalOpen(true);
     };
 
-    // Add this function to handle rating modal close
+    // Handle rating modal close
     const handleRatingModalClose = (updatedRecipe) => {
         setRatingModalOpen(false);
         setRecipeToRate(null);
         
         // Update the recipe in the list if it was rated
         if (updatedRecipe) {
-            setRecipes(prevRecipes => 
-                prevRecipes.map(r => 
-                    r._id === updatedRecipe._id ? updatedRecipe : r
-                )
-            );
+            setRecipes(recipes.map(r => 
+                r._id === updatedRecipe._id ? updatedRecipe : r
+            ));
         }
     };
 
-    // Add this function to handle comment button click
+    // Handle comment button click
     const handleCommentClick = (recipe, e) => {
         e.stopPropagation();
         setRecipeToComment(recipe);
         setCommentModalOpen(true);
     };
 
+    // Helper function to check if a recipe matches ingredients
+    const ingredientMatches = (recipeIngredient, selectedIngredient) => {
+        if (typeof recipeIngredient === 'string') {
+            return recipeIngredient.toLowerCase().includes(selectedIngredient.toLowerCase());
+        } else if (recipeIngredient.name) {
+            return recipeIngredient.name.toLowerCase().includes(selectedIngredient.toLowerCase());
+        }
+        return false;
+    };
+
     return (
         <div className="recipe-page">
             <Navbar />
             <div className="main-content">
+                {/* Show personalization notice if user hasn't completed onboarding */}
+                {user && !user.hasCompletedOnboarding && (
+                    <div className="personalization-notice">
+                        <p>💡 Complete your profile setup to see personalized recipe recommendations!</p>
+                        <button onClick={() => navigate('/onboarding')}>
+                            Personalize Now
+                        </button>
+                    </div>
+                )}
+
                 {/* Responsive Ingredients Sidebar */}
                 <div className="ingredients-responsive">
                     {/* Mobile: Sheet Button */}
@@ -428,36 +524,34 @@ const RecipePage = () => {
                     {/* Header with background image */}
                     <div className="recipe-header-bg">
                         <img
-                            src="https://img.freepik.com/free-photo/top-view-table-full-delicious-food-composition_23-2149141359.jpg"
+                            src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
                             alt="Food Banner"
                             className="header-bg-img"
                         />
                         <div className="header-bg-overlay"></div>
                         <div className="header-bg-text">
-                            <h1 style={{ fontSize: "1.35rem", fontWeight: 700, margin: 0 }}>
-                                Find Recipes
+                            <h1>
+                                {user && user.hasCompletedOnboarding ? 
+                                    `Personalized ${currentMealType} Recipes` : 
+                                    `${currentMealType} Recipes`
+                                }
                             </h1>
+                            {user && user.hasCompletedOnboarding && (
+                                <p>Tailored to your dietary preferences</p>
+                            )}
                         </div>
                     </div>
 
+                    {/* Time-based recommended recipes */}
+                    <TimeBasedRecipes />
+
+                    {/* Selected ingredients display */}
                     <SelectedIngredients 
                         selectedIngredients={selectedIngredients}
                         onRemoveIngredient={handleRemoveIngredient}
                     />
 
-                    {/* Regular recipes section header */}
-                    <div className="recipe-header">
-                        <p>
-                            Available Recipes
-                            {filteredRecipes.length > 0 && (
-                                <span style={{ marginLeft: 8, color: "#b86b1b", fontWeight: 600 }}>
-                                    ({filteredRecipes.length})
-                                </span>
-                            )}
-                        </p>
-                    </div>
-
-                    {/* Filter controls - ONLY USE THIS COMPONENT */}
+                    {/* Filter controls */}
                     <RecipeFilters 
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
@@ -469,29 +563,137 @@ const RecipePage = () => {
                         setMaxPrice={setMaxPrice}
                     />
 
-                    {/* Recipe grid - now with time-based recipes appearing first */}
-                    <RecipeGrid 
-                        gridRecipes={gridRecipes}
-                        isSwiping={isSwiping}
-                        setSelectedRecipe={setSelectedRecipe}
-                        handleFavoriteToggle={handleFavoriteToggle}
-                        favoriteRecipes={favoriteRecipes}
-                        handleTouchStart={handleTouchStart}
-                        handleTouchMove={handleTouchMove}
-                        handleTouchEnd={handleTouchEnd}
-                        gridContainerRef={gridContainerRef}
-                        filteredRecipes={filteredRecipes}
-                        handleRateClick={handleRateClick}
-                        currentMealType={currentMealType} // Added to highlight time-based recipes
-                        handleCommentClick={handleCommentClick} // Add this prop
-                    />
+                    {/* Recipe Section Headers based on user preferences */}
+                    {user && user.hasCompletedOnboarding && (
+                        <>
+                            {/* Time-based preferred recipes */}
+                            {timeAndPreferenceRecipes.length > 0 && (
+                                <div className="recipe-section">
+                                    <h2 className="section-title">
+                                        <i className="bx bx-time"></i> {currentMealType} Recommendations
+                                        <span className="recipe-count">({timeAndPreferenceRecipes.length})</span>
+                                    </h2>
+                                    <div className="recipe-section-grid">
+                                        {timeAndPreferenceRecipes.slice(0, 4).map(recipe => (
+                                            <div 
+                                                key={recipe._id} 
+                                                className="recipe-card highlight-card"
+                                                onClick={() => setSelectedRecipe(recipe)}
+                                            >
+                                                <div className="recipe-image">
+                                                    <img 
+                                                        src={recipe.imageUrl || "https://via.placeholder.com/300x200?text=No+Image"} 
+                                                        alt={recipe.title} 
+                                                        onError={(e) => {
+                                                            e.target.src = "https://via.placeholder.com/300x200?text=No+Image";
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="recipe-content">
+                                                    <h3>{recipe.title}</h3>
+                                                    <p>{recipe.description?.substring(0, 60)}...</p>
+                                                    <div className="recipe-meta">
+                                                        <span><i className="bx bx-time"></i> {recipe.cookingTime || 30} min</span>
+                                                        <span><i className="bx bx-bowl-hot"></i> {recipe.difficulty || 'Easy'}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="recipe-badges">
+                                                    <span className="time-badge">{currentMealType}</span>
+                                                    {recipe.dietaryTags?.map((tag, i) => (
+                                                        <span key={i} className="dietary-badge">{tag}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {timeAndPreferenceRecipes.length > 4 && (
+                                        <button 
+                                            className="view-more-btn"
+                                            onClick={() => {/* Handle view more logic */}}
+                                        >
+                                            View More {currentMealType} Recipes
+                                        </button>
+                                    )}
+                                </div>
+                            )}
 
-                    {/* Pagination controls */}
-                    <PaginationControls 
-                        currentPage={currentPage}
-                        setCurrentPage={setCurrentPage}
-                        totalPages={totalPages}
-                    />
+                            {/* Other preferred recipes not based on time */}
+                            {preferenceOnlyRecipes.length > 0 && (
+                                <div className="recipe-section">
+                                    <h2 className="section-title">
+                                        <i className="bx bx-like"></i> Other Recommended Recipes
+                                        <span className="recipe-count">({preferenceOnlyRecipes.length})</span>
+                                    </h2>
+                                    <div className="recipe-section-grid">
+                                        {preferenceOnlyRecipes.slice(0, 4).map(recipe => (
+                                            <div 
+                                                key={recipe._id} 
+                                                className="recipe-card"
+                                                onClick={() => setSelectedRecipe(recipe)}
+                                            >
+                                                <div className="recipe-image">
+                                                    <img 
+                                                        src={recipe.imageUrl || "https://via.placeholder.com/300x200?text=No+Image"} 
+                                                        alt={recipe.title} 
+                                                        onError={(e) => {
+                                                            e.target.src = "https://via.placeholder.com/300x200?text=No+Image";
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="recipe-content">
+                                                    <h3>{recipe.title}</h3>
+                                                    <p>{recipe.description?.substring(0, 60)}...</p>
+                                                    <div className="recipe-meta">
+                                                        <span><i className="bx bx-time"></i> {recipe.cookingTime || 30} min</span>
+                                                        <span><i className="bx bx-bowl-hot"></i> {recipe.difficulty || 'Easy'}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Other recipes section */}
+                            {otherRecipes.length > 0 && (
+                                <div className="recipe-section">
+                                    <h2 className="section-title">
+                                        <i className="bx bx-food-menu"></i> All Other Recipes
+                                        <span className="recipe-count">({otherRecipes.length})</span>
+                                    </h2>
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {/* Main recipe grid - fallback for all cases */}
+                    <div className="recipe-grid-container">
+                        <h2 className="section-title">All Recipes</h2>
+                        <RecipeGrid 
+                            gridRecipes={gridRecipes}
+                            isSwiping={isSwiping}
+                            setSelectedRecipe={setSelectedRecipe}
+                            handleFavoriteToggle={handleFavoriteToggle}
+                            favoriteRecipes={favoriteRecipes}
+                            handleTouchStart={handleTouchStart}
+                            handleTouchMove={handleTouchMove}
+                            handleTouchEnd={handleTouchEnd}
+                            gridContainerRef={gridContainerRef}
+                            filteredRecipes={allFilteredRecipes}
+                            handleRateClick={handleRateClick}
+                            currentMealType={currentMealType}
+                            handleCommentClick={handleCommentClick}
+                        />
+
+                        {allFilteredRecipes.length === 0 && <NoRecipesFound />}
+
+                        {/* Pagination controls */}
+                        <PaginationControls 
+                            currentPage={currentPage}
+                            setCurrentPage={setCurrentPage}
+                            totalPages={totalPages}
+                        />
+                    </div>
                 </div>
             </div>
             
@@ -506,7 +708,7 @@ const RecipePage = () => {
                 recipe={selectedRecipe}
                 onClose={() => setSelectedRecipe(null)}
                 onViewFull={() => {
-                    window.location.href = `/recipes/${selectedRecipe._id}`;
+                    window.location.href = `/recipe/${selectedRecipe._id}`;
                 }}
             />
             

@@ -14,6 +14,7 @@ import AdminDashboard from "./AdminSide/AdminDashboard";
 import CreateRecipePage from "./recipessection/CreateRecipePage";
 import UserProfilePage from "./pages/UserProfilePage";
 import SharedRecipePage from "./recipessection/SharedRecipePage";
+import OnboardingPage from "./pages/OnboardingPage"; // Add this import
 
 import LoadingSpinner from "./components/LoadingSpinner";
 import AccountStatusModal from "./components/AccountStatusModal";
@@ -51,6 +52,11 @@ const ProtectedRoute = ({ children }) => {
         return <Navigate to='/verify-email' replace />;
     }
 
+    // Check if user needs onboarding (except admin)
+    if (!user.hasCompletedOnboarding && user.role !== 'admin') {
+        return <Navigate to='/onboarding' replace />;
+    }
+
     return children;
 };
 
@@ -78,12 +84,37 @@ const RedirectAuthenticatedUser = ({ children }) => {
     const { isAuthenticated, user } = useAuthStore();
 
     if (isAuthenticated && user?.isVerified) {
+        // Check if user needs onboarding first (except admin)
+        if (!user.hasCompletedOnboarding && user.role !== 'admin') {
+            return <Navigate to='/onboarding' replace />;
+        }
+        
         // Redirect admin to admin dashboard, others to regular dashboard
         if (user.role === 'admin') {
             console.log("Redirecting authenticated admin to admin dashboard");
             return <Navigate to='/admin-dashboard' replace />;
         }
         console.log("Redirecting authenticated user to home");
+        return <Navigate to='/' replace />;
+    }
+
+    return children;
+};
+
+// Add OnboardingRoute component
+const OnboardingRoute = ({ children }) => {
+    const { isAuthenticated, user } = useAuthStore();
+
+    if (!isAuthenticated) {
+        return <Navigate to='/login' replace />;
+    }
+
+    if (!user.isVerified) {
+        return <Navigate to='/verify-email' replace />;
+    }
+
+    // If user already completed onboarding, redirect to home
+    if (user.hasCompletedOnboarding || user.role === 'admin') {
         return <Navigate to='/' replace />;
     }
 
@@ -129,11 +160,27 @@ function App() {
                     <Routes>
                         <Route
                             path='/'
-                            element={<DashboardPage />}
+                            element={
+                                <ProtectedRoute>
+                                    <DashboardPage />
+                                </ProtectedRoute>
+                            }
                         />
                         <Route
                             path='/recipes'
-                            element={<RecipePage />}
+                            element={
+                                <ProtectedRoute>
+                                    <RecipePage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path='/onboarding'
+                            element={
+                                <OnboardingRoute>
+                                    <OnboardingPage />
+                                </OnboardingRoute>
+                            }
                         />
                         <Route
                             path='/admin-dashboard'

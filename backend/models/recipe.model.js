@@ -13,14 +13,13 @@ const recipeSchema = new mongoose.Schema({
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     isPublic: { type: Boolean, default: false },
     isShared: { type: Boolean, default: false },
-    // Add new field for moderation
     shareStatus: { 
         type: String, 
         enum: ['not_shared', 'pending', 'approved', 'rejected'], 
         default: 'not_shared' 
     },
     rejectionReason: { type: String },
-    price: { type: Number, default: 0 }, // Added price field
+    price: { type: Number, default: 0 },
     ratings: [
         {
             user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -28,7 +27,22 @@ const recipeSchema = new mongoose.Schema({
             createdAt: { type: Date, default: Date.now }
         }
     ],
-    averageRating: { type: Number, default: 0 }
+    averageRating: { type: Number, default: 0 },
+    
+    dietaryTags: {
+        type: [String],
+        enum: ['vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'keto', 'paleo', 'halal', 'kosher', 'low-carb', 'high-protein'],
+        default: []
+    },
+    cuisine: {
+        type: String,
+        enum: ['Filipino', 'Italian', 'Chinese', 'Japanese', 'Korean', 'Mexican', 'Indian', 'Thai', 'American', 'French', 'Mediterranean'],
+        default: 'Filipino'
+    },
+    allergens: {
+        type: [String],
+        default: []
+    }
 }, { timestamps: true });
 
 export const Recipe = mongoose.model("Recipe", recipeSchema);

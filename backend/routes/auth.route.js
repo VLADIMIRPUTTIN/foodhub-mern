@@ -10,6 +10,8 @@ import {
 	createAdmin,
 	googleLogin,
 	resendVerification,
+	setPreferences,
+	getPreferences,
 } from "../controllers/auth.controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { testResendConnection } from "../mailtrap/resend.config.js";
@@ -30,6 +32,8 @@ router.post("/reset-password/:token", resetPassword);
 router.post("/create-admin", createAdmin);
 router.post("/google-login", googleLogin);
 router.post("/resend-verification", resendVerification);
+router.post("/set-preferences", verifyToken, setPreferences);
+router.get("/get-preferences", verifyToken, getPreferences);
 
 // Test route for Resend
 router.get("/test-resend", async (req, res) => {
