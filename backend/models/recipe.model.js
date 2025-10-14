@@ -40,6 +40,10 @@ const recipeSchema = new mongoose.Schema({
     allergens: {
         type: [String],
         default: []
+    },
+    commentCount: {
+        type: Number,
+        default: 0
     }
 }, { timestamps: true });
 

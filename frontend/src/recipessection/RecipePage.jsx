@@ -480,7 +480,24 @@ const RecipePage = () => {
         setRecipeToComment(recipe);
         setCommentModalOpen(true);
     };
-    
+
+    // Add this function to handle comment count updates:
+    // Handle comment count updates
+    const handleCommentUpdate = (recipeId, action) => {
+        setRecipes(prevRecipes => 
+            prevRecipes.map(recipe => {
+                if (recipe._id === recipeId) {
+                    const currentCount = recipe.commentCount || 0;
+                    return {
+                        ...recipe,
+                        commentCount: action === 'add' ? currentCount + 1 : Math.max(0, currentCount - 1)
+                    };
+                }
+                return recipe;
+            })
+        );
+    };
+
     // Add this useEffect to debug user data:
     useEffect(() => {
         console.log('Current user data:', user);
@@ -656,6 +673,7 @@ const RecipePage = () => {
                 isOpen={commentModalOpen}
                 onClose={() => setCommentModalOpen(false)}
                 recipe={recipeToComment}
+                onCommentUpdate={handleCommentUpdate}
             />
         </div>
     );

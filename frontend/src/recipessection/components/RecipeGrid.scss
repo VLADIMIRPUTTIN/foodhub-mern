@@ -273,6 +273,7 @@
   transition: all 0.2s ease;
   gap: 0.3rem; // Smaller gap
   height: 28px; // Smaller height
+  position: relative; // Add this for badge positioning
   
   i {
     font-size: 0.75rem; // Smaller icons
@@ -295,16 +296,47 @@
     }
   }
   
-  // Comment button styling
+  // Comment button styling with badge support
   &.comment-btn {
     border-color: #5C73A0;
     color: #5C73A0;
+    
+    .comment-btn-content {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      position: relative;
+    }
+    
+    .comment-count-badge {
+      position: absolute;
+      top: -13px;
+      right: -25px;
+      background: #FF4444;
+      color: white;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 700;
+      border: 1px solid white;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      z-index: 1;
+    }
     
     &:hover {
       background: #5C73A0;
       color: white;
       transform: translateY(-1px);
       box-shadow: 0 2px 6px rgba(92, 115, 160, 0.3);
+      
+      .comment-count-badge {
+        background: #FF6666;
+        border-color: #5C73A0;
+      }
     }
   }
 }
@@ -398,6 +430,16 @@
     
     i {
       font-size: 0.7rem;
+    }
+    
+    &.comment-btn {
+      .comment-count-badge {
+        width: 14px;
+        height: 14px;
+        font-size: 0.55rem;
+        top: -6px;
+        right: -6px;
+      }
     }
   }
 }

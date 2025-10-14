@@ -1,5 +1,6 @@
 import { Comment } from "../models/comment.model.js";
 import { Recipe } from "../models/recipe.model.js";
+import { User } from "../models/user.model.js";
 
 // Create a new comment
 export const createComment = async (req, res) => {
@@ -15,8 +16,8 @@ export const createComment = async (req, res) => {
         }
 
         // Check if recipe exists
-        const recipeExists = await Recipe.exists({ _id: recipeId });
-        if (!recipeExists) {
+        const recipe = await Recipe.findById(recipeId);
+        if (!recipe) {
             return res.status(404).json({
                 success: false,
                 message: "Recipe not found"
@@ -31,6 +32,11 @@ export const createComment = async (req, res) => {
         });
 
         await comment.save();
+
+        // Increment comment count on recipe
+        await Recipe.findByIdAndUpdate(recipeId, {
+            $inc: { commentCount: 1 }
+        });
 
         // Populate user info before sending response
         await comment.populate('user', 'name profileImage');
@@ -86,7 +92,7 @@ export const deleteComment = async (req, res) => {
 
         // Check if user is the author of the comment
         if (comment.user.toString() !== userId) {
-            // Check if user is admin (you'll need to implement this)
+            // Check if user is admin
             const user = await User.findById(userId);
             if (user.role !== 'admin') {
                 return res.status(403).json({
@@ -95,6 +101,11 @@ export const deleteComment = async (req, res) => {
                 });
             }
         }
+
+        // Decrement comment count on recipe
+        await Recipe.findByIdAndUpdate(comment.recipe, {
+            $inc: { commentCount: -1 }
+        });
 
         await Comment.findByIdAndDelete(commentId);
 

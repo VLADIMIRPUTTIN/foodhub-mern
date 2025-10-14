@@ -4,7 +4,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useToast } from '../../components/ui/toast';
 import './CommentModal.scss';
 
-const CommentModal = ({ isOpen, onClose, recipe }) => {
+const CommentModal = ({ isOpen, onClose, recipe, onCommentUpdate }) => {
     const { user } = useAuthStore();
     const { toast } = useToast();
     const [comment, setComment] = useState('');
@@ -74,6 +74,11 @@ const CommentModal = ({ isOpen, onClose, recipe }) => {
                 setComment('');
                 // Add new comment to the top of the list
                 setComments([response.data.comment, ...comments]);
+                
+                // Notify parent component to update recipe data
+                if (onCommentUpdate) {
+                    onCommentUpdate(recipe._id, 'add');
+                }
             }
         } catch (error) {
             console.error('Error submitting comment:', error);
@@ -103,6 +108,11 @@ const CommentModal = ({ isOpen, onClose, recipe }) => {
                 
                 // Remove the deleted comment from the list
                 setComments(comments.filter(c => c._id !== commentId));
+                
+                // Notify parent component to update recipe data
+                if (onCommentUpdate) {
+                    onCommentUpdate(recipe._id, 'delete');
+                }
             }
         } catch (error) {
             console.error('Error deleting comment:', error);

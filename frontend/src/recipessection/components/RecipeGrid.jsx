@@ -119,7 +119,7 @@ const RecipeGrid = ({
                                         </div>
                                     )}
                                     
-                                    {/* Action buttons container */}
+                                    {/* Action buttons container - fixed at bottom */}
                                     <div className="recipe-action-buttons">
                                         {/* Rate Button */}
                                         <button 
@@ -130,13 +130,20 @@ const RecipeGrid = ({
                                             Rate
                                         </button>
                                         
-                                        {/* Comment Button */}
+                                        {/* Comment Button with count */}
                                         <button 
                                             className="recipe-action-btn comment-btn" 
                                             onClick={(e) => handleCommentClick(recipe, e)}
                                         >
-                                            <i className="bx bx-comment"></i>
-                                            Comments
+                                            <div className="comment-btn-content">
+                                                <i className="bx bx-comment"></i>
+                                                <span>Comments</span>
+                                                {recipe.commentCount > 0 && (
+                                                    <div className="comment-count-badge">
+                                                        {recipe.commentCount}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </button>
                                     </div>
                                 </div>
