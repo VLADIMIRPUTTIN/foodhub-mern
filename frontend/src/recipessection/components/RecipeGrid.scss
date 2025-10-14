@@ -37,9 +37,8 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  height: 420px; // Keep fixed consistent height
-  min-height: 420px;
-  max-height: 420px;
+  height: 380px; // Reduced height
+
 
   &:hover {
     transform: translateY(-4px);
@@ -48,7 +47,7 @@
 
   .recipe-image {
     position: relative;
-    height: 160px; // Fixed image height
+    height: 140px; // Reduced image height to give more space for content
     overflow: hidden;
     flex-shrink: 0;
     border-radius: 12px 12px 0 0;
@@ -66,49 +65,50 @@
   }
 
   .recipe-content {
-    padding: 1rem;
+    padding: 0.8rem; // Reduced padding
     flex: 1;
     display: flex;
     flex-direction: column;
-    height: 260px; // Fixed content height
-    overflow: hidden; // Prevent overflow
+    height: 240px; // Fixed content height (380px - 140px image)
+    overflow: hidden;
     position: relative;
 
     .recipe-title {
-      font-size: 1rem;
+      font-size: 0.95rem; // Slightly smaller font
       font-weight: 700;
       color: #333;
-      margin-bottom: 0.5rem; // Smaller margin
-      line-height: 1.3;
-      height: 2.6em; // Fixed height for 2 lines
+      margin-bottom: 0.4rem;
+      line-height: 1.2; // Tighter line height
+      height: 2.4em; // Fixed height for 2 lines
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      order: -1; // Make sure title is always first
+      order: -1;
     }
 
     .recipe-category {
       display: inline-flex;
       align-items: center;
-      gap: 0.3rem;
+      gap: 0.2rem;
       background: #CF996C;
       color: white;
-      padding: 0.25rem 0.5rem;
-      border-radius: 12px;
-      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 10px;
+      font-size: 0.65rem; // Smaller font
       font-weight: 600;
-      margin-bottom: 0.5rem; // Smaller margin
+      margin-bottom: 0.4rem;
       width: fit-content;
       order: 0;
+      height: 22px; // Fixed height
     }
     
     .recipe-desc {
       color: #666;
-      font-size: 0.8rem;
-      margin-bottom: 0.5rem; // Smaller margin
-      line-height: 1.4;
-      height: 2.8em; // Fixed height for 2 lines
+      font-size: 0.75rem; // Smaller font
+      margin-bottom: 0.4rem;
+      line-height: 1.3;
+      height: 2.6em; // Fixed height for 2 lines
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
@@ -120,27 +120,29 @@
     .recipe-meta-container {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
+      gap: 0.4rem;
+      margin-bottom: 0.4rem;
       order: 2;
+      height: 28px; // Fixed height
+      align-items: center;
     }
     
     .recipe-price {
       display: flex;
       align-items: center;
-      gap: 0.3rem;
+      gap: 0.25rem;
       background: rgba(207, 153, 108, 0.1);
-      padding: 0.25rem 0.5rem;
-      border-radius: 15px;
-      font-size: 0.7rem;
+      padding: 0.2rem 0.4rem;
+      border-radius: 12px;
+      font-size: 0.65rem; // Smaller font
       font-weight: 600;
       color: #b86b1b;
       border: 1px solid rgba(207, 153, 108, 0.2);
       width: fit-content;
-      height: 26px; // Fixed height
+      height: 24px;
       
       i {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         color: #CF996C;
       }
     }
@@ -148,25 +150,19 @@
     .recipe-servings {
       display: flex;
       align-items: center;
-      gap: 0.2rem; // Smaller gap
+      gap: 0.2rem;
       background: rgba(92, 115, 160, 0.1);
-      padding: 0.15rem 0.4rem; // Reduced padding
-      border-radius: 12px; // Slightly smaller radius
+      padding: 0.2rem 0.4rem;
+      border-radius: 12px;
       font-size: 0.65rem; // Smaller font
       font-weight: 600;
       color: #455a8f;
       border: 1px solid rgba(92, 115, 160, 0.15);
       width: fit-content;
-      height: 35px; // Fixed height
-      margin-left: 4rem;
+      height: 24px;
       
       i {
-        font-size: 0.7rem; // Smaller icon
-      }
-      
-      span {
-        // Make text more compact
-        letter-spacing: -0.2px;
+        font-size: 0.7rem;
       }
     }
     
@@ -174,68 +170,30 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.2rem;
-      margin-bottom: 0.5rem; // Smaller margin
+      gap: 0.15rem; // Smaller gap
+      margin-bottom: 0.4rem;
       height: 20px; // Fixed height
       order: 3;
       
       i {
         color: #FF9529;
-        font-size: 0.9rem;
+        font-size: 0.8rem; // Smaller stars
       }
       
       span {
-        font-size: 0.7rem;
+        font-size: 0.65rem; // Smaller text
         color: #666;
         margin-left: 0.2rem;
       }
-    }
-    
-    // Rate Recipe Button - Fixed at bottom
-    .rate-recipe-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: #CF996C;
-        color: white;
-        border: none;
-        border-radius: 20px;
-        padding: 0.4rem 1rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        cursor: pointer;
-        align-self: center;
-        transition: all 0.2s ease;
-        gap: 0.4rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        margin-top: auto; // Push to bottom
-        margin-bottom: 0.5rem; // Bottom margin
-        height: 32px; // Fixed height
-        min-width: 120px; // Minimum width
-        order: 4; // Always last
-        
-        i {
-            font-size: 0.9rem;
-        }
-        
-        &:hover {
-            background: #BB8860;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        
-        &:active {
-            transform: translateY(0);
-        }
     }
   }
 
   .favorite-btn {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 36px;
-    height: 36px;
+    top: 8px;
+    right: 8px;
+    width: 32px; // Smaller heart button
+    height: 32px;
     background: rgba(0, 0, 0, 0.6);
     border: none;
     border-radius: 50%;
@@ -249,7 +207,7 @@
     z-index: 20;
 
     i {
-      font-size: 1.3rem;
+      font-size: 1.1rem; // Smaller icon
       color: #bbb;
       transition: all 0.3s ease;
       font-family: 'boxicons' !important;
@@ -262,7 +220,7 @@
       i {
         color: #ededed;
         filter: drop-shadow(0 0 12px #ff6b6b88);
-        transform: scale(1.15);
+        transform: scale(1.1);
         animation: heartPulse 0.5s;
       }
     }
@@ -291,32 +249,33 @@
 // Add this for the action buttons container
 .recipe-action-buttons {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem; // Smaller gap
   margin-top: auto;
   width: 100%;
-  padding-top: 0.5rem;
-  order: 5;
+  padding-top: 0.4rem;
+  order: 4;
+  height: 30px; // Fixed height
 }
 
-// Style for action buttons
+// Style for action buttons - smaller and cleaner
 .recipe-action-btn {
   flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px solid;
-  border-radius: 20px;
-  padding: 0.4rem 0;
-  font-size: 0.75rem;
+  border: 1.5px solid; // Thicker border
+  border-radius: 15px; // More rounded
+  padding: 0.3rem 0; // Smaller padding
+  font-size: 0.65rem; // Smaller font
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  gap: 0.4rem;
-  height: 32px;
+  gap: 0.3rem; // Smaller gap
+  height: 28px; // Smaller height
   
   i {
-    font-size: 0.9rem;
+    font-size: 0.75rem; // Smaller icons
   }
   
   &:active {
@@ -332,6 +291,7 @@
       background: #CF996C;
       color: white;
       transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(207, 153, 108, 0.3);
     }
   }
   
@@ -344,49 +304,8 @@
       background: #5C73A0;
       color: white;
       transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(92, 115, 160, 0.3);
     }
-  }
-}
-
-// Update the existing .recipe-content to include the new order
-.recipe-content {
-  // Existing styles...
-  
-  .recipe-title {
-    // Existing styles...
-    order: -1;
-  }
-  
-  .recipe-category {
-    // Existing styles...
-    order: 0;
-  }
-  
-  .recipe-desc {
-    // Existing styles...
-    order: 1;
-  }
-  
-  .recipe-meta-container {
-    // Existing styles...
-    order: 2;
-  }
-  
-  .star-rating-display {
-    // Existing styles...
-    order: 3;
-  }
-  
-  // Remove or comment out the standalone rate-recipe-btn since we now have the action buttons container
-  /*
-  .rate-recipe-btn {
-    // Existing styles...
-    order: 4;
-  }
-  */
-  
-  .recipe-action-buttons {
-    order: 4;
   }
 }
 
@@ -394,85 +313,91 @@
 @media (max-width: 768px) {
   .recipes-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.8rem;
-  }
-  
-  .recipe-card-wrapper {
-    margin-bottom: 1rem;
+    gap: 0.6rem; // Smaller gap on mobile
   }
   
   .recipe-card {
-    height: 360px; // Slightly smaller on mobile but still consistent
-    min-height: 360px;
-    max-height: 360px;
+    height: 320px; // Smaller on mobile
+    min-height: 320px;
+    max-height: 500px;
     
     .recipe-image {
-      height: 120px;
+      height: 110px; // Smaller image on mobile
     }
     
     .recipe-content {
-      padding: 0.8rem;
-      height: 240px; // Adjusted for mobile (360px - 120px image)
+      padding: 0.6rem;
+      height: 210px; // Adjusted for mobile (320px - 110px image)
       
       .recipe-title {
-        font-size: 0.9rem;
-        margin-bottom: 0.6rem;
-        height: 2.4em;
+        font-size: 0.85rem;
+        margin-bottom: 0.3rem;
+        height: 2.2em;
       }
       
       .recipe-category {
-        margin-bottom: 0.6rem;
-        font-size: 0.65rem;
+        margin-bottom: 0.3rem;
+        font-size: 0.6rem;
+        height: 20px;
       }
       
       .recipe-desc {
-        font-size: 0.75rem;
-        margin-bottom: 0.6rem;
+        font-size: 0.7rem;
+        margin-bottom: 0.3rem;
         height: 2.4em;
+      }
+      
+      .recipe-meta-container {
+        margin-bottom: 0.3rem;
+        height: 24px;
       }
       
       .recipe-price,
       .recipe-servings {
-        margin-bottom: 0.6rem;
-        height: 24px;
-        font-size: 0.65rem;
+        height: 22px;
+        font-size: 0.6rem;
+        padding: 0.15rem 0.3rem;
       }
       
       .star-rating-display {
-        margin-bottom: 0.6rem;
+        margin-bottom: 0.3rem;
         height: 18px;
-      }
-      
-      .rate-recipe-btn {
-        padding: 0.35rem 0.8rem;
-        font-size: 0.7rem;
-        height: 28px;
-        margin-bottom: 0.4rem;
+        
+        i {
+          font-size: 0.75rem;
+        }
+        
+        span {
+          font-size: 0.6rem;
+        }
       }
     }
     
     .favorite-btn {
-      top: 8px;
-      right: 8px;
-      width: 30px;
-      height: 30px;
+      top: 6px;
+      right: 6px;
+      width: 28px;
+      height: 28px;
       
       i {
-        font-size: 1.1rem;
+        font-size: 1rem;
       }
     }
   }
   
   .recipe-action-buttons {
     padding-top: 0.3rem;
+    gap: 0.3rem;
+    height: 26px;
   }
   
   .recipe-action-btn {
-    font-size: 0.7rem;
-    height: 28px;
+    font-size: 0.6rem;
+    height: 24px;
+    border-radius: 12px;
     
     i {
-      font-size: 0.8rem;
+      font-size: 0.7rem;
     }
   }
 }
