@@ -14,7 +14,7 @@ import AdminDashboard from "./AdminSide/AdminDashboard";
 import CreateRecipePage from "./recipessection/CreateRecipePage";
 import UserProfilePage from "./pages/UserProfilePage";
 import SharedRecipePage from "./recipessection/SharedRecipePage";
-import OnboardingPage from "./pages/OnboardingPage"; // Add this import
+import OnboardingPage from "./pages/OnboardingPage";
 
 import LoadingSpinner from "./components/LoadingSpinner";
 import AccountStatusModal from "./components/AccountStatusModal";
@@ -79,7 +79,7 @@ const AdminRoute = ({ children }) => {
     return children;
 };
 
-// redirect authenticated users to the appropriate dashboard
+// redirect authenticated users to the appropriate dashboard ONLY from login/signup pages
 const RedirectAuthenticatedUser = ({ children }) => {
     const { isAuthenticated, user } = useAuthStore();
 
@@ -94,7 +94,7 @@ const RedirectAuthenticatedUser = ({ children }) => {
             console.log("Redirecting authenticated admin to admin dashboard");
             return <Navigate to='/admin-dashboard' replace />;
         }
-        console.log("Redirecting authenticated user to home");
+        console.log("Redirecting authenticated user to dashboard");
         return <Navigate to='/' replace />;
     }
 
@@ -158,21 +158,15 @@ function App() {
             <SocketProvider>
                 <div>
                     <Routes>
+                        {/* Dashboard is now public - no protection */}
                         <Route
                             path='/'
-                            element={
-                                <ProtectedRoute>
-                                    <DashboardPage />
-                                </ProtectedRoute>
-                            }
+                            element={<DashboardPage />}
                         />
+                        {/* Recipes page is now public - no protection */}
                         <Route
                             path='/recipes'
-                            element={
-                                <ProtectedRoute>
-                                    <RecipePage />
-                                </ProtectedRoute>
-                            }
+                            element={<RecipePage />}
                         />
                         <Route
                             path='/onboarding'
@@ -223,6 +217,7 @@ function App() {
                                 </RedirectAuthenticatedUser>
                             }
                         />
+                        {/* These routes still need authentication */}
                         <Route
                             path='/create-recipe'
                             element={
@@ -239,10 +234,12 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        {/* Recipe details is public */}
                         <Route
                             path='/recipe/:id'
                             element={<RecipeFull />}
                         />
+                        {/* Shared recipes is public */}
                         <Route
                             path='/shared-recipes'
                             element={<SharedRecipePage />}

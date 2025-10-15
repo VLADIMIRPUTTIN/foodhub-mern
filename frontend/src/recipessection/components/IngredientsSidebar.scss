@@ -2,20 +2,21 @@
 // INGREDIENTS SIDEBAR STYLES
 // =============================================================================
 .ingredients-sidebar {
-  width: 280px;
-  background: #fff;
+  width: 300px; // Slightly wider
+  background: linear-gradient(145deg, #ffffff, #fcf9f5);
   border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
-  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(207, 153, 108, 0.12);
+  padding: 1.75rem;
   height: fit-content;
   max-height: 700px;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 1.25rem;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   transform: translateX(-30px);
   opacity: 0;
   flex-shrink: 0;
+  border: 1px solid rgba(207, 153, 108, 0.1);
   
   &.sidebar-animate-in {
     transform: translateX(0);
@@ -23,49 +24,78 @@
   }
   
   .sidebar-header {
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
     position: relative;
     
     .sidebar-title {
-      font-size: 1.3rem;
+      font-size: 1.4rem;
       font-weight: 700;
       color: #333;
+      letter-spacing: -0.02em;
       
       .highlight {
         color: #CF996C;
+        position: relative;
+        
+        &::after {
+          content: "";
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 6px;
+          background: rgba(207, 153, 108, 0.2);
+          border-radius: 10px;
+          z-index: -1;
+          transform: translateY(2px);
+        }
       }
     }
     
     .sidebar-underline {
       height: 3px;
-      width: 60px;
+      width: 70px;
       background: linear-gradient(90deg, #CF996C, #e26a00);
-      margin-top: 8px;
+      margin-top: 10px;
       border-radius: 4px;
     }
   }
   
   .search-container {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
+    position: relative;
+    
+    &::before {
+      content: "\ee3a"; // Boxicons search icon
+      font-family: 'boxicons' !important;
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #CF996C;
+      font-size: 1.1rem;
+    }
     
     .ingredient-search {
       width: 100%;
-      padding: 0.75rem 1rem;
-      border: 2px solid rgba(207, 153, 108, 0.2);
-      border-radius: 10px;
-      background: rgba(245, 245, 245, 0.5);
+      padding: 0.9rem 1rem 0.9rem 2.5rem;
+      border: 2px solid rgba(207, 153, 108, 0.15);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.8);
       transition: all 0.3s ease;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
+      box-shadow: 0 2px 8px rgba(207, 153, 108, 0.06);
       
       &:focus {
         outline: none;
         border-color: #CF996C;
         background: white;
-        box-shadow: 0 0 0 3px rgba(207, 153, 108, 0.1);
+        box-shadow: 0 0 0 3px rgba(207, 153, 108, 0.1), 0 4px 12px rgba(207, 153, 108, 0.08);
       }
       
       &::placeholder {
-        color: #aaa;
+        color: #bbb;
+        font-size: 0.9rem;
       }
     }
   }
@@ -73,10 +103,11 @@
   .ingredient-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.7rem; // Increased gap
     overflow-y: auto;
     max-height: 500px;
-    padding: 0.2rem;
+    padding: 0.5rem 0.2rem;
+    align-content: flex-start;
     
     // Custom scrollbar styles
     &::-webkit-scrollbar {
@@ -84,24 +115,94 @@
     }
     
     &::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.05);
+      background: rgba(0, 0, 0, 0.03);
       border-radius: 10px;
     }
     
     &::-webkit-scrollbar-thumb {
-      background: rgba(207, 153, 108, 0.3);
+      background: rgba(207, 153, 108, 0.25);
       border-radius: 10px;
       
       &:hover {
-        background: rgba(207, 153, 108, 0.5);
+        background: rgba(207, 153, 108, 0.4);
       }
     }
     
-    // Ingredient buttons are defined in the main RecipePage.scss
-    // as they're used in multiple places, but we can override specific styles here
+    // Enhanced ingredient buttons
     .ingredient-btn {
-      margin: 0.2rem;
+      margin: 0;
+      padding: 0.6rem 1.1rem;
+      background-color: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(207, 153, 108, 0.15);
+      border-radius: 12px;
+      color: #555;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(207, 153, 108, 0.05);
+      position: relative;
+      overflow: hidden;
+      
+      &::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(207, 153, 108, 0), rgba(207, 153, 108, 0.08));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      
+      &:hover {
+        border-color: rgba(207, 153, 108, 0.3);
+        color: #333;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(207, 153, 108, 0.1);
+        
+        &::before {
+          opacity: 1;
+        }
+      }
+      
+      &:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(207, 153, 108, 0.05);
+      }
+      
+      &.selected {
+        background: linear-gradient(135deg, #CF996C, #e26a00);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 4px 12px rgba(207, 153, 108, 0.3);
+        font-weight: 600;
+        
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 15px rgba(207, 153, 108, 0.35);
+        }
+        
+        &:active {
+          transform: translateY(0);
+          box-shadow: 0 4px 8px rgba(207, 153, 108, 0.2);
+        }
+      }
     }
+  }
+  
+  // Add a subtle texture background
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23cf996c' fill-opacity='0.03' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.7;
+    pointer-events: none;
+    z-index: -1;
+    border-radius: 16px;
   }
 }
 
@@ -116,22 +217,32 @@
 // Responsive adjustments
 @media (max-width: 1200px) {
   .ingredients-sidebar {
-    width: 240px;
-    padding: 1.2rem;
+    width: 270px;
+    padding: 1.5rem;
     
     .sidebar-title {
-      font-size: 1.1rem;
+      font-size: 1.3rem;
+    }
+    
+    .ingredient-list {
+      gap: 0.6rem;
     }
   }
 }
 
 @media (max-width: 992px) {
   .ingredients-sidebar {
-    width: 220px;
-    padding: 1rem;
+    width: 240px;
+    padding: 1.25rem;
     
     .ingredient-list {
       max-height: 400px;
+      gap: 0.5rem;
+      
+      .ingredient-btn {
+        padding: 0.5rem 0.9rem;
+        font-size: 0.85rem;
+      }
     }
   }
 }

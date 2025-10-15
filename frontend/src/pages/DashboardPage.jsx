@@ -19,7 +19,7 @@ const DashboardPage = () => {
             e.preventDefault();
             setDeferredPrompt(e);
             setShowInstallBtn(true);
-            setShowInstallNotif(true); // Show notification
+            setShowInstallNotif(true);
         };
 
         const handleAppInstalled = () => {
@@ -57,10 +57,17 @@ const DashboardPage = () => {
 
     const handleGetStarted = () => {
         if (user) {
+            // If user is logged in, go to recipes
             navigate('/recipes');
         } else {
-            navigate('/login');
+            // If not logged in, show Join Now -> go to signup
+            navigate('/signup');
         }
+    };
+
+    const handleExploreRecipes = () => {
+        // Anyone can browse recipes
+        navigate('/recipes');
     };
 
     return (
@@ -121,7 +128,8 @@ const DashboardPage = () => {
                         >
                             Discover delicious recipes based on what's already in your kitchen. Save time, reduce waste, and cook with confidence.
                         </motion.p>
-                        <div style={{ display: "flex", gap: "1rem", alignItems: "center", marginTop: "1.2rem" }}>
+                        <div style={{ display: "flex", gap: "1rem", alignItems: "center", marginTop: "1.2rem", flexWrap: "wrap" }}>
+                            {/* Primary action button */}
                             <motion.button
                                 initial={{ opacity: 0, y: 30, scale: 0.8 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -143,13 +151,55 @@ const DashboardPage = () => {
                                 <i className="bx bx-rocket"></i>
                                 {user ? 'Get Started' : 'Join Now'}
                             </motion.button>
-                            {showInstallBtn && (
+
+                            {/* Secondary action - Browse recipes (for non-logged users) */}
+                            {!user && (
                                 <motion.button
                                     initial={{ opacity: 0, y: 30, scale: 0.8 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     transition={{
                                         duration: 0.8,
                                         delay: 0.5,
+                                        type: "spring",
+                                        stiffness: 200
+                                    }}
+                                    whileHover={{
+                                        scale: 1.05,
+                                        y: -3,
+                                        boxShadow: "0 15px 30px rgba(255, 255, 255, 0.2)"
+                                    }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={handleExploreRecipes}
+                                    className="explore-btn"
+                                    style={{
+                                        background: 'transparent',
+                                        border: '2px solid rgba(255,255,255,0.8)',
+                                        color: 'white',
+                                        padding: '12px 24px',
+                                        borderRadius: '50px',
+                                        fontSize: '1rem',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        transition: 'all 0.3s ease',
+                                        
+                                    }}
+                                >
+                                    <i className="bx bx-book-open"></i>
+                                    Browse Recipes
+                                </motion.button>
+                            )}
+
+                            {/* Install app button */}
+                            {showInstallBtn && (
+                                <motion.button
+                                    initial={{ opacity: 0, y: 30, scale: 0.8 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    transition={{
+                                        duration: 0.8,
+                                        delay: user ? 0.5 : 0.6,
                                         type: "spring",
                                         stiffness: 200
                                     }}
