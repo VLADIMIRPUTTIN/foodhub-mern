@@ -16,6 +16,7 @@ import favoriteRoutes from './routes/favoriteRoutes.js';
 import visionRoutes from './routes/vision.route.js';
 import youtubeRoutes from './routes/youtube.route.js';
 import commentRoutes from './routes/comment.route.js';
+import translateRoutes from './routes/translate.route.js';
 
 dotenv.config();
 
@@ -109,6 +110,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/vision", visionRoutes);
 app.use("/api/youtube", youtubeRoutes);
 app.use("/api/comments", commentRoutes);
+app.use("/api/translate", translateRoutes);
 
 if (process.env.NODE_ENV === "production") {
     app.use(express.static(path.join(__dirname, "/frontend/dist")));

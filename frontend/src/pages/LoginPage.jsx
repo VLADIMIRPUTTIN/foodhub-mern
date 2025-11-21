@@ -24,53 +24,47 @@ const LoginPage = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            // Call login and get the returned user data
             const userdata = await login(email, password);
             
-            // Check if there's account status data and show modal
             if (accountStatus) {
                 setShowStatusModal(true);
                 return;
             }
 
-            // Check if login was successful and user data is available
             if (userdata) {
-                console.log("Login successful, user data:", userdata);
+                console.log("✅ Login successful, user data:", userdata);
                 
-                // Check if user needs email verification
+                // 1. Check verification FIRST
                 if (!userdata.isVerified) {
-                    console.log("User not verified, redirecting to verification");
+                    console.log("❌ User not verified, redirecting to verification");
                     navigate('/verify-email');
                     return;
                 }
                 
-                // Check if user needs onboarding
+                // 2. Check onboarding BEFORE checking role (CRITICAL!)
                 if (!userdata.hasCompletedOnboarding && userdata.role !== 'admin') {
-                    console.log("User needs onboarding, redirecting to onboarding");
+                    console.log("⚠️ User needs onboarding, redirecting to /onboarding");
                     navigate('/onboarding');
                     return;
                 }
                 
-                // Check user role and redirect accordingly
+                // 3. Finally check role
                 if (userdata.role === 'admin') {
-                    console.log("Admin user detected, redirecting to admin dashboard");
+                    console.log("✅ Admin user, redirecting to admin dashboard");
                     navigate('/admin-dashboard');
                 } else {
-                    console.log("Regular user detected, redirecting to home");
+                    console.log("✅ Regular user with completed onboarding, redirecting to dashboard");
                     navigate('/');
                 }
             }
             
         } catch (error) {
-            console.error("Login failed:", error);
-            // Error is already handled by the auth store
+            console.error("❌ Login failed:", error);
         }
     };
 
     const handleGoogleLogin = async (credentialResponse) => {
         try {
-            console.log("Starting Google login process...");
-            
             const baseURL = import.meta.env.MODE === "development" 
                 ? "http://localhost:5000" 
                 : "";
@@ -81,53 +75,39 @@ const LoginPage = () => {
                 { withCredentials: true }
             );
             
-            console.log("Google login response received:", response.status);
-            console.log("Response data:", response.data);
-            
             if (response.data.user) {
-                // Set user in auth store
                 setUser(response.data.user);
-                
-                // Check user role and verification status
                 const user = response.data.user;
-                console.log("Google login - User role:", user.role, "Verified:", user.isVerified);
                 
-                // Check if user needs email verification first
+                console.log("✅ Google login successful, user data:", user);
+                
+                // 1. Check verification first
                 if (!user.isVerified) {
-                    console.log("User needs verification, redirecting to verify-email");
+                    console.log("❌ User not verified, redirecting to verification");
                     navigate('/verify-email');
                     return;
                 }
                 
-                // Check if user needs onboarding
-                if (response.data.needsOnboarding || (!user.hasCompletedOnboarding && user.role !== 'admin')) {
-                    console.log("User needs onboarding, redirecting to onboarding page");
+                // 2. Check onboarding (CRITICAL!)
+                if (!user.hasCompletedOnboarding && user.role !== 'admin') {
+                    console.log("⚠️ User needs onboarding, redirecting to /onboarding");
                     navigate('/onboarding');
                     return;
                 }
                 
-                // User is verified and completed onboarding, check role for redirect
+                // 3. Check role
                 if (user.role === 'admin') {
-                    console.log("Admin user logged in with Google, redirecting to admin dashboard");
+                    console.log("✅ Admin user, redirecting to admin dashboard");
                     navigate('/admin-dashboard');
                 } else {
-                    console.log("Regular verified user, redirecting to home");
+                    console.log("✅ Regular user with completed onboarding, redirecting to dashboard");
                     navigate('/');
                 }
-            } else {
-                throw new Error("No user data received from server");
             }
-            
         } catch (error) {
-            console.error("Google login failed:", error);
+            console.error("❌ Google login failed:", error);
             if (error.response?.status === 403 && error.response?.data?.statusData) {
-                // Handle account status issues (banned/suspended)
                 setShowStatusModal(true);
-            } else if (error.response) {
-                console.error("Server response:", error.response.data);
-                console.error(error.response.data.message || "Google login failed");
-            } else {
-                console.error("Google login failed. Please try again.");
             }
         }
     };

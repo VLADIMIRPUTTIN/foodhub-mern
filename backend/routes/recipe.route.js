@@ -122,28 +122,44 @@ router.get("/shared", async (req, res) => {
 // Update the share recipe route to set status as pending and emit socket event
 router.post("/:id/share", verifyToken, async (req, res) => {
     try {
-        const recipe = await Recipe.findByIdAndUpdate(
-            req.params.id,
-            { 
-                shareStatus: 'pending',
-                isShared: false
-            },
-            { new: true }
-        ).populate('createdBy', 'name email');
-        
+        const { id } = req.params;
+        const recipe = await Recipe.findById(id).populate('createdBy', 'name email');
+
         if (!recipe) {
             return res.status(404).json({ success: false, message: "Recipe not found" });
         }
-        
+
+        // Check if user owns this recipe
+        if (recipe.createdBy._id.toString() !== req.userId) {
+            return res.status(403).json({ success: false, message: "You can only share your own recipes" });
+        }
+
+        // Set recipe to pending status
+        recipe.shareStatus = 'pending';
+        recipe.isShared = false; // Not public yet until approved
+        await recipe.save();
+
+        // ✅ Emit socket event with FULL recipe data including imageUrl
         const io = req.app.get('io');
-        io.emit('recipePending', {
-            recipeId: recipe._id,
-            title: recipe.title || recipe.name,
-            userId: recipe.createdBy,
-            description: recipe.description
-        });
-        
-        res.json({ success: true, recipe, message: "Recipe submitted for review" });
+        if (io) {
+            io.emit('recipePending', {
+                _id: recipe._id,
+                title: recipe.title,
+                description: recipe.description,
+                category: recipe.category,
+                imageUrl: recipe.imageUrl, // ✅ Include imageUrl
+                createdBy: {
+                    _id: recipe.createdBy._id,
+                    name: recipe.createdBy.name,
+                    email: recipe.createdBy.email
+                },
+                createdAt: recipe.createdAt,
+                shareStatus: 'pending'
+            });
+            console.log('✅ Emitted recipePending event with imageUrl:', recipe.imageUrl);
+        }
+
+        res.json({ success: true, recipe });
     } catch (error) {
         console.error('Error sharing recipe:', error);
         res.status(500).json({ success: false, message: error.message });

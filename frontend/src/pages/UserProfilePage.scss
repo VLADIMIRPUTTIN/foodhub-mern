@@ -740,6 +740,7 @@
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            line-clamp: 2; // ✅ Added standard property
         }
 
         p {
@@ -751,6 +752,7 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
             line-height: 1.3;
+            line-clamp: 2; // ✅ Added standard property
         }
 
         .recipe-meta {
@@ -1454,27 +1456,39 @@ html {
 // Add status indicator for recipe cards
 .recipe-status {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.7rem;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
     font-weight: 600;
-    text-transform: uppercase;
+    backdrop-filter: blur(10px);
+    z-index: 10;
+    
+    i {
+        font-size: 1.125rem;
+    }
     
     &.pending {
-        background: rgba(107, 114, 128, 0.9);
+        background: rgba(234, 179, 8, 0.9);
         color: white;
+        border: 2px solid rgba(234, 179, 8, 1);
     }
     
     &.approved {
-        background: rgba(16, 185, 129, 0.9);
+        background: rgba(34, 197, 94, 0.9);
         color: white;
+        border: 2px solid rgba(34, 197, 94, 1);
     }
     
     &.rejected {
         background: rgba(239, 68, 68, 0.9);
         color: white;
+        border: 2px solid rgba(239, 68, 68, 1);
+        cursor: help;
     }
 }
 .edit-recipe-modal-overlay {

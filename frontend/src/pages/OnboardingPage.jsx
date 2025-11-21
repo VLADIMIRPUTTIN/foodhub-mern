@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import axios from 'axios';
+import toast, { Toaster } from 'react-hot-toast';
 import './OnboardingPage.scss';
 
 const OnboardingPage = () => {
@@ -90,10 +91,14 @@ const OnboardingPage = () => {
 
             if (response.data.success) {
                 setUser(response.data.user);
-                navigate('/');
+                toast.success('Preferences saved successfully! 🎉');
+                setTimeout(() => {
+                    navigate('/');
+                }, 1000);
             }
         } catch (error) {
             console.error('Error saving preferences:', error);
+            toast.error('Failed to save preferences. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -191,10 +196,18 @@ const OnboardingPage = () => {
                         onClick={handleNext}
                         disabled={isLoading}
                     >
-                        {isLoading ? 'Saving...' : currentStep === 3 ? 'Complete' : 'Next'}
+                        {isLoading ? (
+                            <>
+                                <span className="btn-spinner"></span>
+                                Saving...
+                            </>
+                        ) : (
+                            currentStep === 3 ? 'Complete Setup' : 'Next Step'
+                        )}
                     </button>
                 </div>
             </div>
+            <Toaster position="top-center" />
         </div>
     );
 };

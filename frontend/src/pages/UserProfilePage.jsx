@@ -85,10 +85,13 @@ const UserProfilePage = () => {
         }
     }, [location.state]);
 
-    // Socket event handlers
+    // Socket event handlers - Enhanced with toast notifications
     useEffect(() => {
-        if (socket) {
+        if (socket && user) {
             const handleRecipeApproved = (data) => {
+                console.log('✅ Recipe approved event received:', data);
+                
+                // Update recipe status in state
                 setUserRecipes(prev => 
                     prev.map(recipe => 
                         recipe._id === data.recipeId
@@ -96,9 +99,25 @@ const UserProfilePage = () => {
                             : recipe
                     )
                 );
+                
+                // ✅ Show success toast
+                toast.success(`Recipe "${data.title}" approved!`, {
+                    duration: 5000,
+                    icon: '🎉',
+                    style: {
+                        borderRadius: "8px",
+                        background: "#fff",
+                        color: "#222",
+                        boxShadow: "0 4px 16px rgba(16,185,129,0.15)",
+                        fontWeight: 600,
+                    },
+                });
             };
 
             const handleRecipeRejected = (data) => {
+                console.log('❌ Recipe rejected event received:', data);
+                
+                // Update recipe status in state
                 setUserRecipes(prev => 
                     prev.map(recipe => 
                         recipe._id === data.recipeId
@@ -106,17 +125,48 @@ const UserProfilePage = () => {
                             : recipe
                     )
                 );
+                
+                // ✅ Show warning toast with reason
+                toast.error(
+                    `Recipe "${data.title}" declined${data.reason ? `: ${data.reason}` : ''}`,
+                    {
+                        duration: 8000,
+                        icon: '⚠️',
+                        style: {
+                            borderRadius: "8px",
+                            background: "#fff",
+                            color: "#222",
+                            boxShadow: "0 4px 16px rgba(239,68,68,0.15)",
+                            fontWeight: 600,
+                        },
+                    }
+                );
+            };
+
+            // ✅ Personal events (more specific to this user)
+            const handleRecipeApprovedPersonal = (data) => {
+                console.log('✅ Personal recipe approved:', data);
+                handleRecipeApproved(data);
+            };
+
+            const handleRecipeRejectedPersonal = (data) => {
+                console.log('❌ Personal recipe rejected:', data);
+                handleRecipeRejected(data);
             };
 
             socket.on('recipeApproved', handleRecipeApproved);
             socket.on('recipeRejected', handleRecipeRejected);
+            socket.on('recipeApprovedPersonal', handleRecipeApprovedPersonal);
+            socket.on('recipeRejectedPersonal', handleRecipeRejectedPersonal);
 
             return () => {
                 socket.off('recipeApproved', handleRecipeApproved);
                 socket.off('recipeRejected', handleRecipeRejected);
+                socket.off('recipeApprovedPersonal', handleRecipeApprovedPersonal);
+                socket.off('recipeRejectedPersonal', handleRecipeRejectedPersonal);
             };
         }
-    }, [socket]);
+    }, [socket, user]);
 
     const fetchUserData = async () => {
         setIsLoading(true);
@@ -287,13 +337,23 @@ const UserProfilePage = () => {
         return user?.profileImage || DEFAULT_PROFILE_IMAGE;
     };
 
+    // ✅ SIMPLIFIED: Recipe image URL handler
     const getRecipeImageUrl = (imageUrl) => {
-        if (!imageUrl) return '/api/placeholder/200/150';
+        // If no image, return placeholder
+        if (!imageUrl) {
+            return 'https://via.placeholder.com/400x300?text=No+Image'; // ✅ Added https://
+        }
         
-        if (imageUrl.startsWith('http')) return imageUrl;
+        // ✅ If it's already a full URL (from Cloudinary), use it directly
+        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+            return imageUrl;
+        }
         
-        const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
-        return `${baseURL}${imageUrl}`;
+        // ✅ Legacy support: if it's a relative path (old system)
+        const baseURL = import.meta.env.MODE === "development" 
+            ? "http://localhost:5000" 
+            : "";
+        return `${baseURL}${imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl}`;
     };
 
     const formatDate = (date) => {
@@ -890,14 +950,18 @@ const UserProfilePage = () => {
                                                     transition={{ duration: 0.4, delay: index * 0.1 }}
                                                     whileHover={{ scale: 1.02 }}
                                                     whileTap={{ scale: 0.98 }}
-                                                    style={{ position: 'relative' }}
+                                                    style={{ 
+                                                        position: 'relative',
+                                                        opacity: recipe.shareStatus === 'pending' ? 0.8 : 1 // Dim pending recipes
+                                                    }}
                                                 >
                                                     <div className="recipe-image">
                                                         <img 
                                                             src={getRecipeImageUrl(recipe.imageUrl)} 
                                                             alt={recipe.title || recipe.name} 
                                                             onError={(e) => {
-                                                                e.target.src = '/api/placeholder/200/150';
+                                                                console.error('Image load error for:', recipe.imageUrl);
+                                                                e.target.src = 'https://via.placeholder.com/400x300?text=Image+Error'; // ✅ Added https://
                                                             }}
                                                         />
                                                         <div className="recipe-overlay">
@@ -990,6 +1054,19 @@ const UserProfilePage = () => {
                                                             <span>Declined</span>
                                                         </div>
                                                     )}
+                                                    {/* ✅ Status badges */}
+                                                    {recipe.shareStatus === 'pending' && (
+                                                        <div className="recipe-status pending">
+                                                            <i className="bx bx-time"></i>
+                                                            <span>Pending Review</span>
+                                                        </div>
+                                                    )}
+                                                    {recipe.shareStatus === 'approved' && recipe.isShared && (
+                                                        <div className="recipe-status approved">
+                                                            <i className="bx bx-check-circle"></i>
+                                                            <span>Shared</span>
+                                                        </div>
+                                                    )}
                                                 </motion.div>
                                             ))}
                                         </div>
@@ -1030,7 +1107,7 @@ const UserProfilePage = () => {
                                                                 src={getRecipeImageUrl(favorite.recipe.imageUrl)} 
                                                                 alt={favorite.recipe.title || favorite.recipe.name || 'Recipe'} 
                                                                 onError={(e) => {
-                                                                    e.target.src = '/api/placeholder/200/150';
+                                                                    e.target.src = 'https://via.placeholder.com/200/150?text=No+Image'; // ✅ Added https://
                                                                 }}
                                                             />
                                                             <div className="recipe-overlay">

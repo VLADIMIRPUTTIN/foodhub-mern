@@ -9,10 +9,27 @@ const userSchema = new mongoose.Schema(
 		},
 		password: {
 			type: String,
+			required: true,
 		},
 		name: {
 			type: String,
 			required: true,
+		},
+		role: {
+			type: String,
+			enum: ["user", "admin"],
+			default: "user",
+		},
+		status: {
+			type: String,
+			enum: ["active", "suspended", "banned"],
+			default: "active",
+		},
+		suspendedUntil: {
+			type: Date,
+		},
+		banReason: {
+			type: String,
 		},
 		lastLogin: {
 			type: Date,
@@ -22,53 +39,25 @@ const userSchema = new mongoose.Schema(
 			type: Boolean,
 			default: false,
 		},
-		resetPasswordToken: String,
-		resetPasswordExpiresAt: Date,
 		verificationToken: String,
 		verificationTokenExpiresAt: Date,
-		profileImage: { type: String, default: null },
-		bio: { type: String, default: "" },
-
-		// User status for admin management
-		status: {
+		resetPasswordToken: String,
+		resetPasswordExpiresAt: Date,
+		profileImage: {
 			type: String,
-			enum: ["active", "suspended", "banned"],
-			default: "active",
+			default: "",
 		},
-		suspendedUntil: { type: Date },
-		banReason: { type: String },
-
-		// User role
-		role: {
+		bio: {
 			type: String,
-			enum: ["user", "admin"],
-			default: "user",
+			default: "",
 		},
-
-		// Google OAuth fields
-		googleId: { type: String, sparse: true },
-
-		// ADD: Onboarding completion flag
+		// Add these onboarding-related fields
 		hasCompletedOnboarding: {
 			type: Boolean,
 			default: false,
 		},
-
-		// User Preferences for personalized recipes
 		dietaryPreferences: {
 			type: [String],
-			enum: [
-				"vegetarian",
-				"vegan",
-				"gluten-free",
-				"dairy-free",
-				"keto",
-				"paleo",
-				"halal",
-				"kosher",
-				"low-carb",
-				"high-protein",
-			],
 			default: [],
 		},
 		allergies: {
@@ -77,19 +66,6 @@ const userSchema = new mongoose.Schema(
 		},
 		preferredCuisines: {
 			type: [String],
-			enum: [
-				"Filipino",
-				"Italian",
-				"Chinese",
-				"Japanese",
-				"Korean",
-				"Mexican",
-				"Indian",
-				"Thai",
-				"American",
-				"French",
-				"Mediterranean",
-			],
 			default: [],
 		},
 	},

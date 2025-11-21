@@ -20,7 +20,7 @@ const ManageRecipeAndIngredientsPage = ({
     const [editingRecipe, setEditingRecipe] = useState(null);
     const [editingIngredient, setEditingIngredient] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('recipes'); // For mobile view
+    const [activeTab, setActiveTab] = useState('recipes');
 
     const handleIngredientUpdated = (updatedIngredient) => {
         setEditingIngredient(null);
@@ -46,311 +46,232 @@ const ManageRecipeAndIngredientsPage = ({
         setIngredientSearch('');
     };
 
-    const renderRecipeItem = (recipe) => (
-        <div className="list-item recipe-item" key={recipe._id}>
-            <div className="item-image">
-                {recipe.imageUrl ? (
-                    <img
-                        src={
-                            recipe.imageUrl.startsWith('http')
-                                ? recipe.imageUrl
-                                : `${import.meta.env.MODE === 'development' ? 'http://localhost:5000' : ''}/${
-                                      recipe.imageUrl.startsWith('/') ? recipe.imageUrl.slice(1) : recipe.imageUrl
-                                  }`
-                        }
-                        alt={recipe.title || recipe.name}
-                        onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/150?text=No+Image';
-                        }}
-                    />
-                ) : (
-                    <div className="placeholder-image">
-                        <i className="bx bx-image"></i>
-                    </div>
-                )}
-            </div>
-            <div className="item-content">
-                <div className="item-header">
-                    <h3 className="item-title">{recipe.title || recipe.name}</h3>
-                    <div className="item-category">{recipe.category}</div>
-                </div>
-
-                <div className="item-meta">
-                    <div className="meta-row">
-                        <span className="creator">
-                            <i className="bx bx-user"></i>
-                            {recipe.createdBy?.name || 'Unknown User'}
-                        </span>
-                        <span className="timestamp">
-                            <i className="bx bx-calendar"></i>
-                            {new Date(recipe.createdAt).toLocaleDateString()}
-                        </span>
-
-                        {/* Add cooking time */}
-                        {recipe.cookingTime && (
-                            <span className="cooking-time">
-                                <i className="bx bx-time"></i>
-                                {recipe.cookingTime} min
-                            </span>
-                        )}
-
-                        {/* Add difficulty */}
-                        {recipe.difficulty && (
-                            <span className="difficulty">
-                                <i className="bx bx-line-chart"></i>
-                                {recipe.difficulty}
-                            </span>
-                        )}
-                    </div>
-
-                    {/* Add cuisine */}
-                    {recipe.cuisine && (
-                        <div className="cuisine-tag">
-                            <i className="bx bx-world"></i>
-                            {recipe.cuisine}
-                        </div>
-                    )}
-
-                    {/* Add dietary tags */}
-                    {recipe.dietaryTags && recipe.dietaryTags.length > 0 && (
-                        <div className="dietary-tags">
-                            {recipe.dietaryTags.map((tag) => (
-                                <span key={tag} className="dietary-tag-small">
-                                    {tag}
-                                </span>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                <div className="item-description">{recipe.description}</div>
-            </div>
-
-            <div className="item-actions">
-                <button
-                    className="btn btn--secondary btn--sm"
-                    onClick={() => setEditingRecipe(recipe)}
-                >
-                    <i className="bx bx-edit"></i>
-                    Edit
-                </button>
-                <button
-                    className="btn btn--destructive btn--sm"
-                    onClick={() => handleDeleteRecipe(recipe._id)}
-                >
-                    <i className="bx bx-trash"></i>
-                    Delete
-                </button>
-            </div>
-        </div>
-    );
+    const getImageUrl = (recipe) => {
+        if (!recipe.imageUrl) return 'https://via.placeholder.com/80x80?text=No+Image';
+        
+        if (recipe.imageUrl.startsWith('http')) {
+            return recipe.imageUrl;
+        }
+        
+        const baseURL = import.meta.env.MODE === 'development' ? 'http://localhost:5000' : '';
+        const cleanPath = recipe.imageUrl.startsWith('/') ? recipe.imageUrl.slice(1) : recipe.imageUrl;
+        return `${baseURL}/${cleanPath}`;
+    };
 
     return (
         <div className="manage-recipes-ingredients">
-            {/* Mobile Tab Navigation */}
-            <div className="mobile-tabs">
+            {/* Page Header */}
+            <motion.div 
+                className="page-header"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+            >
+                <h1 className="page-title">
+                    <i className="bx bx-food-menu"></i>
+                    Manage Content
+                </h1>
+                <p className="page-subtitle">Organize and manage all recipes and ingredients</p>
+            </motion.div>
+
+            {/* Tab Navigation */}
+            <div className="tab-navigation">
                 <button
-                    className={`tab-button ${activeTab === 'recipes' ? 'active' : ''}`}
+                    className={`tab-btn ${activeTab === 'recipes' ? 'active' : ''}`}
                     onClick={() => setActiveTab('recipes')}
                 >
                     <i className="bx bx-bowl-hot"></i>
-                    Recipes ({filteredRecipes.length})
+                    <span>Recipes</span>
+                    <span className="badge">{filteredRecipes.length}</span>
                 </button>
                 <button
-                    className={`tab-button ${activeTab === 'ingredients' ? 'active' : ''}`}
+                    className={`tab-btn ${activeTab === 'ingredients' ? 'active' : ''}`}
                     onClick={() => setActiveTab('ingredients')}
                 >
                     <i className="bx bx-leaf"></i>
-                    Ingredients ({filteredIngredients.length})
+                    <span>Ingredients</span>
+                    <span className="badge">{filteredIngredients.length}</span>
                 </button>
             </div>
 
-            {/* Content Grid */}
-            <div className="content-grid">
-                {/* Recipes Column */}
-                <div className={`manage-column recipes-column ${activeTab === 'recipes' ? 'active' : ''}`}>
-                    <div className="column-header">
-                        <h2 className="column-title">
-                            <i className="bx bx-bowl-hot"></i>
-                            All Recipes
-                            <span className="count">({filteredRecipes.length})</span>
-                        </h2>
-
-                        <div className="search-container">
+            <AnimatePresence mode="wait">
+                {/* Recipes Tab */}
+                {activeTab === 'recipes' && (
+                    <motion.div
+                        key="recipes"
+                        className="content-section"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                    >
+                        {/* Search Bar */}
+                        <div className="search-bar">
                             <div className="search-wrapper">
-                                <i className="bx bx-search search-icon"></i>
+                                <i className="bx bx-search"></i>
                                 <input
                                     type="text"
-                                    className="search-input"
-                                    placeholder="Search recipes by title, category, creator..."
+                                    placeholder="Search recipes by title, category, or creator..."
                                     value={recipeSearch}
                                     onChange={(e) => setRecipeSearch(e.target.value)}
                                 />
                                 {recipeSearch && (
-                                    <button
-                                        className="clear-search"
-                                        onClick={clearRecipeSearch}
-                                        title="Clear search"
-                                    >
+                                    <button className="clear-btn" onClick={clearRecipeSearch}>
                                         <i className="bx bx-x"></i>
                                     </button>
                                 )}
                             </div>
-                            {recipeSearch && (
-                                <div className="search-results">
-                                    Found {filteredRecipes.length} recipe
-                                    {filteredRecipes.length !== 1 ? 's' : ''}
-                                </div>
-                            )}
                         </div>
-                    </div>
 
-                    <div className="column-content">
+                        {/* Recipes List */}
                         <div className="items-list">
                             {filteredRecipes.length === 0 ? (
                                 <div className="empty-state">
-                                    <i className="bx bx-bowl-hot empty-icon"></i>
+                                    <i className="bx bx-bowl-hot"></i>
                                     <h3>No recipes found</h3>
                                     <p>
                                         {recipeSearch
-                                            ? `No recipes match your search for "${recipeSearch}"`
-                                            : 'No recipes available in the system'}
+                                            ? `No recipes match "${recipeSearch}"`
+                                            : 'No recipes available'}
                                     </p>
-                                    {recipeSearch && (
-                                        <button
-                                            className="btn btn--primary"
-                                            onClick={clearRecipeSearch}
-                                        >
-                                            <i className="bx bx-refresh"></i>
-                                            Clear Search
-                                        </button>
-                                    )}
                                 </div>
                             ) : (
                                 filteredRecipes.map((recipe, index) => (
                                     <motion.div
                                         key={recipe._id}
+                                        className="recipe-item"
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.05 }}
-                                        className="list-item recipe-item"
-                                        whileHover={{ y: -4, scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
+                                        transition={{ delay: index * 0.03 }}
                                     >
-                                        {renderRecipeItem(recipe)}
+                                        <div className="recipe-main">
+                                            <div className="recipe-image-small">
+                                                <img
+                                                    src={getImageUrl(recipe)}
+                                                    alt={recipe.title || recipe.name}
+                                                    onError={(e) => {
+                                                        e.target.src = 'https://via.placeholder.com/80x80?text=No+Image';
+                                                    }}
+                                                />
+                                            </div>
+                                            
+                                            <div className="recipe-details">
+                                                <h3 className="recipe-title">{recipe.title || recipe.name}</h3>
+                                                <div className="recipe-meta">
+                                                    <span className="category-badge">{recipe.category}</span>
+                                                    <span className="meta-item">
+                                                        <i className="bx bx-user"></i>
+                                                        {recipe.createdBy?.name || 'Unknown'}
+                                                    </span>
+                                                    {recipe.cookingTime && (
+                                                        <span className="meta-item">
+                                                            <i className="bx bx-time"></i>
+                                                            {recipe.cookingTime} min
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="recipe-actions">
+                                            <button
+                                                className="btn-action btn-edit"
+                                                onClick={() => setEditingRecipe(recipe)}
+                                                title="Edit Recipe"
+                                            >
+                                                <i className="bx bx-edit"></i>
+                                            </button>
+                                            <button
+                                                className="btn-action btn-delete"
+                                                onClick={() => handleDeleteRecipe(recipe._id)}
+                                                title="Delete Recipe"
+                                            >
+                                                <i className="bx bx-trash"></i>
+                                            </button>
+                                        </div>
                                     </motion.div>
                                 ))
                             )}
                         </div>
-                    </div>
-                </div>
+                    </motion.div>
+                )}
 
-                {/* Ingredients Column */}
-                <div className={`manage-column ingredients-column ${activeTab === 'ingredients' ? 'active' : ''}`}>
-                    <div className="column-header">
-                        <h2 className="column-title">
-                            <i className="bx bx-leaf"></i>
-                            All Ingredients
-                            <span className="count">({filteredIngredients.length})</span>
-                        </h2>
-
-                        <div className="search-container">
+                {/* Ingredients Tab */}
+                {activeTab === 'ingredients' && (
+                    <motion.div
+                        key="ingredients"
+                        className="content-section"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                    >
+                        {/* Search Bar */}
+                        <div className="search-bar">
                             <div className="search-wrapper">
-                                <i className="bx bx-search search-icon"></i>
+                                <i className="bx bx-search"></i>
                                 <input
                                     type="text"
-                                    className="search-input"
                                     placeholder="Search ingredients by name..."
                                     value={ingredientSearch}
                                     onChange={(e) => setIngredientSearch(e.target.value)}
                                 />
                                 {ingredientSearch && (
-                                    <button
-                                        className="clear-search"
-                                        onClick={clearIngredientSearch}
-                                        title="Clear search"
-                                    >
+                                    <button className="clear-btn" onClick={clearIngredientSearch}>
                                         <i className="bx bx-x"></i>
                                     </button>
                                 )}
                             </div>
-                            {ingredientSearch && (
-                                <div className="search-results">
-                                    Found {filteredIngredients.length} ingredient
-                                    {filteredIngredients.length !== 1 ? 's' : ''}
-                                </div>
-                            )}
                         </div>
-                    </div>
 
-                    <div className="column-content">
+                        {/* Ingredients List */}
                         <div className="items-list">
                             {filteredIngredients.length === 0 ? (
                                 <div className="empty-state">
-                                    <i className="bx bx-leaf empty-icon"></i>
+                                    <i className="bx bx-leaf"></i>
                                     <h3>No ingredients found</h3>
                                     <p>
                                         {ingredientSearch
-                                            ? `No ingredients match your search for "${ingredientSearch}"`
-                                            : 'No ingredients available in the system'}
+                                            ? `No ingredients match "${ingredientSearch}"`
+                                            : 'No ingredients available'}
                                     </p>
-                                    {ingredientSearch && (
-                                        <button
-                                            className="btn btn--primary"
-                                            onClick={clearIngredientSearch}
-                                        >
-                                            <i className="bx bx-refresh"></i>
-                                            Clear Search
-                                        </button>
-                                    )}
                                 </div>
                             ) : (
                                 filteredIngredients.map((ingredient, index) => (
                                     <motion.div
                                         key={ingredient._id}
+                                        className="ingredient-item"
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.05 }}
-                                        className="list-item ingredient-item"
+                                        transition={{ delay: index * 0.03 }}
                                     >
-                                        <div className="item-content">
-                                            <div className="item-header">
-                                                <h4 className="item-title">
-                                                    <i className="bx bx-leaf"></i>
-                                                    {ingredient.name}
-                                                </h4>
+                                        <div className="ingredient-main">
+                                            <div className="ingredient-icon">
+                                                <i className="bx bx-leaf"></i>
                                             </div>
-                                            {ingredient.description && (
-                                                <div className="item-description">
-                                                    {ingredient.description}
-                                                </div>
-                                            )}
+                                            <h3 className="ingredient-name">{ingredient.name}</h3>
                                         </div>
-                                        <div className="item-actions">
+
+                                        <div className="ingredient-actions">
                                             <button
-                                                className="btn btn--secondary btn--sm"
+                                                className="btn-action btn-edit"
                                                 onClick={() => openEditModal(ingredient)}
                                                 title="Edit Ingredient"
                                             >
                                                 <i className="bx bx-edit"></i>
-                                                <span>Edit</span>
                                             </button>
                                             <button
-                                                className="btn btn--destructive btn--sm"
+                                                className="btn-action btn-delete"
                                                 onClick={() => handleDeleteIngredient(ingredient._id)}
                                                 title="Delete Ingredient"
                                             >
                                                 <i className="bx bx-trash"></i>
-                                                <span>Delete</span>
                                             </button>
                                         </div>
                                     </motion.div>
                                 ))
                             )}
                         </div>
-                    </div>
-                </div>
-            </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Edit Recipe Modal */}
             <AnimatePresence>

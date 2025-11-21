@@ -227,86 +227,119 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
                 return (
                     <div className="tab-content">
                         <div className="form-card">
-                            <div className="form-group">
-                                <label className="form-label">Recipe Name</label>
-                                <input
-                                    type="text"
-                                    className="form-input"
-                                    value={name}
-                                    onChange={e => setName(e.target.value)}
-                                    required
-                                    placeholder="Enter recipe name"
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Category</label>
-                                <select
-                                    className="form-select"
-                                    value={category}
-                                    onChange={e => setCategory(e.target.value)}
-                                    required
-                                >
-                                    <option value="">Select Category</option>
-                                    {categories.map(cat => (
-                                        <option key={cat} value={cat}>{cat}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Description</label>
-                                <textarea
-                                    className="form-textarea"
-                                    value={description}
-                                    onChange={e => setDescription(e.target.value)}
-                                    placeholder="Describe your recipe"
-                                    rows={4}
-                                    required
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Price</label>
-                                <input
-                                    type="number"
-                                    className="form-input"
-                                    placeholder="Recipe price"
-                                    value={price}
-                                    onChange={e => setPrice(e.target.value)}
-                                    min="0"
-                                    step="0.01"
-                                />
-                                <p className="form-description">
-                                    <i className="bx bx-info-circle"></i>
-                                    Estimated cost of ingredients in PHP
-                                </p>
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Recipe Image</label>
-                                <div className="image-upload-container">
-                                    <input
-                                        type="file"
-                                        className="form-input"
-                                        accept="image/*"
-                                        onChange={handleImageChange}
-                                        id="recipe-image"
-                                    />
-                                    <label htmlFor="recipe-image" className="image-upload-label">
-                                        <i className="bx bx-upload"></i> 
-                                        {image ? "Change image" : "Upload image"}
+                            <h3 className="card-title">
+                                <i className="bx bx-info-circle"></i>
+                                Basic Information
+                            </h3>
+                            <div className="form-content">
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        <i className="bx bx-dish"></i>
+                                        Recipe Name
                                     </label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        value={name}
+                                        onChange={e => setName(e.target.value)}
+                                        required
+                                        placeholder="Enter a delicious recipe name..."
+                                        maxLength={100}
+                                    />
+                                    <p className="form-description">
+                                        <i className="bx bx-info-circle"></i>
+                                        Choose a catchy and descriptive name (max 100 characters)
+                                    </p>
                                 </div>
-                                {(imagePreview) && (
-                                    <div className="image-preview-container">
-                                        <img
-                                            src={imagePreview}
-                                            alt="Recipe preview"
-                                            className="image-preview"
+                                
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label">
+                                            <i className="bx bx-category"></i>
+                                            Category
+                                        </label>
+                                        <select
+                                            className="form-select"
+                                            value={category}
+                                            onChange={e => setCategory(e.target.value)}
+                                            required
+                                        >
+                                            <option value="">Select Category</option>
+                                            {categories.map(cat => (
+                                                <option key={cat} value={cat}>{cat}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    
+                                    <div className="form-group">
+                                        <label className="form-label">
+                                            <i className="bx bx-money"></i>
+                                            Estimated Price (₱)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            className="form-input"
+                                            placeholder="0.00"
+                                            value={price}
+                                            onChange={e => setPrice(e.target.value)}
+                                            min="0"
+                                            step="0.01"
                                         />
                                     </div>
-                                )}
-                                <p className="form-description">
-                                    <i className="bx bx-info-circle"></i>
-                                    Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
-                                </p>
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        <i className="bx bx-detail"></i>
+                                        Description
+                                    </label>
+                                    <textarea
+                                        className="form-textarea"
+                                        value={description}
+                                        onChange={e => setDescription(e.target.value)}
+                                        placeholder="Describe what makes this recipe special..."
+                                        rows={4}
+                                        required
+                                        maxLength={500}
+                                    />
+                                    <p className="form-description">
+                                        <i className="bx bx-info-circle"></i>
+                                        Share the story behind this recipe (max 500 characters)
+                                    </p>
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        <i className="bx bx-image-add"></i>
+                                        Recipe Image
+                                    </label>
+                                    <div className="image-upload-container">
+                                        <input
+                                            type="file"
+                                            className="form-input"
+                                            accept="image/*"
+                                            onChange={handleImageChange}
+                                            id="recipe-image"
+                                        />
+                                        <label htmlFor="recipe-image" className="image-upload-label">
+                                            <i className="bx bx-upload"></i> 
+                                            {image ? "Change Image" : "Upload Image"}
+                                        </label>
+                                    </div>
+                                    {imagePreview && (
+                                        <div className="image-preview-container">
+                                            <img
+                                                src={imagePreview}
+                                                alt="Recipe preview"
+                                                className="image-preview"
+                                            />
+                                        </div>
+                                    )}
+                                    <p className="form-description">
+                                        <i className="bx bx-info-circle"></i>
+                                        Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -316,7 +349,10 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
                     <div className="tab-content">
                         <div className="form-card">
                             <div className="ingredients-header">
-                                <h3 className="card-title">Ingredients ({ingredients.length})</h3>
+                                <h3 className="card-title">
+                                    <i className="bx bx-leaf"></i>
+                                    Ingredients ({ingredients.length})
+                                </h3>
                             </div>
                             
                             {isLoadingIngredients ? (
@@ -328,6 +364,7 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
                                 <div className="ingredients-list">
                                     {ingredients.map((ing, idx) => (
                                         <div key={idx} className="ingredient-row">
+                                            <div className="ingredient-number">{idx + 1}</div>
                                             <div className="ingredient-fields">
                                                 <input
                                                     type="text"
@@ -365,7 +402,7 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
                                             {ingredients.length > 1 && (
                                                 <button
                                                     type="button"
-                                                    className="btn btn--icon"
+                                                    className="btn btn--icon btn--remove"
                                                     onClick={() => removeIngredient(idx)}
                                                     title="Remove ingredient"
                                                 >
@@ -392,7 +429,10 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
                     <div className="tab-content">
                         <div className="form-card">
                             <div className="ingredients-header">
-                                <h3 className="card-title">Preparation Steps ({steps.length})</h3>
+                                <h3 className="card-title">
+                                    <i className="bx bx-list-ol"></i>
+                                    Preparation Steps ({steps.length})
+                                </h3>
                             </div>
                             <div className="steps-list">
                                 {steps.map((step, idx) => (
@@ -402,24 +442,26 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
                                             <input
                                                 type="text"
                                                 className="form-input"
-                                                placeholder="Step instruction (e.g., Preheat oven)"
+                                                placeholder="Step title (e.g., Preheat oven to 350°F)"
                                                 value={step.instruction}
                                                 onChange={e => handleStepChange(idx, 'instruction', e.target.value)}
                                                 required
+                                                maxLength={150}
                                             />
                                             <textarea
                                                 className="form-textarea"
-                                                placeholder="Detailed preparation instructions"
+                                                placeholder="Detailed instructions for this step..."
                                                 value={step.details}
                                                 onChange={e => handleStepChange(idx, 'details', e.target.value)}
                                                 rows={3}
                                                 required
+                                                maxLength={500}
                                             />
                                         </div>
                                         {steps.length > 1 && (
                                             <button
                                                 type="button"
-                                                className="btn btn--icon"
+                                                className="btn btn--icon btn--remove"
                                                 onClick={() => removeStep(idx)}
                                                 title="Remove step"
                                             >
@@ -442,92 +484,119 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
                 );
             case 'preferences':
                 return (
-                    <div className="form-card">
-                        <h3 className="card-title">
-                            <i className="bx bx-dish"></i>
-                            Recipe Preferences & Dietary Information
-                        </h3>
-                        <div className="form-content">
-                            <div className="form-group">
-                                <label className="form-label">Cuisine</label>
-                                <select 
-                                    className="form-select" 
-                                    value={cuisine} 
-                                    onChange={(e) => setCuisine(e.target.value)}
-                                >
-                                    {cuisineOptions.map(option => (
-                                        <option key={option} value={option}>{option}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            
-                            <div className="form-group">
-                                <label className="form-label">Cooking Time (minutes)</label>
-                                <input
-                                    type="number"
-                                    className="form-input"
-                                    value={cookingTime}
-                                    onChange={(e) => setCookingTime(e.target.value)}
-                                    placeholder="e.g., 30"
-                                    min="1"
-                                />
-                            </div>
-                            
-                            <div className="form-group">
-                                <label className="form-label">Difficulty Level</label>
-                                <select 
-                                    className="form-select" 
-                                    value={difficulty} 
-                                    onChange={(e) => setDifficulty(e.target.value)}
-                                >
-                                    <option value="Easy">Easy</option>
-                                    <option value="Medium">Medium</option>
-                                    <option value="Hard">Hard</option>
-                                </select>
-                            </div>
-                            
-                            <div className="form-group">
-                                <label className="form-label">Dietary Tags</label>
-                                <div className="dietary-tags-container">
-                                    {dietaryOptions.map(tag => (
-                                        <button
-                                            type="button"
-                                            key={tag}
-                                            onClick={() => handleDietaryTagToggle(tag)}
-                                            className={`dietary-tag ${dietaryTags.includes(tag) ? 'active' : ''}`}
+                    <div className="tab-content">
+                        <div className="form-card">
+                            <h3 className="card-title">
+                                <i className="bx bx-food-menu"></i>
+                                Recipe Preferences & Dietary Information
+                            </h3>
+                            <div className="form-content">
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label">
+                                            <i className="bx bx-world"></i>
+                                            Cuisine
+                                        </label>
+                                        <select 
+                                            className="form-select" 
+                                            value={cuisine} 
+                                            onChange={(e) => setCuisine(e.target.value)}
                                         >
-                                            {dietaryTags.includes(tag) && <i className="bx bx-check"></i>}
-                                            {tag}
-                                        </button>
-                                    ))}
+                                            {cuisineOptions.map(option => (
+                                                <option key={option} value={option}>{option}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    
+                                    <div className="form-group">
+                                        <label className="form-label">
+                                            <i className="bx bx-time"></i>
+                                            Cooking Time (minutes)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            className="form-input"
+                                            value={cookingTime}
+                                            onChange={(e) => setCookingTime(e.target.value)}
+                                            placeholder="e.g., 30"
+                                            min="1"
+                                        />
+                                    </div>
+                                    
+                                    <div className="form-group">
+                                        <label className="form-label">
+                                            <i className="bx bx-bar-chart-alt"></i>
+                                            Difficulty Level
+                                        </label>
+                                        <select 
+                                            className="form-select" 
+                                            value={difficulty} 
+                                            onChange={(e) => setDifficulty(e.target.value)}
+                                        >
+                                            <option value="Easy">🟢 Easy</option>
+                                            <option value="Medium">🟡 Medium</option>
+                                            <option value="Hard">🔴 Hard</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <p className="form-description">
-                                    <i className="bx bx-info-circle"></i>
-                                    Select all tags that apply to this recipe
-                                </p>
-                            </div>
-                            
-                            <div className="form-group">
-                                <label className="form-label">Allergens</label>
-                                <input
-                                    type="text"
-                                    className="form-input"
-                                    placeholder="Type and press Enter to add allergens"
-                                    onKeyDown={handleAddAllergen}
-                                />
-                                <div className="allergens-container">
-                                    {allergens.map(allergen => (
-                                        <div key={allergen} className="allergen-tag">
-                                            {allergen}
-                                            <button 
-                                                type="button" 
-                                                className="remove-allergen" 
-                                                onClick={() => handleRemoveAllergen(allergen)}
+                                
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        <i className="bx bx-food-tag"></i>
+                                        Dietary Tags
+                                    </label>
+                                    <div className="dietary-tags-container">
+                                        {dietaryOptions.map(tag => (
+                                            <button
+                                                type="button"
+                                                key={tag}
+                                                onClick={() => handleDietaryTagToggle(tag)}
+                                                className={`dietary-tag ${dietaryTags.includes(tag) ? 'active' : ''}`}
                                             >
-                                                <i className="bx bx-x"></i>
+                                                {dietaryTags.includes(tag) && <i className="bx bx-check"></i>}
+                                                {tag}
                                             </button>
+                                        ))}
+                                    </div>
+                                    <p className="form-description">
+                                        <i className="bx bx-info-circle"></i>
+                                        Select all dietary tags that apply to this recipe
+                                    </p>
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        <i className="bx bx-error"></i>
+                                        Allergens
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        placeholder="Type allergen and press Enter (e.g., peanuts, eggs)"
+                                        onKeyDown={handleAddAllergen}
+                                    />
+                                    {allergens.length > 0 && (
+                                        <div className="allergens-container">
+                                            {allergens.map(allergen => (
+                                                <div key={allergen} className="allergen-tag">
+                                                    <i className="bx bx-error-circle"></i>
+                                                    {allergen}
+                                                    <button 
+                                                        type="button" 
+                                                        className="remove-allergen" 
+                                                        onClick={() => handleRemoveAllergen(allergen)}
+                                                        title="Remove allergen"
+                                                    >
+                                                        <i className="bx bx-x"></i>
+                                                    </button>
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
+                                    )}
+                                    <p className="form-description">
+                                        <i className="bx bx-info-circle"></i>
+                                        List all potential allergens in this recipe
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -542,11 +611,15 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
         <div className="modal-overlay" onClick={handleOverlayClick}>
             <div className="modal">
                 <div className="modal__header">
-                    <h2 className="modal__title">Edit Recipe</h2>
+                    <h2 className="modal__title">
+                        <i className="bx bx-edit-alt"></i>
+                        Edit Recipe
+                    </h2>
                     <button
                         className="modal__close"
                         onClick={onCancel}
                         type="button"
+                        disabled={isLoading}
                     >
                         <i className="bx bx-x"></i>
                     </button>
@@ -576,8 +649,6 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
                         <i className="bx bx-list-ol"></i>
                         Steps
                     </button>
-                    
-                    {/* New preferences tab */}
                     <button
                         type="button"
                         className={`tab-button ${activeTab === 'preferences' ? 'active' : ''}`}
@@ -589,18 +660,21 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
                 </div>
                 <form onSubmit={handleSubmit} className="modal__form">
                     {renderTabContent()}
+                    
                     {error && (
                         <div className="alert alert--error">
                             <i className="bx bx-error-circle alert__icon"></i>
-                            {error}
+                            <span>{error}</span>
                         </div>
                     )}
+                    
                     {success && (
                         <div className="alert alert--success">
                             <i className="bx bx-check-circle alert__icon"></i>
-                            {success}
+                            <span>{success}</span>
                         </div>
                     )}
+                    
                     <div className="modal__actions">
                         <button
                             type="button"
@@ -608,6 +682,7 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
                             className="btn btn--secondary"
                             disabled={isLoading}
                         >
+                            <i className="bx bx-x"></i>
                             Cancel
                         </button>
                         <button
@@ -618,10 +693,13 @@ const EditRecipe = ({ recipe, onRecipeUpdated, onCancel }) => {
                             {isLoading ? (
                                 <span className="btn__loading">
                                     <span className="spinner"></span>
-                                    Updating...
+                                    Updating Recipe...
                                 </span>
                             ) : (
-                                "Update Recipe"
+                                <>
+                                    <i className="bx bx-save"></i>
+                                    Update Recipe
+                                </>
                             )}
                         </button>
                     </div>

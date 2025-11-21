@@ -1,14 +1,13 @@
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { useAuthStore } from "../store/authStore";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 import './EmailVerificationPage.scss';
 
 const API_URL = import.meta.env.MODE === "development" 
     ? "http://localhost:5000/api/auth" 
-    : "/api/auth"; // Changed from absolute URL to relative
+    : "/api/auth";
 
 const EmailVerificationPage = () => {
     const [code, setCode] = useState(["", "", "", "", "", ""]);
@@ -18,108 +17,64 @@ const EmailVerificationPage = () => {
     const inputRefs = useRef([]);
     const navigate = useNavigate();
 
-    const { error, isLoading, verifyEmail } = useAuthStore();
+    const { error, isLoading, verifyEmail, user } = useAuthStore();
+
+    const handlePaste = (e) => {
+        e.preventDefault();
+        const pastedData = e.clipboardData.getData('text').trim();
+        
+        // Extract only numbers from pasted data
+        const numbers = pastedData.replace(/\D/g, '');
+        
+        if (numbers.length === 6) {
+            const newCode = numbers.split('').slice(0, 6);
+            setCode(newCode);
+            // Focus last input
+            inputRefs.current[5]?.focus();
+            toast.success("Code pasted successfully!");
+        } else {
+            toast.error("Please paste a 6-digit code");
+        }
+    };
 
     const handleChange = (index, value) => {
-        // Only allow numbers (0-9) - filter out any non-numeric characters
-        const numericValue = value.replace(/[^0-9]/g, '');
-        
-        const newCode = [...code];
-
-        // Handle pasted content
-        if (numericValue.length > 1) {
-            const pastedCode = numericValue.slice(0, 6).split("");
-            for (let i = 0; i < 6; i++) {
-                newCode[i] = pastedCode[i] || "";
-            }
+        // Handle single character input
+        if (value.length === 1) {
+            const newCode = [...code];
+            newCode[index] = value;
             setCode(newCode);
 
-            // Focus on the last non-empty input or the first empty one
-            const lastFilledIndex = newCode.findLastIndex((digit) => digit !== "");
-            const focusIndex = lastFilledIndex < 5 ? lastFilledIndex + 1 : 5;
-            inputRefs.current[focusIndex].focus();
-        } else {
-            // Only set the value if it's a single digit number
-            if (numericValue.length <= 1) {
-                newCode[index] = numericValue;
-                setCode(newCode);
-
-                // Move focus to the next input field if value is entered
-                if (numericValue && index < 5) {
-                    inputRefs.current[index + 1].focus();
-                }
+            // Move focus to next input
+            if (index < 5) {
+                inputRefs.current[index + 1]?.focus();
             }
         }
     };
 
     const handleKeyDown = (index, e) => {
-        // Allow backspace to move to previous input
-        if (e.key === "Backspace" && !code[index] && index > 0) {
-            inputRefs.current[index - 1].focus();
-        }
-        
-        // Prevent non-numeric keys (except navigation and control keys)
-        const allowedKeys = [
-            'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
-            'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
-            'Home', 'End'
-        ];
-        
-        const isNumber = /^[0-9]$/.test(e.key);
-        const isAllowedKey = allowedKeys.includes(e.key);
-        const isCtrlV = e.ctrlKey && e.key === 'v'; // Allow Ctrl+V for paste
-        const isCmdV = e.metaKey && e.key === 'v'; // Allow Cmd+V for paste (Mac)
-        
-        if (!isNumber && !isAllowedKey && !isCtrlV && !isCmdV) {
+        if (e.key === "Backspace") {
             e.preventDefault();
+            const newCode = [...code];
             
-            // Show toast message for invalid input
-            if (e.key.match(/[a-zA-Z]/)) {
-                toast.error("Only numbers are allowed");
+            if (code[index]) {
+                // Clear current field
+                newCode[index] = "";
+                setCode(newCode);
+            } else if (index > 0) {
+                // Move to previous field and clear it
+                newCode[index - 1] = "";
+                setCode(newCode);
+                inputRefs.current[index - 1]?.focus();
             }
+        } else if (e.key === "ArrowLeft" && index > 0) {
+            inputRefs.current[index - 1]?.focus();
+        } else if (e.key === "ArrowRight" && index < 5) {
+            inputRefs.current[index + 1]?.focus();
         }
-    };
-
-    const handlePaste = (e) => {
-        e.preventDefault();
-        const pasteData = e.clipboardData.getData('text');
-        
-        // Only allow numeric characters from paste
-        const numericPaste = pasteData.replace(/[^0-9]/g, '');
-        
-        if (numericPaste.length === 0) {
-            toast.error("Only numbers are allowed");
-            return;
-        }
-        
-        if (numericPaste.length > 6) {
-            toast.error("Please paste only 6 digits");
-            return;
-        }
-        
-        // Fill the inputs with pasted numbers
-        const newCode = [...code];
-        const pastedCode = numericPaste.slice(0, 6).split("");
-        
-        for (let i = 0; i < 6; i++) {
-            newCode[i] = pastedCode[i] || "";
-        }
-        
-        setCode(newCode);
-        
-        // Focus on the last filled input or the first empty one
-        const lastFilledIndex = newCode.findLastIndex((digit) => digit !== "");
-        const focusIndex = lastFilledIndex < 5 ? lastFilledIndex + 1 : 5;
-        inputRefs.current[focusIndex].focus();
-        
-        toast.success(`${numericPaste.length} digits pasted successfully`);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        if (isSubmitting) return; // Prevent multiple submissions
-        
         const verificationCode = code.join("");
         console.log("🔍 Submitting verification code:", verificationCode);
         
@@ -137,9 +92,19 @@ const EmailVerificationPage = () => {
         setIsSubmitting(true);
         
         try {
-            await verifyEmail(verificationCode);
-            toast.success("Email verified successfully");
-            navigate("/");
+            const response = await verifyEmail(verificationCode);
+            
+            if (response && response.user) {
+                // ✅ Check if user needs onboarding
+                if (!response.user.hasCompletedOnboarding && response.user.role !== 'admin') {
+                    navigate("/onboarding");
+                } else if (response.user.role === 'admin') {
+                    navigate("/admin-dashboard");
+                } else {
+                    navigate("/");
+                }
+                toast.success("Email verified successfully!");
+            }
         } catch (error) {
             console.error("Verification failed:", error);
             toast.error(error.response?.data?.message || "Verification failed");
@@ -176,26 +141,27 @@ const EmailVerificationPage = () => {
         }
     }, [resendCooldown]);
 
+    // Auto submit when all fields are filled
+    useEffect(() => {
+        if (code.every((digit) => digit !== "") && !isSubmitting) {
+            handleSubmit(new Event("submit"));
+        }
+    }, [code]);
+
     return (
         <div className="email-verification-container">
-            <motion.div
-                initial={{ opacity: 0, y: -50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="email-verification-card"
-            >
+            <div className="email-verification-card">
                 <div className="verification-header">
                     <div className="verification-icon">
                         <i className="bx bx-envelope"></i>
                     </div>
                     <h2 className="email-verification-title">Verify Your Email</h2>
                     <p className="email-verification-desc">
-                        Enter the 6-digit verification code sent to your email address.
-                        <br />
-                        <span className="input-hint">Numbers only (0-9)</span>
+                        Enter the 6-digit code sent to your email address.
+                        <span className="input-hint">You can paste the code with Ctrl+V</span>
                     </p>
                 </div>
-                
+
                 <form onSubmit={handleSubmit}>
                     <div className="code-inputs">
                         {code.map((digit, index) => (
@@ -203,76 +169,73 @@ const EmailVerificationPage = () => {
                                 key={index}
                                 ref={(el) => (inputRefs.current[index] = el)}
                                 type="text"
-                                inputMode="numeric" // Shows numeric keyboard on mobile
-                                pattern="[0-9]*" // Additional hint for numeric input
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 maxLength="1"
                                 value={digit}
                                 onChange={(e) => handleChange(index, e.target.value)}
                                 onKeyDown={(e) => handleKeyDown(index, e)}
                                 onPaste={handlePaste}
-                                className="code-input"
-                                disabled={isSubmitting}
-                                placeholder="0"
-                                autoComplete="one-time-code"
+                                className={`code-input ${error ? 'error' : ''} ${digit ? 'success' : ''}`}
+                                placeholder="•"
+                                disabled={isLoading || isSubmitting}
+                                autoComplete="off"
                             />
                         ))}
                     </div>
-                    
-                    {error && <p className="error-message">{error}</p>}
-                    
-                    <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+
+                    {error && (
+                        <div className="error-message">
+                            {error}
+                        </div>
+                    )}
+
+                    <button
                         type="submit"
-                        disabled={isLoading || isSubmitting || code.some((digit) => !digit)}
                         className="verify-btn"
+                        disabled={isLoading || isSubmitting || code.some((digit) => !digit)}
                     >
-                        <span className="btn-content">
-                            {isLoading || isSubmitting ? (
-                                <>
-                                    <div className="btn-spinner"></div>
-                                    Verifying...
-                                </>
-                            ) : (
-                                <>
-                                    <i className="bx bx-check-circle"></i>
-                                    Verify Email
-                                </>
-                            )}
-                        </span>
-                    </motion.button>
-                    
-                    <div className="resend-section">
-                        <motion.button
-                            type="button"
-                            className="resend-btn"
-                            onClick={handleResendCode}
-                            disabled={resendLoading || resendCooldown > 0}
-                            whileHover={{ scale: resendLoading || resendCooldown > 0 ? 1 : 1.02 }}
-                            whileTap={{ scale: resendLoading || resendCooldown > 0 ? 1 : 0.98 }}
-                        >
-                            <span className="btn-content">
-                                {resendLoading ? (
-                                    <>
-                                        <div className="btn-spinner"></div>
-                                        Resending...
-                                    </>
-                                ) : resendCooldown > 0 ? (
-                                    <>
-                                        <i className="bx bx-time-five"></i>
-                                        Resend Code ({resendCooldown}s)
-                                    </>
-                                ) : (
-                                    <>
-                                        <i className="bx bx-refresh"></i>
-                                        Resend Code
-                                    </>
-                                )}
-                            </span>
-                        </motion.button>
-                    </div>
+                        {isLoading || isSubmitting ? (
+                            <div className="btn-content">
+                                <div className="btn-spinner"></div>
+                                <span>Verifying...</span>
+                            </div>
+                        ) : (
+                            <div className="btn-content">
+                                <i className="bx bx-check-circle"></i>
+                                <span>Verify Email</span>
+                            </div>
+                        )}
+                    </button>
                 </form>
-            </motion.div>
+
+                <div className="resend-section">
+                    <button
+                        type="button"
+                        className="resend-btn"
+                        onClick={handleResendCode}
+                        disabled={resendLoading || resendCooldown > 0}
+                    >
+                        {resendLoading ? (
+                            <div className="btn-content">
+                                <div className="btn-spinner"></div>
+                                <span>Sending...</span>
+                            </div>
+                        ) : resendCooldown > 0 ? (
+                            <div className="btn-content">
+                                <i className="bx bx-time"></i>
+                                <span>Resend in {resendCooldown}s</span>
+                            </div>
+                        ) : (
+                            <div className="btn-content">
+                                <i className="bx bx-refresh"></i>
+                                <span>Resend Code</span>
+                            </div>
+                        )}
+                    </button>
+                </div>
+            </div>
+            <Toaster position="top-center" />
         </div>
     );
 };

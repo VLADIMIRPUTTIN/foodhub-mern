@@ -174,7 +174,12 @@ export const useAuthStore = create((set, get) => ({
             
             if (response.data.success) {
                 console.log('Auth check - user data:', response.data.user);
-                set({ user: response.data.user, isAuthenticated: true, isCheckingAuth: false });
+                // Make sure hasCompletedOnboarding is included in the user data
+                set({ 
+                    user: response.data.user, 
+                    isAuthenticated: true, 
+                    isCheckingAuth: false 
+                });
             } else {
                 set({ user: null, isAuthenticated: false, isCheckingAuth: false });
             }

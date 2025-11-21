@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
@@ -52,7 +52,7 @@ const ProtectedRoute = ({ children }) => {
         return <Navigate to='/verify-email' replace />;
     }
 
-    // Check if user needs onboarding (except admin)
+    // IMPORTANT: Check onboarding before allowing access
     if (!user.hasCompletedOnboarding && user.role !== 'admin') {
         return <Navigate to='/onboarding' replace />;
     }
@@ -121,6 +121,22 @@ const OnboardingRoute = ({ children }) => {
     return children;
 };
 
+// ✅ NEW: Component that checks onboarding for authenticated users
+const DashboardWithOnboardingCheck = ({ children }) => {
+    const { isAuthenticated, user } = useAuthStore();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        // If user is authenticated and verified but hasn't completed onboarding
+        if (isAuthenticated && user?.isVerified && !user?.hasCompletedOnboarding && user?.role !== 'admin') {
+            console.log("User needs onboarding, redirecting from dashboard...");
+            navigate('/onboarding', { replace: true });
+        }
+    }, [isAuthenticated, user, navigate]);
+
+    return children;
+};
+
 function App() {
     const { isCheckingAuth, checkAuth } = useAuthStore();
     const [globalAccountStatus, setGlobalAccountStatus] = useState(null);
@@ -158,15 +174,23 @@ function App() {
             <SocketProvider>
                 <div>
                     <Routes>
-                        {/* Dashboard is now public - no protection */}
+                        {/* ✅ Dashboard now checks for onboarding */}
                         <Route
                             path='/'
-                            element={<DashboardPage />}
+                            element={
+                                <DashboardWithOnboardingCheck>
+                                    <DashboardPage />
+                                </DashboardWithOnboardingCheck>
+                            }
                         />
-                        {/* Recipes page is now public - no protection */}
+                        {/* ✅ Recipes page also checks for onboarding if user is logged in */}
                         <Route
                             path='/recipes'
-                            element={<RecipePage />}
+                            element={
+                                <DashboardWithOnboardingCheck>
+                                    <RecipePage />
+                                </DashboardWithOnboardingCheck>
+                            }
                         />
                         <Route
                             path='/onboarding'

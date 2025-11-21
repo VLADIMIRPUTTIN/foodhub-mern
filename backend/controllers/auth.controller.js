@@ -35,7 +35,7 @@ export const signup = async (req, res) => {
         
         if (email === 'admin@foodhub.com') {
             role = 'admin';
-            isVerified = true; // Admin is auto-verified
+            isVerified = true;
         }
 
         const user = new User({
@@ -44,8 +44,9 @@ export const signup = async (req, res) => {
             name,
             role: role,
             isVerified: isVerified,
+            hasCompletedOnboarding: false, // Explicitly set to false for new users
             verificationToken: isVerified ? undefined : verificationToken,
-            verificationTokenExpiresAt: isVerified ? undefined : Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+            verificationTokenExpiresAt: isVerified ? undefined : Date.now() + 24 * 60 * 60 * 1000,
         });
 
         await user.save();
@@ -53,45 +54,20 @@ export const signup = async (req, res) => {
         // Generate JWT token and set cookie
         generateTokenAndSetCookie(res, user._id);
 
-        console.log("User created:", user.email);
-        console.log("Is verified:", user.isVerified);
-        console.log("Verification token:", user.verificationToken);
-
-        // Send verification email for regular users
+        // Send verification email for non-admin users
         if (!isVerified) {
-            console.log("🚀 STARTING VERIFICATION EMAIL PROCESS");
-            console.log(`📧 User email: ${user.email}`);
-            console.log(`🔑 Generated token: ${verificationToken}`);
-            console.log(`⏰ Token expires at: ${new Date(user.verificationTokenExpiresAt)}`);
-            
-            try {
-                // FIX: Correct parameter order - email, name, verificationCode
-                await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
-                console.log("✅ Verification email process completed");
-            } catch (emailError) {
-                console.error("❌ Verification email process failed:", emailError.message);
-                console.error("📋 Full error:", emailError);
-            }
-        } else {
-            // Send welcome email for admin
-            try {
-                await sendWelcomeEmail(user.email, user.name);
-                console.log("✅ Welcome email sent successfully");
-            } catch (emailError) {
-                console.error("❌ Welcome email failed:", emailError.message);
-            }
+            await sendVerificationEmail(user.email, verificationToken);
         }
 
         res.status(201).json({
             success: true,
-            message: isVerified ? "Admin account created successfully" : "User created successfully. Please check your email to verify your account.",
+            message: isVerified ? "Admin account created successfully" : "User created successfully. Please verify your email.",
             user: {
                 ...user._doc,
                 password: undefined,
             },
         });
     } catch (error) {
-        console.error("Signup error:", error);
         res.status(400).json({ success: false, message: error.message });
     }
 };

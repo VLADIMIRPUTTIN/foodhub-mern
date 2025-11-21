@@ -522,26 +522,6 @@ const RecipePage = () => {
         <div className="recipe-page">
             <Navbar />
             <div className="main-content">
-                {/* Show personalization notice if user hasn't completed onboarding */}
-                {user && !user.hasCompletedOnboarding && (
-                    <div className="personalization-notice">
-                        <div className="personalization-content">
-                            <i className="bx bx-bulb"></i>
-                            <div className="personalization-text">
-                                <h3>Get Personalized Recommendations!</h3>
-                                <p>Complete your profile setup to see recipes tailored to your taste and dietary preferences.</p>
-                            </div>
-                            <button 
-                                className="personalize-btn"
-                                onClick={() => navigate('/onboarding')}
-                            >
-                                <i className="bx bx-user-plus"></i>
-                                Set Up Now
-                            </button>
-                        </div>
-                    </div>
-                )}
-
                 {/* Responsive Ingredients Sidebar */}
                 <div className="ingredients-responsive">
                     {/* Mobile: Sheet Button */}

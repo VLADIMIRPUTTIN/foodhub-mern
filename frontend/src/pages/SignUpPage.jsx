@@ -20,21 +20,14 @@ const SignUpPage = () => {
 
     const handleSignUp = async (e) => {
         e.preventDefault();
-
         console.log("Starting signup process...");
-        console.log("Form data:", { name, email, password: "***" });
-
+        
         try {
             await signup(email, password, name);
-            console.log("✅ Signup successful, navigating to verification...");
+            console.log("✅ Signup successful, redirecting to verification...");
             navigate("/verify-email");
         } catch (error) {
             console.error("❌ Signup failed:", error);
-            console.log("Error details:", {
-                message: error.message,
-                response: error.response?.data,
-                status: error.response?.status
-            });
         }
     };
 
@@ -52,26 +45,35 @@ const SignUpPage = () => {
                 { withCredentials: true }
             );
 
-            // Set user in auth store so verification page knows the email
             if (response.data.user) {
                 setUser(response.data.user);
-            }
+                const user = response.data.user;
+                
+                console.log("✅ Google signup successful, user data:", user);
+                
+                // Check if verified
+                if (!user.isVerified) {
+                    console.log("❌ User not verified, redirecting to verification");
+                    navigate("/verify-email");
+                    return;
+                }
 
-            if (response.data.user && response.data.user.isVerified) {
-                // Check if user needs onboarding
-                if (response.data.needsOnboarding || (!response.data.user.hasCompletedOnboarding && response.data.user.role !== 'admin')) {
+                // ✅ NEW USERS ALWAYS NEED ONBOARDING (unless admin)
+                if (!user.hasCompletedOnboarding && user.role !== 'admin') {
+                    console.log("⚠️ New user needs onboarding, redirecting...");
                     navigate("/onboarding");
+                    return;
+                }
+
+                // Existing users who already completed onboarding
+                if (user.role === 'admin') {
+                    navigate("/admin-dashboard");
                 } else {
                     navigate("/");
-                    // Force a reload only if needed
-                    setTimeout(() => window.location.reload(), 100);
                 }
-            } else {
-                navigate("/verify-email");
             }
         } catch (error) {
-            console.error("Google signup failed:", error);
-            console.error("Error details:", error.response?.data || error.message);
+            console.error("❌ Google signup failed:", error);
             toast.error(error.response?.data?.message || "Google signup failed. Please try again.");
         }
     };
@@ -79,6 +81,49 @@ const SignUpPage = () => {
     const handleGoogleError = () => {
         console.error("Google signup error");
         alert("Google signup failed. Please try again.");
+    };
+
+    const handleGoogleLogin = async (credentialResponse) => {
+        try {
+            const baseURL = import.meta.env.MODE === "development" 
+                ? "http://localhost:5000" 
+                : "";
+                
+            const response = await axios.post(
+                `${baseURL}/api/auth/google-login`,
+                { credential: credentialResponse.credential },
+                { withCredentials: true }
+            );
+            
+            if (response.data.user) {
+                setUser(response.data.user);
+                const user = response.data.user;
+                
+                // Check verification first
+                if (!user.isVerified) {
+                    navigate('/verify-email');
+                    return;
+                }
+                
+                // Check onboarding
+                if (!user.hasCompletedOnboarding && user.role !== 'admin') {
+                    navigate('/onboarding');
+                    return;
+                }
+                
+                // Check role
+                if (user.role === 'admin') {
+                    navigate('/admin-dashboard');
+                } else {
+                    navigate('/');
+                }
+            }
+        } catch (error) {
+            console.error("Google login failed:", error);
+            if (error.response?.status === 403 && error.response?.data?.statusData) {
+                setShowStatusModal(true);
+            }
+        }
     };
 
     return (

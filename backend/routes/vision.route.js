@@ -543,15 +543,19 @@ router.post("/generate-recipe-suggestion", async (req, res) => {
   }
 });
 
-// Generate cooking instructions route
+// Enhanced generate cooking instructions route with AI-powered suggestions
 router.post("/generate-cooking-instructions", verifyToken, async (req, res) => {
   try {
     const { recipeName, recipeInstructions, availableIngredients, missingIngredients } = req.body;
     
-    if (!recipeName || !recipeInstructions || !availableIngredients) {
+    console.log("Generating cooking instructions for:", recipeName);
+    console.log("Available ingredients:", availableIngredients);
+    console.log("Missing ingredients:", missingIngredients);
+    
+    if (!recipeName || !availableIngredients || !Array.isArray(availableIngredients)) {
       return res.status(400).json({ 
         success: false, 
-        message: "Missing required information" 
+        message: "Recipe name and available ingredients are required" 
       });
     }
     
@@ -562,23 +566,93 @@ router.post("/generate-cooking-instructions", verifyToken, async (req, res) => {
       });
     }
     
+    // Format ingredients properly
+    const availableIngredientsText = availableIngredients
+      .map(ing => {
+        if (typeof ing === 'string') return ing;
+        return `${ing.amount || ''} ${ing.unit || ''} ${ing.name || ing}`.trim();
+      })
+      .filter(ing => ing.length > 0)
+      .join("\n- ");
+    
+    const missingIngredientsText = missingIngredients && missingIngredients.length > 0
+      ? missingIngredients
+          .map(ing => {
+            if (typeof ing === 'string') return ing;
+            return `${ing.amount || ''} ${ing.unit || ''} ${ing.name || ing}`.trim();
+          })
+          .filter(ing => ing.length > 0)
+          .join("\n- ")
+      : "None - You have all ingredients!";
+    
     const instructionsText = Array.isArray(recipeInstructions) 
-      ? recipeInstructions.join("\n") 
-      : recipeInstructions;
+      ? recipeInstructions.map((step, idx) => {
+          if (typeof step === 'string') return `${idx + 1}. ${step}`;
+          return `${idx + 1}. ${step.instruction || step.details || step}`;
+        }).join("\n")
+      : recipeInstructions || "No instructions provided";
     
     const prompt = `
-    You are a helpful cooking assistant. I want to make "${recipeName}" but I'm missing some ingredients.
+You are an expert chef and cooking instructor. A home cook wants to make "${recipeName}" but is missing some ingredients.
 
-    The original recipe instructions are:
-    ${instructionsText}
-    
-    Ingredients I HAVE:
-    ${availableIngredients.join(", ")}
-    
-    Ingredients I DON'T HAVE:
-    ${missingIngredients.join(", ")}
-    
-    Please help me adapt the recipe using only the ingredients I have. If it's not possible to make something similar, suggest alternative simple dishes I could make with my available ingredients. Make your response conversational and encouraging.
+ORIGINAL RECIPE INSTRUCTIONS:
+${instructionsText}
+
+INGREDIENTS THEY HAVE:
+- ${availableIngredientsText}
+
+INGREDIENTS THEY ARE MISSING:
+- ${missingIngredientsText}
+
+YOUR TASK:
+Provide creative, practical, and detailed cooking suggestions based on what they have. Consider these scenarios:
+
+1. If they have MOST key ingredients (80%+):
+   - Adapt the original recipe with substitutions
+   - Explain which missing ingredients can be omitted or substituted
+   - Provide modified step-by-step instructions
+   - Mention how the taste/texture might differ
+
+2. If they have SOME key ingredients (50-80%):
+   - Suggest a simplified version of the original recipe
+   - OR suggest a completely different but related dish
+   - Provide complete cooking instructions
+   - Explain ingredient substitutions clearly
+
+3. If they have FEW matching ingredients (<50%):
+   - Suggest 2-3 completely different recipes they CAN make
+   - Focus on simple, quick dishes using their available ingredients
+   - Provide full recipes with ingredients they have
+   - Be encouraging and creative
+
+FORMAT YOUR RESPONSE:
+Use clear sections with emojis for better readability:
+
+🎯 **Assessment**: Brief analysis of what they can make
+
+📋 **Recommended Recipe(s)**: Name(s) of suggested dish(es)
+
+🥘 **What You'll Make**: Describe the final dish
+
+📝 **Ingredients Needed** (from what you have):
+- List only the ingredients from their available list
+- Include amounts if important
+
+👨‍🍳 **Step-by-Step Instructions**:
+1. Clear, numbered steps
+2. Include timing and temperatures
+3. Mention techniques and tips
+
+💡 **Tips & Substitutions**:
+- Helpful advice
+- Flavor enhancement ideas
+- What to watch for
+
+⚠️ **Missing Ingredients Impact**:
+- What they're missing and why it matters
+- Possible substitutes from their pantry
+
+Be conversational, encouraging, and specific. Use metric measurements. Make them excited to cook!
     `;
     
     try {
@@ -587,29 +661,67 @@ router.post("/generate-cooking-instructions", verifyToken, async (req, res) => {
       const response = await result.response;
       const text = response.text();
       
+      console.log("AI cooking suggestions generated successfully");
+      
       res.json({ 
         success: true, 
-        instructions: text 
+        instructions: text,
+        metadata: {
+          availableCount: availableIngredients.length,
+          missingCount: missingIngredients?.length || 0,
+          recipeName: recipeName
+        }
       });
     } catch (aiError) {
       console.error("Gemini API error:", aiError);
       
-      const fallbackResponse = `
-I see you're making ${recipeName}.
+      // Enhanced fallback response
+      const availableCount = availableIngredients.length;
+      const totalCount = availableCount + (missingIngredients?.length || 0);
+      const availabilityPercent = totalCount > 0 ? (availableCount / totalCount) * 100 : 0;
+      
+      let fallbackResponse = `
+🎯 **Assessment**
+You have ${availableCount} out of ${totalCount} ingredients (${Math.round(availabilityPercent)}%).
 
-Here are some general tips for adapting recipes:
+📋 **What You Can Make**
 
-1. For missing ingredients, look for substitutes with similar properties
-2. Focus on the cooking techniques from the original recipe
-3. Simplify the recipe by omitting non-essential ingredients
-4. Try a different cooking method if needed
+Based on your available ingredients: ${availableIngredientsText.substring(0, 100)}...
 
-Check the full recipe and see which steps you can still follow with your available ingredients!
+Here are some general suggestions:
+
+👨‍🍳 **Cooking Approach**
+
+1. **Assess your ingredients**: Look at what proteins, vegetables, and seasonings you have
+2. **Choose a cooking method**: 
+   - Stir-fry for quick meals with vegetables
+   - Simmer for soups and stews
+   - Roast for deeper flavors
+3. **Build layers of flavor**: Start with aromatics like onions and garlic if available
+4. **Season progressively**: Taste and adjust as you cook
+5. **Finish strong**: Add fresh herbs or a splash of acid (lemon, vinegar) at the end
+
+💡 **Tips**
+- Use what you have creatively
+- Don't be afraid to experiment
+- Simple dishes can be delicious
+- Trust your instincts
+
+Missing ingredients from "${recipeName}": ${missingIngredientsText}
+
+Consider checking your pantry for common substitutes!
       `;
       
       res.json({
         success: true,
-        instructions: fallbackResponse
+        instructions: fallbackResponse,
+        isFallback: true,
+        metadata: {
+          availableCount: availableIngredients.length,
+          missingCount: missingIngredients?.length || 0,
+          recipeName: recipeName,
+          availabilityPercent: Math.round(availabilityPercent)
+        }
       });
     }
   } catch (error) {

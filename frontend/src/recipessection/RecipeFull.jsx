@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { translateContainer } from "../utils/translateUtils";
 import "./RecipeFull.scss";
 
 const RecipeFull = () => {
@@ -10,6 +11,9 @@ const RecipeFull = () => {
   const [youtubeVideos, setYoutubeVideos] = useState([]);
   const [loadingVideos, setLoadingVideos] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [isTranslated, setIsTranslated] = useState(false);
+  const [translationProgress, setTranslationProgress] = useState(0);
 
   // API Base URL
   const API_BASE = import.meta.env.MODE === "development" 
@@ -21,14 +25,17 @@ const RecipeFull = () => {
     if (!recipe.imageUrl) {
       return 'https://via.placeholder.com/800x400?text=No+Image';
     }
-    if (recipe.imageUrl.startsWith('http')) {
+    
+    // ✅ If it's already a full URL (Cloudinary), use it directly
+    if (recipe.imageUrl.startsWith('http://') || recipe.imageUrl.startsWith('https://')) {
       return recipe.imageUrl;
     }
-    const cleanPath = recipe.imageUrl.startsWith('/') ? recipe.imageUrl.slice(1) : recipe.imageUrl;
-    if (import.meta.env.MODE === "development") {
-      return `http://localhost:5000/${cleanPath}`;
-    }
-    return `/${cleanPath}`;
+    
+    // ✅ Legacy support for old relative paths
+    const baseURL = import.meta.env.MODE === "development" 
+      ? "http://localhost:5000" 
+      : "";
+    return `${baseURL}${recipe.imageUrl.startsWith('/') ? recipe.imageUrl : '/' + recipe.imageUrl}`;
   };
 
   // Function to search YouTube videos using backend API
@@ -126,6 +133,60 @@ const RecipeFull = () => {
     });
   };
 
+  const handleTranslate = async () => {
+    if (isTranslating || isTranslated) return;
+
+    setIsTranslating(true);
+    setTranslationProgress(0);
+
+    try {
+      console.log('🚀 Starting translation process...');
+      
+      // Mark only icons and buttons we don't want to translate
+      const skipElements = document.querySelectorAll('i.bx, .bx, svg');
+      skipElements.forEach(el => {
+        el.setAttribute('translate', 'no');
+        // Also mark parent button if it only contains icon
+        if (el.parentElement && el.parentElement.tagName === 'BUTTON') {
+          const buttonText = el.parentElement.textContent.trim();
+          if (buttonText === '←' || buttonText === '→' || buttonText === '') {
+            el.parentElement.setAttribute('translate', 'no');
+          }
+        }
+      });
+
+      // Get the main recipe container
+      const recipeContainer = document.querySelector('.full-recipe-page');
+      
+      if (!recipeContainer) {
+        console.error('❌ Recipe container not found!');
+        alert('Hindi makita ang recipe content. Please refresh the page.');
+        return;
+      }
+
+      console.log('📄 Found recipe container, starting translation...');
+      
+      // Translate EVERYTHING in the container
+      await translateContainer(
+        recipeContainer,
+        'tl', // Tagalog/Filipino
+        (processed, total) => {
+          const progress = Math.round((processed / total) * 100);
+          setTranslationProgress(progress);
+          console.log(`📊 Progress: ${processed}/${total} (${progress}%)`);
+        }
+      );
+
+      setIsTranslated(true);
+      console.log('✅ Tapos na! Lahat ng text ay Tagalog na!');
+    } catch (error) {
+      console.error('❌ Translation failed:', error);
+      alert('Hindi nag-translate. Please try again.');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   if (!recipe) return <div className="loading-recipe">Loading...</div>;
 
   return (
@@ -136,11 +197,38 @@ const RecipeFull = () => {
           alt={recipe.title || recipe.name} 
           className="full-recipe-img"
           onError={(e) => {
-            e.target.src = 'https://via.placeholder.com/800x400?text=No+Image';
+            console.error('Recipe image load error:', recipe.imageUrl);
+            e.target.src = 'https://via.placeholder.com/800x400?text=Image+Error';
           }}
         />
         <div className="full-recipe-overlay" />
         <button className="full-recipe-back" onClick={() => navigate(-1)}>← Back</button>
+        
+        {/* Translate Button */}
+        <button 
+          className="translate-btn" 
+          onClick={handleTranslate}
+          disabled={isTranslating || isTranslated}
+          title={isTranslated ? "Already translated" : "Translate to Tagalog"}
+        >
+          {isTranslating ? (
+            <>
+              <i className="bx bx-loader-alt bx-spin"></i>
+              Translating... {translationProgress}%
+            </>
+          ) : isTranslated ? (
+            <>
+              <i className="bx bx-check"></i>
+              Translated
+            </>
+          ) : (
+            <>
+              <i className="bx bx-globe"></i>
+              Translate to Tagalog
+            </>
+          )}
+        </button>
+
         <div className="full-recipe-info">
           <h1>{recipe.title || recipe.name}</h1>
           <div className="full-recipe-tags">
