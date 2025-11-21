@@ -24,6 +24,7 @@ import NotificationToast from './components/NotificationToast';
 
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
+import { initVisitCounter } from "./utils/visitCounter";
 
 // Global axios interceptor for handling account status errors
 const setupAxiosInterceptors = (setGlobalAccountStatus) => {
@@ -140,6 +141,14 @@ const DashboardWithOnboardingCheck = ({ children }) => {
 function App() {
     const { isCheckingAuth, checkAuth } = useAuthStore();
     const [globalAccountStatus, setGlobalAccountStatus] = useState(null);
+
+    const API_BASE = import.meta.env.DEV
+    ? (import.meta.env.VITE_API_URL || "http://localhost:5000")
+    : ((import.meta.env.VITE_API_URL?.replace(/\/$/, "")) || window.location.origin);
+
+    useEffect(() => {
+        initVisitCounter(API_BASE);
+    }, [API_BASE]);
 
     useEffect(() => {
         console.log("App initializing auth check...");

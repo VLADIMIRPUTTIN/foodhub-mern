@@ -93,25 +93,20 @@ export const useAuthStore = create((set, get) => ({
 
     logout: async () => {
         try {
-            // Set logout flag FIRST before any async operations
+            // Mark logout (used by App.jsx)
             localStorage.setItem('loggedOut', 'true');
-            
+
+            // Preserve visit flag for this tab session
+            const visitFlag = sessionStorage.getItem('visit_session_active');
+
             const baseURL = import.meta.env.MODE === "development" 
                 ? "http://localhost:5000" 
                 : "";
-            
-            // Call logout endpoint to clear server-side cookie    
-            await axios.post(`${baseURL}/api/auth/logout`, {}, {
-                withCredentials: true
-            });
-            
+
+            await axios.post(`${baseURL}/api/auth/logout`, {}, { withCredentials: true });
             console.log("Server logout successful");
             
-        } catch (error) {
-            console.error("Server logout failed:", error);
-            // Even if server logout fails, we still want to logout locally
-        } finally {
-            // Always clear local state regardless of server response
+            // Restore visit flag after any clearing below
             set({ 
                 user: null, 
                 isAuthenticated: false, 
@@ -119,15 +114,27 @@ export const useAuthStore = create((set, get) => ({
                 error: null,
                 accountStatus: null
             });
-            
-            // Clear all possible storage
+
+            // Clear only app auth artifacts
+            localStorage.removeItem('auth-storage');
+
+            // IMPORTANT: do not lose the per-tab visit flag
+            sessionStorage.clear();
+            if (visitFlag === '1') {
+                sessionStorage.setItem('visit_session_active', '1');
+            }
+
+            localStorage.setItem('loggedOut', 'true');
+            console.log("Local logout completed");
+        } catch (error) {
+            console.error("Server logout failed:", error);
+            // Still clear local state but keep the visit flag
+            const visitFlag = sessionStorage.getItem('visit_session_active');
+            set({ user: null, isAuthenticated: false, isCheckingAuth: false, error: null, accountStatus: null });
             localStorage.removeItem('auth-storage');
             sessionStorage.clear();
-            
-            // Double-check the logout flag is set
+            if (visitFlag === '1') sessionStorage.setItem('visit_session_active', '1');
             localStorage.setItem('loggedOut', 'true');
-            
-            console.log("Local logout completed");
         }
     },
 
