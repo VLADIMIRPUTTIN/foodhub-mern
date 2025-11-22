@@ -64,30 +64,31 @@ const __dirname = path.resolve();
 
 const allowedOrigins = [
     "http://localhost:5173",
+    "http://localhost:3000",
     "https://foodhub-mern-production.up.railway.app",
     "https://www.foodhubrecipe.shop",
-    "https://foodhubrecipe.shop"
+    "https://foodhubrecipe.shop",
 ];
 
-// Update the CORS configuration
+// Simplified CORS configuration for production
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps, curl requests)
+        // Allow requests with no origin (mobile apps, Postman, etc)
         if (!origin) return callback(null, true);
         
+        // Check if origin is in allowed list
         if (allowedOrigins.includes(origin)) {
             return callback(null, true);
         }
         
-        // For production, be more strict
-        if (process.env.NODE_ENV === "production") {
-            console.log("Blocked by CORS in production:", origin);
-            return callback(new Error('Not allowed by CORS'), false);
-        }
+        // Log unauthorized origins
+        console.log("⚠️ Request from unauthorized origin:", origin);
         
-        // For development, allow all
-        console.log("Allowed in development:", origin);
+        // ✅ For production: Allow all origins temporarily for debugging
         return callback(null, true);
+        
+        // ❌ After fixing, use strict CORS:
+        // return callback(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],

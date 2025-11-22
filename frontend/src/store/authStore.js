@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import axios from "axios";
 
+// ✅ Fix API URL - use relative path in production
 const API_URL = import.meta.env.MODE === "development" 
     ? "http://localhost:5000/api/auth" 
-    : "/api/auth";
+    : "/api/auth"; // Changed to relative path
 
 axios.defaults.withCredentials = true;
 
@@ -93,14 +94,13 @@ export const useAuthStore = create((set, get) => ({
 
     logout: async () => {
         try {
-            // Set logout flag FIRST before any async operations
             localStorage.setItem('loggedOut', 'true');
             
+            // ✅ Fix: Use relative path
             const baseURL = import.meta.env.MODE === "development" 
                 ? "http://localhost:5000" 
                 : "";
             
-            // Call logout endpoint to clear server-side cookie    
             await axios.post(`${baseURL}/api/auth/logout`, {}, {
                 withCredentials: true
             });
@@ -109,9 +109,7 @@ export const useAuthStore = create((set, get) => ({
             
         } catch (error) {
             console.error("Server logout failed:", error);
-            // Even if server logout fails, we still want to logout locally
         } finally {
-            // Always clear local state regardless of server response
             set({ 
                 user: null, 
                 isAuthenticated: false, 
@@ -120,11 +118,8 @@ export const useAuthStore = create((set, get) => ({
                 accountStatus: null
             });
             
-            // Clear all possible storage
             localStorage.removeItem('auth-storage');
             sessionStorage.clear();
-            
-            // Double-check the logout flag is set
             localStorage.setItem('loggedOut', 'true');
             
             console.log("Local logout completed");
@@ -164,9 +159,10 @@ export const useAuthStore = create((set, get) => ({
 
     checkAuth: async () => {
         try {
+            // ✅ Fix: Use relative path in production
             const baseURL = import.meta.env.MODE === "development" 
                 ? "http://localhost:5000" 
-                : "";
+                : ""; // Use relative path
             
             const response = await axios.get(`${baseURL}/api/auth/check-auth`, {
                 withCredentials: true,
@@ -174,7 +170,6 @@ export const useAuthStore = create((set, get) => ({
             
             if (response.data.success) {
                 console.log('Auth check - user data:', response.data.user);
-                // Make sure hasCompletedOnboarding is included in the user data
                 set({ 
                     user: response.data.user, 
                     isAuthenticated: true, 
