@@ -12,39 +12,74 @@ const DashboardPage = () => {
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [showInstallBtn, setShowInstallBtn] = useState(false);
     const [showInstallNotif, setShowInstallNotif] = useState(false);
-    
     const [visitCount, setVisitCount] = useState(0);
 
+    // Prevent React StrictMode double-call (dev only)
+    const trackingFlagKey = 'visit_tracked';
+    const sessionKey = 'visit_session_id';
+
+    const API_BASE = import.meta.env.MODE === 'development' ? 'http://localhost:5000' : '';
+
+    const ensureSessionId = () => {
+        let sessionId = sessionStorage.getItem(sessionKey);
+        if (!sessionId) {
+            sessionId = `sess_${Date.now()}_${Math.random().toString(36).slice(2,11)}`;
+            sessionStorage.setItem(sessionKey, sessionId);
+        }
+        return sessionId;
+    };
+
+    const fetchTotalOnly = async () => {
+        try {
+            const resp = await fetch(`${API_BASE}/api/visit/total`, { credentials: 'include' });
+            if (!resp.ok) return;
+            const data = await resp.json();
+            setVisitCount(data.totalVisits || 0);
+        } catch (e) {
+            console.error('Total fetch error', e);
+        }
+    };
+
     useEffect(() => {
-        // ✅ Track visit using CountAPI - idempotent per session
-        const trackVisit = async () => {
+        const sessionId = ensureSessionId();
+
+        // If already tracked (true or pending), just fetch total once
+        const status = sessionStorage.getItem(trackingFlagKey);
+        if (status === 'true' || status === 'pending') {
+            fetchTotalOnly();
+            return;
+        }
+
+        // Mark as pending immediately to block second invocation
+        sessionStorage.setItem(trackingFlagKey, 'pending');
+
+        const track = async () => {
             try {
-                // Check if already counted in this session
-                const alreadyCounted = sessionStorage.getItem('visit_counted');
-                
-                if (alreadyCounted === 'true') {
-                    console.log('⚠️ Already counted in this session, fetching count only');
-                    // Just get the current count without incrementing
-                    const response = await fetch('https://api.countapi.xyz/get/foodhub-app/visits');
-                    const data = await response.json();
-                    setVisitCount(data.value || 0);
+                const endpoint = user
+                    ? `${API_BASE}/api/visit/track`
+                    : `${API_BASE}/api/visit/track-anonymous`;
+
+                const resp = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ sessionId })
+                });
+
+                if (!resp.ok) {
+                    await fetchTotalOnly();
                 } else {
-                    console.log('✅ New session, incrementing count');
-                    // Increment the count
-                    const response = await fetch('https://api.countapi.xyz/hit/foodhub-app/visits');
-                    const data = await response.json();
-                    setVisitCount(data.value || 0);
-                    
-                    // Mark as counted in this session
-                    sessionStorage.setItem('visit_counted', 'true');
-                    console.log('✅ Visit counted! Total:', data.value);
+                    const data = await resp.json();
+                    setVisitCount(data.totalVisits || 0);
                 }
-            } catch (error) {
-                console.error('Error tracking visit:', error);
+            } catch {
+                await fetchTotalOnly();
+            } finally {
+                sessionStorage.setItem(trackingFlagKey, 'true');
             }
         };
 
-        trackVisit();
+        track();
 
         const handleBeforeInstallPrompt = (e) => {
             e.preventDefault();
@@ -52,12 +87,10 @@ const DashboardPage = () => {
             setShowInstallBtn(true);
             setShowInstallNotif(true);
         };
-
         const handleAppInstalled = () => {
             setShowInstallBtn(false);
             setShowInstallNotif(false);
         };
-
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
         window.addEventListener('appinstalled', handleAppInstalled);
 
@@ -65,7 +98,9 @@ const DashboardPage = () => {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
             window.removeEventListener('appinstalled', handleAppInstalled);
         };
-    }, []);
+        // IMPORTANT: Empty dependency -> runs once per tab load
+        // Not dependent on user so logging in after initial load does NOT re-count
+    }, []); // ← do not depend on user to avoid second count
 
     const handleInstallApp = async () => {
         if (deferredPrompt) {
@@ -77,88 +112,37 @@ const DashboardPage = () => {
             }
         }
     };
-
-    const handleCloseNotif = () => {
-        setShowInstallNotif(false);
-    };
-
-    const handleLogout = () => {
-        logout();
-    };
-
-    const handleGetStarted = () => {
-        if (user) {
-            navigate('/recipes');
-        } else {
-            navigate('/signup');
-        }
-    };
-
-    const handleExploreRecipes = () => {
-        navigate('/recipes');
-    };
+    const handleCloseNotif = () => setShowInstallNotif(false);
+    const handleLogout = () => logout();
+    const handleGetStarted = () => user ? navigate('/recipes') : navigate('/signup');
+    const handleExploreRecipes = () => navigate('/recipes');
 
     return (
         <div className="dashboard-page">
             <Navbar />
-            
-            {/* Install App Notification */}
             {showInstallNotif && (
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 30 }}
-                    transition={{ duration: 0.4 }}
-                    className="install-app-notif"
-                >
+                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="install-app-notif">
                     <i className="bx bx-download"></i>
                     <div className="notif-text">
-                        <div className="notif-title">
-                            Install FoodHub App
-                        </div>
-                        <div className="notif-desc">
-                            Get the best experience by installing FoodHub on your device!
-                        </div>
+                        <div className="notif-title">Install FoodHub App</div>
+                        <div className="notif-desc">Get the best experience by installing FoodHub on your device!</div>
                     </div>
-                    <button
-                        onClick={handleInstallApp}
-                        className="install-app-btn"
-                    >
-                        <i className="bx bx-download"></i>
-                        Install
-                    </button>
-                    <button
-                        onClick={handleCloseNotif}
-                        className="close-btn"
-                        aria-label="Close"
-                    >
-                        <i className="bx bx-x"></i>
-                    </button>
+                    <button onClick={handleInstallApp} className="install-app-btn"><i className="bx bx-download"></i>Install</button>
+                    <button onClick={handleCloseNotif} className="close-btn" aria-label="Close"><i className="bx bx-x"></i></button>
                 </motion.div>
             )}
 
-            {/* Hero Section */}
             <section className="hero-section">
                 <div className="overlay"></div>
                 <div className="hero-content">
                     <div className="hero-text">
-                        <motion.h1
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8 }}
-                        >
+                        <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
                             {user ? `Welcome Back, ${user.name}!` : 'Welcome to FoodHub!'}
                         </motion.h1>
-
-                        <motion.p
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8, delay: 0.2 }}
-                        >
+                        <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }}>
                             Discover delicious recipes based on what's already in your kitchen. Save time, reduce waste, and cook with confidence.
                         </motion.p>
 
-                        {/* ✅ Visit Counter - Compact badge style */}
                         <motion.div
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -167,75 +151,42 @@ const DashboardPage = () => {
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                background: 'rgba(207, 153, 108, 0.15)',
+                                background: 'rgba(207,153,108,0.15)',
                                 backdropFilter: 'blur(10px)',
                                 padding: '8px 16px',
                                 borderRadius: '30px',
                                 marginBottom: '1rem',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
                             }}
                         >
                             <i className="bx bx-globe" style={{ fontSize: '18px', color: '#CF996C' }}></i>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                <span style={{ 
-                                    fontSize: '16px', 
-                                    fontWeight: '700', 
-                                    color: 'white',
-                                    textShadow: '0 1px 3px rgba(0,0,0,0.3)'
-                                }}>
+                                <span style={{ fontSize: '16px', fontWeight: '700', color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
                                     {visitCount.toLocaleString()}
                                 </span>
-                                <span style={{ 
-                                    fontSize: '13px', 
-                                    color: 'rgba(255, 255, 255, 0.9)',
-                                    fontWeight: '500'
-                                }}>
-                                    visits
-                                </span>
+                                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>visits</span>
                             </div>
                         </motion.div>
 
-                        <div style={{ display: "flex", gap: "1rem", alignItems: "center", marginTop: "1.2rem", flexWrap: "wrap" }}>
-                            {/* Primary action button */}
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '1.2rem', flexWrap: 'wrap' }}>
                             <motion.button
                                 initial={{ opacity: 0, y: 30, scale: 0.8 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                                transition={{
-                                    duration: 0.8,
-                                    delay: 0.4,
-                                    type: "spring",
-                                    stiffness: 200
-                                }}
-                                whileHover={{
-                                    scale: 1.05,
-                                    y: -3,
-                                    boxShadow: "0 15px 30px rgba(207, 153, 108, 0.4)"
-                                }}
+                                transition={{ duration: 0.8, delay: 0.4, type: 'spring', stiffness: 200 }}
+                                whileHover={{ scale: 1.05, y: -3, boxShadow: '0 15px 30px rgba(207,153,108,0.4)' }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={handleGetStarted}
                                 className="get-started-btn"
                             >
-                                <i className="bx bx-rocket"></i>
-                                {user ? 'Get Started' : 'Join Now'}
+                                <i className="bx bx-rocket"></i>{user ? 'Get Started' : 'Join Now'}
                             </motion.button>
-
-                            {/* Secondary action - Browse recipes (for non-logged users) */}
                             {!user && (
                                 <motion.button
                                     initial={{ opacity: 0, y: 30, scale: 0.8 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    transition={{
-                                        duration: 0.8,
-                                        delay: 0.5,
-                                        type: "spring",
-                                        stiffness: 200
-                                    }}
-                                    whileHover={{
-                                        scale: 1.05,
-                                        y: -3,
-                                        boxShadow: "0 15px 30px rgba(255, 255, 255, 0.2)"
-                                    }}
+                                    transition={{ duration: 0.8, delay: 0.5, type: 'spring', stiffness: 200 }}
+                                    whileHover={{ scale: 1.05, y: -3, boxShadow: '0 15px 30px rgba(255,255,255,0.2)' }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={handleExploreRecipes}
                                     className="explore-btn"
@@ -251,37 +202,23 @@ const DashboardPage = () => {
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '8px',
-                                        transition: 'all 0.3s ease',
-                                        
+                                        transition: 'all 0.3s ease'
                                     }}
                                 >
-                                    <i className="bx bx-book-open"></i>
-                                    Browse Recipes
+                                    <i className="bx bx-book-open"></i>Browse Recipes
                                 </motion.button>
                             )}
-
-                            {/* Install app button */}
                             {showInstallBtn && (
                                 <motion.button
                                     initial={{ opacity: 0, y: 30, scale: 0.8 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    transition={{
-                                        duration: 0.8,
-                                        delay: user ? 0.5 : 0.6,
-                                        type: "spring",
-                                        stiffness: 200
-                                    }}
-                                    whileHover={{
-                                        scale: 1.05,
-                                        y: -3,
-                                        boxShadow: "0 15px 30px rgba(207, 153, 108, 0.4)"
-                                    }}
+                                    transition={{ duration: 0.8, delay: user ? 0.5 : 0.6, type: 'spring', stiffness: 200 }}
+                                    whileHover={{ scale: 1.05, y: -3, boxShadow: '0 15px 30px rgba(207,153,108,0.4)' }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={handleInstallApp}
                                     className="install-app-btn"
                                 >
-                                    <i className="bx bx-download"></i>
-                                    Install App
+                                    <i className="bx bx-download"></i>Install App
                                 </motion.button>
                             )}
                         </div>

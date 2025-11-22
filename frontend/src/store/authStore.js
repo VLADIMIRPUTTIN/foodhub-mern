@@ -13,10 +13,13 @@ axios.defaults.withCredentials = true;
 axios.interceptors.response.use(
     (response) => response,
     (error) => {
-        // Only logout on 401 if it's from auth endpoints, not profile/user data endpoints
-        if (error.response?.status === 401 && error.config?.url?.includes('/api/auth/')) {
-            console.log("Auth endpoint returned 401, logging out");
-            useAuthStore.getState().logout();
+        const status = error.response?.status;
+        const url = error.config?.url || '';
+        // Only act on explicit auth mutations, not passive check-auth
+        if (status === 401 && /\/api\/auth\/(login|signup|reset-password|forgot-password)/.test(url)) {
+            // Clear state without server logout spam
+            const { clearAuthStateSilently } = useAuthStore.getState();
+            clearAuthStateSilently();
         }
         return Promise.reject(error);
     }
@@ -92,37 +95,37 @@ export const useAuthStore = create((set, get) => ({
 
     clearAccountStatus: () => set({ accountStatus: null }),
 
+    clearAuthStateSilently: () => {
+        set({
+            user: null,
+            isAuthenticated: false,
+            error: null,
+            accountStatus: null
+        });
+        // No console spam
+    },
+
     logout: async () => {
+        // Only perform server logout if currently authenticated
+        const { isAuthenticated } = get();
         try {
-            localStorage.setItem('loggedOut', 'true');
-            
-            // ✅ Fix: Use relative path
-            const baseURL = import.meta.env.MODE === "development" 
-                ? "http://localhost:5000" 
-                : "";
-            
-            await axios.post(`${baseURL}/api/auth/logout`, {}, {
-                withCredentials: true
-            });
-            
-            console.log("Server logout successful");
-            
+            if (isAuthenticated) {
+                const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
+                await axios.post(`${baseURL}/api/auth/logout`, {}, { withCredentials: true });
+            }
         } catch (error) {
-            console.error("Server logout failed:", error);
+            // Suppress noisy errors
         } finally {
-            set({ 
-                user: null, 
-                isAuthenticated: false, 
+            set({
+                user: null,
+                isAuthenticated: false,
                 isCheckingAuth: false,
                 error: null,
                 accountStatus: null
             });
-            
-            localStorage.removeItem('auth-storage');
-            sessionStorage.clear();
             localStorage.setItem('loggedOut', 'true');
-            
-            console.log("Local logout completed");
+            sessionStorage.clear();
+            localStorage.removeItem('auth-storage');
         }
     },
 
@@ -159,27 +162,19 @@ export const useAuthStore = create((set, get) => ({
 
     checkAuth: async () => {
         try {
-            // ✅ Fix: Use relative path in production
-            const baseURL = import.meta.env.MODE === "development" 
-                ? "http://localhost:5000" 
-                : ""; // Use relative path
-            
-            const response = await axios.get(`${baseURL}/api/auth/check-auth`, {
-                withCredentials: true,
-            });
-            
+            const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
+            const response = await axios.get(`${baseURL}/api/auth/check-auth`, { withCredentials: true });
             if (response.data.success) {
-                console.log('Auth check - user data:', response.data.user);
-                set({ 
-                    user: response.data.user, 
-                    isAuthenticated: true, 
-                    isCheckingAuth: false 
+                set({
+                    user: response.data.user,
+                    isAuthenticated: true,
+                    isCheckingAuth: false
                 });
             } else {
                 set({ user: null, isAuthenticated: false, isCheckingAuth: false });
             }
-        } catch (error) {
-            console.error("Auth check error:", error);
+        } catch {
+            // Passive failure: just clear auth, do NOT logout server
             set({ user: null, isAuthenticated: false, isCheckingAuth: false });
         }
     },
