@@ -114,6 +114,10 @@ app.use("/api/comments", commentRoutes);
 app.use("/api/translate", translateRoutes);
 app.use("/api/visits", visitCounterRoutes);
 
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, time: Date.now(), env: process.env.NODE_ENV || "unknown" });
+});
+
 if (process.env.NODE_ENV === "production") {
     app.use(express.static(path.join(__dirname, "/frontend/dist")));
 

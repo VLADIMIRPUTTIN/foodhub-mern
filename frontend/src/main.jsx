@@ -8,6 +8,9 @@ import axios from "axios"; // Add this import
 
 // Configure axios to send cookies with every request
 axios.defaults.withCredentials = true;
+axios.defaults.baseURL = import.meta.env.DEV
+  ? (import.meta.env.VITE_API_URL || "http://localhost:5000")
+  : ""; // relative in prod
 
 ReactDOM.createRoot(document.getElementById("root")).render(
     <React.StrictMode>
