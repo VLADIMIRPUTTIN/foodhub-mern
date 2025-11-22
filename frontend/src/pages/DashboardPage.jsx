@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
@@ -16,9 +16,6 @@ const DashboardPage = () => {
     const [visitCount, setVisitCount] = useState(0);
     const [userVisitCount, setUserVisitCount] = useState(0);
 
-    // ✅ Use ref to prevent double tracking
-    const hasTrackedRef = useRef(false);
-
     // Generate or retrieve session ID
     const getSessionId = () => {
         let sessionId = sessionStorage.getItem('visitSessionId');
@@ -35,15 +32,17 @@ const DashboardPage = () => {
     };
 
     useEffect(() => {
-        // ✅ Prevent double tracking on strict mode
-        if (hasTrackedRef.current) {
-            console.log('⚠️ Already tracked, skipping...');
+        const sessionId = getSessionId();
+        
+        // ✅ Check if already tracked in this session
+        const hasTracked = sessionStorage.getItem(`tracked_${sessionId}`);
+        
+        if (hasTracked === 'true') {
+            console.log('⚠️ Already tracked in this session, skipping...');
             return;
         }
 
         const trackVisit = async () => {
-            const sessionId = getSessionId();
-            
             try {
                 if (user) {
                     const response = await fetch('/api/visit/track', {
@@ -81,8 +80,8 @@ const DashboardPage = () => {
                     setVisitCount(data.totalVisits);
                 }
 
-                // ✅ Mark as tracked
-                hasTrackedRef.current = true;
+                // ✅ Mark this session as tracked
+                sessionStorage.setItem(`tracked_${sessionId}`, 'true');
                 
             } catch (error) {
                 console.error('Error tracking visit:', error);
