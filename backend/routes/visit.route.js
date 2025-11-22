@@ -1,6 +1,5 @@
 import express from 'express';
 import { Visit } from '../models/visit.model.js';
-import { verifyToken } from '../middleware/verifyToken.js';
 
 const router = express.Router();
 
@@ -62,17 +61,18 @@ router.post('/track-anonymous', async (req, res) => {
 });
 
 // Get user's visit count
-router.get('/user/:userId', verifyToken, async (req, res) => {
+router.get('/user/:userId', async (req, res) => {
     try {
         const visit = await Visit.findOne({ userId: req.params.userId });
         res.json({ visitCount: visit ? visit.visitCount : 0 });
     } catch (error) {
+        console.error('Error fetching user visit count:', error);
         res.status(500).json({ message: 'Error fetching user visits' });
     }
 });
 
 // ✅ Track visit with session ID (for logged-in users only)
-router.post('/track', verifyToken, async (req, res) => {
+router.post('/track', async (req, res) => {
     try {
         const { sessionId } = req.body;
         const userId = req.userId;
