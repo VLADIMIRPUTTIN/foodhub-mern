@@ -26,26 +26,43 @@ router.post('/track-anonymous', async (req, res) => {
         const userId = 'anonymous';
         const now = new Date();
 
-        // Atomic upsert & conditional increment
-        const result = await Visit.updateOne(
-            { userId, 'sessions.sessionId': { $ne: sessionId } },
-            {
-                $inc: { visitCount: 1 },
-                $push: { sessions: { sessionId, timestamp: now } },
-                $set: { lastVisit: now }
-            },
-            { upsert: true }
-        );
+        // Check if session already exists
+        const existingVisit = await Visit.findOne({ 
+            userId, 
+            'sessions.sessionId': sessionId 
+        });
 
-        // Fetch current doc
+        let incremented = false;
+
+        if (!existingVisit) {
+            // Session doesn't exist, increment count
+            await Visit.updateOne(
+                { userId },
+                {
+                    $inc: { visitCount: 1 },
+                    $push: { sessions: { sessionId, timestamp: now } },
+                    $set: { lastVisit: now }
+                },
+                { upsert: true }
+            );
+            incremented = true;
+        } else {
+            // Session exists, just update lastVisit without incrementing
+            await Visit.updateOne(
+                { userId },
+                { $set: { lastVisit: now } }
+            );
+        }
+
+        // Fetch current counts
         const visitDoc = await Visit.findOne({ userId });
         const agg = await Visit.aggregate([{ $group: { _id: null, total: { $sum: "$visitCount" } } }]);
         const totalVisits = agg.length ? agg[0].total : 0;
 
         res.json({
             totalVisits,
-            anonymousVisits: visitDoc.visitCount,
-            incremented: (result.modifiedCount > 0 || result.upsertedCount) ? true : false,
+            anonymousVisits: visitDoc ? visitDoc.visitCount : 0,
+            incremented,
             sessionId
         });
     } catch (e) {
@@ -74,24 +91,43 @@ router.post('/track', verifyToken, async (req, res) => {
         const userId = req.userId;
         const now = new Date();
 
-        const result = await Visit.updateOne(
-            { userId, 'sessions.sessionId': { $ne: sessionId } },
-            {
-                $inc: { visitCount: 1 },
-                $push: { sessions: { sessionId, timestamp: now } },
-                $set: { lastVisit: now }
-            },
-            { upsert: true }
-        );
+        // Check if session already exists
+        const existingVisit = await Visit.findOne({ 
+            userId, 
+            'sessions.sessionId': sessionId 
+        });
 
+        let incremented = false;
+
+        if (!existingVisit) {
+            // Session doesn't exist, increment count
+            await Visit.updateOne(
+                { userId },
+                {
+                    $inc: { visitCount: 1 },
+                    $push: { sessions: { sessionId, timestamp: now } },
+                    $set: { lastVisit: now }
+                },
+                { upsert: true }
+            );
+            incremented = true;
+        } else {
+            // Session exists, just update lastVisit without incrementing
+            await Visit.updateOne(
+                { userId },
+                { $set: { lastVisit: now } }
+            );
+        }
+
+        // Fetch current counts
         const visitDoc = await Visit.findOne({ userId });
         const agg = await Visit.aggregate([{ $group: { _id: null, total: { $sum: "$visitCount" } } }]);
         const totalVisits = agg.length ? agg[0].total : 0;
 
         res.json({
-            userVisitCount: visitDoc.visitCount,
+            userVisitCount: visitDoc ? visitDoc.visitCount : 0,
             totalVisits,
-            incremented: (result.modifiedCount > 0 || result.upsertedCount) ? true : false,
+            incremented,
             sessionId
         });
     } catch (e) {
