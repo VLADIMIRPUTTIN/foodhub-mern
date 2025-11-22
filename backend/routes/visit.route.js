@@ -1,5 +1,6 @@
 import express from 'express';
 import { Visit } from '../models/visit.model.js';
+import { verifyToken } from '../middleware/verifyToken.js';
 
 const router = express.Router();
 
@@ -30,19 +31,26 @@ router.post('/track-anonymous', async (req, res) => {
         let visit = await Visit.findOne({ userId: anonymousUserId });
 
         if (!visit) {
+            // First visit ever
             visit = await Visit.create({
                 userId: anonymousUserId,
                 visitCount: 1,
                 sessions: [{ sessionId, timestamp: new Date() }]
             });
+            console.log('✅ First anonymous visit tracked');
         } else {
+            // Check if this EXACT session ID already exists
             const sessionExists = visit.sessions.some(s => s.sessionId === sessionId);
             
             if (!sessionExists) {
+                // New session - increment count
                 visit.visitCount += 1;
                 visit.sessions.push({ sessionId, timestamp: new Date() });
                 visit.lastVisit = new Date();
                 await visit.save();
+                console.log('✅ New anonymous session tracked, count:', visit.visitCount);
+            } else {
+                console.log('📊 Session already exists, not incrementing');
             }
         }
 
@@ -52,7 +60,8 @@ router.post('/track-anonymous', async (req, res) => {
 
         res.json({ 
             totalVisits,
-            anonymousVisits: visit.visitCount
+            anonymousVisits: visit.visitCount,
+            sessionId // Return session ID for verification
         });
     } catch (error) {
         console.error('Error tracking anonymous visit:', error);
@@ -72,7 +81,7 @@ router.get('/user/:userId', async (req, res) => {
 });
 
 // ✅ Track visit with session ID (for logged-in users only)
-router.post('/track', async (req, res) => {
+router.post('/track', verifyToken, async (req, res) => {
     try {
         const { sessionId } = req.body;
         const userId = req.userId;
@@ -84,19 +93,26 @@ router.post('/track', async (req, res) => {
         let visit = await Visit.findOne({ userId });
 
         if (!visit) {
+            // First visit ever for this user
             visit = await Visit.create({
                 userId,
                 visitCount: 1,
                 sessions: [{ sessionId, timestamp: new Date() }]
             });
+            console.log(`✅ First visit tracked for user ${userId}`);
         } else {
+            // Check if this EXACT session ID already exists
             const sessionExists = visit.sessions.some(s => s.sessionId === sessionId);
             
             if (!sessionExists) {
+                // New session - increment count
                 visit.visitCount += 1;
                 visit.sessions.push({ sessionId, timestamp: new Date() });
                 visit.lastVisit = new Date();
                 await visit.save();
+                console.log(`✅ New session tracked for user ${userId}, count:`, visit.visitCount);
+            } else {
+                console.log(`📊 Session already exists for user ${userId}, not incrementing`);
             }
         }
 
@@ -106,7 +122,7 @@ router.post('/track', async (req, res) => {
         res.json({ 
             userVisitCount: visit.visitCount,
             totalVisits,
-            isNewSession: !visit.sessions.some(s => s.sessionId === sessionId && visit.sessions.length > 1)
+            sessionId // Return session ID for verification
         });
     } catch (error) {
         console.error('Error tracking visit:', error);
