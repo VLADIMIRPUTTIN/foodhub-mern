@@ -13,8 +13,67 @@ const DashboardPage = () => {
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [showInstallBtn, setShowInstallBtn] = useState(false);
     const [showInstallNotif, setShowInstallNotif] = useState(false);
+    
+    // Visit counter state
+    const [visitCount, setVisitCount] = useState(0);
+    const [userVisitCount, setUserVisitCount] = useState(0);
 
     useEffect(() => {
+        // Generate or get session ID (stored in sessionStorage - clears when tab/browser closes)
+        const getSessionId = () => {
+            let sessionId = sessionStorage.getItem('foodhub_session_id');
+            
+            if (!sessionId) {
+                // Generate unique session ID
+                sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                sessionStorage.setItem('foodhub_session_id', sessionId);
+            }
+            
+            return sessionId;
+        };
+
+        // Track visit
+        const trackVisit = async () => {
+            // Only track if user is logged in
+            if (!user) {
+                console.log('User not logged in, skipping visit tracking');
+                return;
+            }
+
+            try {
+                const sessionId = getSessionId();
+                
+                const response = await fetch('/api/visit/track', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ sessionId }),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.log('Visit counter backend not ready');
+                    return;
+                }
+
+                const data = await response.json();
+                console.log('✅ Visit tracked successfully:', data);
+                setVisitCount(data.totalVisits);
+                setUserVisitCount(data.userVisitCount);
+                
+            } catch (error) {
+                console.error('❌ Visit tracking error:', error.message);
+            }
+        };
+
+        trackVisit();
+
         const handleBeforeInstallPrompt = (e) => {
             e.preventDefault();
             setDeferredPrompt(e);
@@ -34,7 +93,7 @@ const DashboardPage = () => {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
             window.removeEventListener('appinstalled', handleAppInstalled);
         };
-    }, []);
+    }, [user]);
 
     const handleInstallApp = async () => {
         if (deferredPrompt) {
@@ -57,16 +116,13 @@ const DashboardPage = () => {
 
     const handleGetStarted = () => {
         if (user) {
-            // If user is logged in, go to recipes
             navigate('/recipes');
         } else {
-            // If not logged in, show Join Now -> go to signup
             navigate('/signup');
         }
     };
 
     const handleExploreRecipes = () => {
-        // Anyone can browse recipes
         navigate('/recipes');
     };
 
@@ -74,6 +130,33 @@ const DashboardPage = () => {
         <div className="dashboard-page">
             <Navbar />
             
+            {/* Visit Counter Display - Only show if logged in and has data */}
+            {user && userVisitCount > 0 && (
+                <div className="visit-counter-wrapper">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5 }}
+                        className="visit-counter"
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <i className="bx bx-globe" style={{ fontSize: '18px' }}></i>
+                            <span>{visitCount.toLocaleString()} total visits</span>
+                        </div>
+                        <div style={{ 
+                            fontSize: '12px', 
+                            opacity: 0.9,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                        }}>
+                            <i className="bx bx-user" style={{ fontSize: '14px' }}></i>
+                            <span>You: {userVisitCount} {userVisitCount === 1 ? 'visit' : 'visits'}</span>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
             {/* Install App Notification */}
             {showInstallNotif && (
                 <motion.div
