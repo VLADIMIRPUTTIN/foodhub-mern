@@ -30,8 +30,39 @@ const DashboardPage = () => {
 
         const trackVisit = async () => {
             const sessionId = getSessionId();
+            
+            // ✅ Check if already counted in this session
+            const hasCountedThisSession = sessionStorage.getItem('visit_counted');
 
-            // ✅ Track visit for EVERYONE (logged-in or not)
+            // If already counted, just fetch the current totals without incrementing
+            if (hasCountedThisSession) {
+                try {
+                    // Just fetch total visits
+                    const totalResponse = await fetch('/api/visit/total');
+                    if (totalResponse.ok) {
+                        const data = await totalResponse.json();
+                        setVisitCount(data.totalVisits);
+                    }
+
+                    // If logged in, also fetch user visits
+                    if (user) {
+                        const userResponse = await fetch(`/api/visit/user/${user._id}`, {
+                            credentials: 'include'
+                        });
+                        if (userResponse.ok) {
+                            const userData = await userResponse.json();
+                            setUserVisitCount(userData.visitCount);
+                        }
+                    }
+                    
+                    console.log('📊 Displaying cached counts (no increment on refresh)');
+                } catch (error) {
+                    console.error('Error fetching visit counts:', error);
+                }
+                return; // Exit early - don't track again
+            }
+
+            // ✅ First visit in this session - track it
             if (!user) {
                 // Anonymous user tracking
                 try {
@@ -46,6 +77,8 @@ const DashboardPage = () => {
                     if (response.ok) {
                         const data = await response.json();
                         setVisitCount(data.totalVisits);
+                        // ✅ Mark as counted in this session
+                        sessionStorage.setItem('visit_counted', 'true');
                         console.log('✅ Anonymous visit tracked:', data);
                     }
                 } catch (error) {
@@ -67,6 +100,8 @@ const DashboardPage = () => {
                         const data = await response.json();
                         setVisitCount(data.totalVisits);
                         setUserVisitCount(data.userVisitCount);
+                        // ✅ Mark as counted in this session
+                        sessionStorage.setItem('visit_counted', 'true');
                         console.log('✅ User visit tracked:', data);
                     }
                 } catch (error) {
