@@ -23,6 +23,9 @@ const DashboardPage = () => {
             if (!sessionId) {
                 sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                 sessionStorage.setItem('foodhub_session_id', sessionId);
+                console.log('🆕 New session ID created:', sessionId);
+            } else {
+                console.log('♻️ Using existing session ID:', sessionId);
             }
             
             return sessionId;
@@ -31,20 +34,21 @@ const DashboardPage = () => {
         const trackVisit = async () => {
             const sessionId = getSessionId();
             
-            // ✅ Check if already counted in this session
-            const hasCountedThisSession = sessionStorage.getItem('visit_counted');
+            // ✅ CRITICAL: Check if already counted in this session
+            const hasCountedThisSession = sessionStorage.getItem(`visit_counted_${sessionId}`);
 
-            // If already counted, just fetch the current totals without incrementing
-            if (hasCountedThisSession) {
+            if (hasCountedThisSession === 'true') {
+                console.log('⛔ Already counted in this session, skipping track call');
+                
+                // Just fetch current counts without calling track endpoints
                 try {
-                    // Just fetch total visits
                     const totalResponse = await fetch('/api/visit/total');
                     if (totalResponse.ok) {
                         const data = await totalResponse.json();
                         setVisitCount(data.totalVisits);
+                        console.log('📊 Fetched total visits:', data.totalVisits);
                     }
 
-                    // If logged in, also fetch user visits
                     if (user) {
                         const userResponse = await fetch(`/api/visit/user/${user._id}`, {
                             credentials: 'include'
@@ -52,17 +56,18 @@ const DashboardPage = () => {
                         if (userResponse.ok) {
                             const userData = await userResponse.json();
                             setUserVisitCount(userData.visitCount);
+                            console.log('📊 Fetched user visits:', userData.visitCount);
                         }
                     }
-                    
-                    console.log('📊 Displaying cached counts (no increment on refresh)');
                 } catch (error) {
                     console.error('Error fetching visit counts:', error);
                 }
-                return; // Exit early - don't track again
+                return; // ✅ Exit early - don't track again!
             }
 
             // ✅ First visit in this session - track it
+            console.log('✅ First visit in this session, tracking...');
+            
             if (!user) {
                 // Anonymous user tracking
                 try {
@@ -77,12 +82,12 @@ const DashboardPage = () => {
                     if (response.ok) {
                         const data = await response.json();
                         setVisitCount(data.totalVisits);
-                        // ✅ Mark as counted in this session
-                        sessionStorage.setItem('visit_counted', 'true');
-                        console.log('✅ Anonymous visit tracked:', data);
+                        // ✅ Mark as counted for THIS specific session
+                        sessionStorage.setItem(`visit_counted_${sessionId}`, 'true');
+                        console.log('✅ Anonymous visit tracked successfully:', data);
                     }
                 } catch (error) {
-                    console.error('Error tracking anonymous visit:', error);
+                    console.error('❌ Error tracking anonymous visit:', error);
                 }
             } else {
                 // Logged-in user tracking
@@ -100,12 +105,12 @@ const DashboardPage = () => {
                         const data = await response.json();
                         setVisitCount(data.totalVisits);
                         setUserVisitCount(data.userVisitCount);
-                        // ✅ Mark as counted in this session
-                        sessionStorage.setItem('visit_counted', 'true');
-                        console.log('✅ User visit tracked:', data);
+                        // ✅ Mark as counted for THIS specific session
+                        sessionStorage.setItem(`visit_counted_${sessionId}`, 'true');
+                        console.log('✅ User visit tracked successfully:', data);
                     }
                 } catch (error) {
-                    console.error('Error tracking user visit:', error);
+                    console.error('❌ Error tracking user visit:', error);
                 }
             }
         };
