@@ -11,7 +11,8 @@ export const ensureVisitorUid = () => {
 };
 
 export const initVisitCounter = async (API_BASE) => {
-  const base = (import.meta.env.DEV ? API_BASE : ""); // relative in prod
+  // Production: use empty string (relative)
+  const base = import.meta.env.DEV ? API_BASE : "";
   const uid = ensureVisitorUid();
   if (sessionStorage.getItem("visit_session_active")) return;
   sessionStorage.setItem("visit_session_active", "1");

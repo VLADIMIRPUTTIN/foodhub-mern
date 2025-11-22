@@ -139,14 +139,14 @@ const DashboardWithOnboardingCheck = ({ children }) => {
 };
 
 function App() {
-    // Production: walang localhost fallback
+    // Force relative paths in production (empty string)
     const API_BASE = import.meta.env.DEV
         ? (import.meta.env.VITE_API_URL || "http://localhost:5000")
-        : (import.meta.env.VITE_API_URL || ""); // empty => relative
+        : ""; // empty = relative
 
     useEffect(() => {
         console.log("[App] API_BASE:", API_BASE || "(relative)");
-        initVisitCounter(API_BASE || "");
+        initVisitCounter(API_BASE);
     }, [API_BASE]);
 
     const { isCheckingAuth, checkAuth } = useAuthStore();

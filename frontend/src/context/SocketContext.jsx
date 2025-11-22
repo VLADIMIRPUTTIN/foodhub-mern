@@ -51,8 +51,8 @@ export const SocketProvider = ({ children }) => {
                 : "";
                 
             const SOCKET_URL = import.meta.env.DEV
-              ? (import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:5000")
-              : window.location.origin;
+                ? (import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:5000")
+                : window.location.origin; // same-origin in prod
 
             socketInstance = io(SOCKET_URL, { withCredentials: true });
             // socketInstance = io(SOCKET_URL, { withCredentials: true });
