@@ -16,6 +16,51 @@ router.get('/total', async (req, res) => {
     }
 });
 
+// ✅ PUBLIC: Track anonymous visit (no login required)
+router.post('/track-anonymous', async (req, res) => {
+    try {
+        const { sessionId } = req.body;
+
+        if (!sessionId) {
+            return res.status(400).json({ message: 'Session ID required' });
+        }
+
+        // Use a special "anonymous" user ID
+        const anonymousUserId = 'anonymous';
+        
+        let visit = await Visit.findOne({ userId: anonymousUserId });
+
+        if (!visit) {
+            visit = await Visit.create({
+                userId: anonymousUserId,
+                visitCount: 1,
+                sessions: [{ sessionId, timestamp: new Date() }]
+            });
+        } else {
+            const sessionExists = visit.sessions.some(s => s.sessionId === sessionId);
+            
+            if (!sessionExists) {
+                visit.visitCount += 1;
+                visit.sessions.push({ sessionId, timestamp: new Date() });
+                visit.lastVisit = new Date();
+                await visit.save();
+            }
+        }
+
+        // Get total visits
+        const allVisits = await Visit.find();
+        const totalVisits = allVisits.reduce((sum, v) => sum + v.visitCount, 0);
+
+        res.json({ 
+            totalVisits,
+            anonymousVisits: visit.visitCount
+        });
+    } catch (error) {
+        console.error('Error tracking anonymous visit:', error);
+        res.status(500).json({ message: 'Error tracking visit' });
+    }
+});
+
 // Get user's visit count
 router.get('/user/:userId', verifyToken, async (req, res) => {
     try {

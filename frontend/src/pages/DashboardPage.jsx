@@ -29,22 +29,31 @@ const DashboardPage = () => {
         };
 
         const trackVisit = async () => {
-            // ✅ For ALL users (logged-in or not), fetch total visits
-            try {
-                const response = await fetch('/api/visit/total');
-                if (response.ok) {
-                    const data = await response.json();
-                    setVisitCount(data.totalVisits);
-                }
-            } catch (error) {
-                console.error('Error fetching total visits:', error);
-            }
+            const sessionId = getSessionId();
 
-            // ✅ Only track individual visits if logged in
-            if (user) {
+            // ✅ Track visit for EVERYONE (logged-in or not)
+            if (!user) {
+                // Anonymous user tracking
                 try {
-                    const sessionId = getSessionId();
-                    
+                    const response = await fetch('/api/visit/track-anonymous', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ sessionId }),
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        setVisitCount(data.totalVisits);
+                        console.log('✅ Anonymous visit tracked:', data);
+                    }
+                } catch (error) {
+                    console.error('Error tracking anonymous visit:', error);
+                }
+            } else {
+                // Logged-in user tracking
+                try {
                     const response = await fetch('/api/visit/track', {
                         method: 'POST',
                         headers: {
@@ -58,7 +67,7 @@ const DashboardPage = () => {
                         const data = await response.json();
                         setVisitCount(data.totalVisits);
                         setUserVisitCount(data.userVisitCount);
-                        console.log('✅ Visit tracked:', data);
+                        console.log('✅ User visit tracked:', data);
                     }
                 } catch (error) {
                     console.error('Error tracking user visit:', error);

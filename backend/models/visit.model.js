@@ -2,8 +2,7 @@ import mongoose from 'mongoose';
 
 const visitSchema = new mongoose.Schema({
     userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        type: String, // Changed from ObjectId to String to support "anonymous"
         required: true
     },
     visitCount: {
