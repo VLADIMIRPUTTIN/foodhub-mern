@@ -17,105 +17,49 @@ const DashboardPage = () => {
     const [userVisitCount, setUserVisitCount] = useState(0);
 
     useEffect(() => {
-        const getSessionId = () => {
-            let sessionId = sessionStorage.getItem('foodhub_session_id');
-            
-            if (!sessionId) {
-                sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                sessionStorage.setItem('foodhub_session_id', sessionId);
-                console.log('🆕 New session ID created:', sessionId);
-            } else {
-                console.log('♻️ Using existing session ID:', sessionId);
-            }
-            
-            return sessionId;
-        };
+        // Stable sessionId per tab (persists through refresh; new when tab closed)
+        let sessionId = sessionStorage.getItem('foodhub_session_id');
+        if (!sessionId) {
+            sessionId = `sess_${crypto.randomUUID?.() || Date.now()}`;
+            sessionStorage.setItem('foodhub_session_id', sessionId);
+            console.log('🆕 New tab session:', sessionId);
+        } else {
+            console.log('♻️ Reused session (refresh):', sessionId);
+        }
 
-        const trackVisit = async () => {
-            const sessionId = getSessionId();
-            
-            // ✅ CRITICAL: Check if already counted in this session
-            const hasCountedThisSession = sessionStorage.getItem(`visit_counted_${sessionId}`);
-
-            if (hasCountedThisSession === 'true') {
-                console.log('⛔ Already counted in this session, skipping track call');
-                
-                // Just fetch current counts without calling track endpoints
-                try {
-                    const totalResponse = await fetch('/api/visit/total');
-                    if (totalResponse.ok) {
-                        const data = await totalResponse.json();
-                        setVisitCount(data.totalVisits);
-                        console.log('📊 Fetched total visits:', data.totalVisits);
-                    }
-
-                    if (user) {
-                        const userResponse = await fetch(`/api/visit/user/${user._id}`, {
-                            credentials: 'include'
-                        });
-                        if (userResponse.ok) {
-                            const userData = await userResponse.json();
-                            setUserVisitCount(userData.visitCount);
-                            console.log('📊 Fetched user visits:', userData.visitCount);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error fetching visit counts:', error);
-                }
-                return; // ✅ Exit early - don't track again!
-            }
-
-            // ✅ First visit in this session - track it
-            console.log('✅ First visit in this session, tracking...');
-            
-            if (!user) {
-                // Anonymous user tracking
-                try {
-                    const response = await fetch('/api/visit/track-anonymous', {
+        const run = async () => {
+            try {
+                if (user) {
+                    const r = await fetch('/api/visit/track', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ sessionId }),
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        setVisitCount(data.totalVisits);
-                        // ✅ Mark as counted for THIS specific session
-                        sessionStorage.setItem(`visit_counted_${sessionId}`, 'true');
-                        console.log('✅ Anonymous visit tracked successfully:', data);
-                    }
-                } catch (error) {
-                    console.error('❌ Error tracking anonymous visit:', error);
-                }
-            } else {
-                // Logged-in user tracking
-                try {
-                    const response = await fetch('/api/visit/track', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ sessionId }),
                         credentials: 'include'
                     });
-
-                    if (response.ok) {
-                        const data = await response.json();
+                    if (r.ok) {
+                        const data = await r.json();
                         setVisitCount(data.totalVisits);
                         setUserVisitCount(data.userVisitCount);
-                        // ✅ Mark as counted for THIS specific session
-                        sessionStorage.setItem(`visit_counted_${sessionId}`, 'true');
-                        console.log('✅ User visit tracked successfully:', data);
+                        console.log(data.incremented ? '✅ Count +1 (new tab)' : '⛔ No increment (refresh)');
                     }
-                } catch (error) {
-                    console.error('❌ Error tracking user visit:', error);
+                } else {
+                    const r = await fetch('/api/visit/track-anonymous', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sessionId })
+                    });
+                    if (r.ok) {
+                        const data = await r.json();
+                        setVisitCount(data.totalVisits);
+                        console.log(data.incremented ? '✅ Anonymous +1' : '⛔ Anonymous no increment');
+                    }
                 }
+            } catch (e) {
+                console.error('Visit track error:', e);
             }
         };
 
-        trackVisit();
+        run();
 
         const handleBeforeInstallPrompt = (e) => {
             e.preventDefault();
@@ -585,7 +529,7 @@ const DashboardPage = () => {
                                 animate={{ scale: 1, y: 0 }}
                                 transition={{ 
                                     delay: 0.9, 
-                                    type: "spring", 
+                                    type: "spring",
                                     bounce: 0.6,
                                     stiffness: 200
                                 }}

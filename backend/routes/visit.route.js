@@ -4,128 +4,98 @@ import { verifyToken } from '../middleware/verifyToken.js';
 
 const router = express.Router();
 
-// ✅ PUBLIC: Get total site visits (accessible to everyone)
+// Get total visits
 router.get('/total', async (req, res) => {
     try {
-        const visits = await Visit.find();
-        const totalVisits = visits.reduce((sum, visit) => sum + visit.visitCount, 0);
-        res.json({ totalVisits });
-    } catch (error) {
-        console.error('Error fetching total visits:', error);
+        const agg = await Visit.aggregate([
+            { $group: { _id: null, total: { $sum: "$visitCount" } } }
+        ]);
+        res.json({ totalVisits: agg.length ? agg[0].total : 0 });
+    } catch (e) {
+        console.error(e);
         res.status(500).json({ message: 'Error fetching total visits' });
     }
 });
 
-// ✅ PUBLIC: Track anonymous visit (no login required)
+// Track anonymous (idempotent)
 router.post('/track-anonymous', async (req, res) => {
     try {
         const { sessionId } = req.body;
+        if (!sessionId) return res.status(400).json({ message: 'Session ID required' });
 
-        if (!sessionId) {
-            return res.status(400).json({ message: 'Session ID required' });
-        }
+        const userId = 'anonymous';
+        const now = new Date();
 
-        // Use a special "anonymous" user ID
-        const anonymousUserId = 'anonymous';
-        
-        let visit = await Visit.findOne({ userId: anonymousUserId });
+        // Atomic upsert & conditional increment
+        const result = await Visit.updateOne(
+            { userId, 'sessions.sessionId': { $ne: sessionId } },
+            {
+                $inc: { visitCount: 1 },
+                $push: { sessions: { sessionId, timestamp: now } },
+                $set: { lastVisit: now }
+            },
+            { upsert: true }
+        );
 
-        if (!visit) {
-            // First visit ever
-            visit = await Visit.create({
-                userId: anonymousUserId,
-                visitCount: 1,
-                sessions: [{ sessionId, timestamp: new Date() }]
-            });
-            console.log('✅ First anonymous visit tracked');
-        } else {
-            // Check if this EXACT session ID already exists
-            const sessionExists = visit.sessions.some(s => s.sessionId === sessionId);
-            
-            if (!sessionExists) {
-                // New session - increment count
-                visit.visitCount += 1;
-                visit.sessions.push({ sessionId, timestamp: new Date() });
-                visit.lastVisit = new Date();
-                await visit.save();
-                console.log('✅ New anonymous session tracked, count:', visit.visitCount);
-            } else {
-                console.log('📊 Session already exists, not incrementing');
-            }
-        }
+        // Fetch current doc
+        const visitDoc = await Visit.findOne({ userId });
+        const agg = await Visit.aggregate([{ $group: { _id: null, total: { $sum: "$visitCount" } } }]);
+        const totalVisits = agg.length ? agg[0].total : 0;
 
-        // Get total visits
-        const allVisits = await Visit.find();
-        const totalVisits = allVisits.reduce((sum, v) => sum + v.visitCount, 0);
-
-        res.json({ 
+        res.json({
             totalVisits,
-            anonymousVisits: visit.visitCount,
-            sessionId // Return session ID for verification
+            anonymousVisits: visitDoc.visitCount,
+            incremented: (result.modifiedCount > 0 || result.upsertedCount) ? true : false,
+            sessionId
         });
-    } catch (error) {
-        console.error('Error tracking anonymous visit:', error);
-        res.status(500).json({ message: 'Error tracking visit' });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ message: 'Error tracking anonymous visit' });
     }
 });
 
-// Get user's visit count
+// Get user visit count
 router.get('/user/:userId', async (req, res) => {
     try {
         const visit = await Visit.findOne({ userId: req.params.userId });
         res.json({ visitCount: visit ? visit.visitCount : 0 });
-    } catch (error) {
-        console.error('Error fetching user visit count:', error);
+    } catch (e) {
+        console.error(e);
         res.status(500).json({ message: 'Error fetching user visits' });
     }
 });
 
-// ✅ Track visit with session ID (for logged-in users only)
+// Track logged-in user (idempotent)
 router.post('/track', verifyToken, async (req, res) => {
     try {
         const { sessionId } = req.body;
+        if (!sessionId) return res.status(400).json({ message: 'Session ID required' });
+
         const userId = req.userId;
+        const now = new Date();
 
-        if (!sessionId) {
-            return res.status(400).json({ message: 'Session ID required' });
-        }
+        const result = await Visit.updateOne(
+            { userId, 'sessions.sessionId': { $ne: sessionId } },
+            {
+                $inc: { visitCount: 1 },
+                $push: { sessions: { sessionId, timestamp: now } },
+                $set: { lastVisit: now }
+            },
+            { upsert: true }
+        );
 
-        let visit = await Visit.findOne({ userId });
+        const visitDoc = await Visit.findOne({ userId });
+        const agg = await Visit.aggregate([{ $group: { _id: null, total: { $sum: "$visitCount" } } }]);
+        const totalVisits = agg.length ? agg[0].total : 0;
 
-        if (!visit) {
-            // First visit ever for this user
-            visit = await Visit.create({
-                userId,
-                visitCount: 1,
-                sessions: [{ sessionId, timestamp: new Date() }]
-            });
-            console.log(`✅ First visit tracked for user ${userId}`);
-        } else {
-            // Check if this EXACT session ID already exists
-            const sessionExists = visit.sessions.some(s => s.sessionId === sessionId);
-            
-            if (!sessionExists) {
-                // New session - increment count
-                visit.visitCount += 1;
-                visit.sessions.push({ sessionId, timestamp: new Date() });
-                visit.lastVisit = new Date();
-                await visit.save();
-                console.log(`✅ New session tracked for user ${userId}, count:`, visit.visitCount);
-            } else {
-                console.log(`📊 Session already exists for user ${userId}, not incrementing`);
-            }
-        }
-
-        const allVisits = await Visit.find();
-        const totalVisits = allVisits.reduce((sum, v) => sum + v.visitCount, 0);
-
-        res.json({ 
-            userVisitCount: visit.visitCount,
+        res.json({
+            userVisitCount: visitDoc.visitCount,
             totalVisits,
-            sessionId // Return session ID for verification
+            incremented: (result.modifiedCount > 0 || result.upsertedCount) ? true : false,
+            sessionId
         });
-    } catch (error) {
-        console.error('Error tracking visit:', error);
+    } catch (e) {
+        console.error(e);
         res.status(500).json({ message: 'Error tracking visit' });
     }
 });
