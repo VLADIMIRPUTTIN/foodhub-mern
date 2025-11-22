@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { useAuthStore } from "../store/authStore";
-import { useNavigate } from "react-router-dom";
-import Navbar from "./NavbarPage";
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { useAuthStore } from '../store/authStore';
+import { useNavigate } from 'react-router-dom';
+import Navbar from './NavbarPage';
 import './DashboardPage.scss';
 
 const DashboardPage = () => {
@@ -16,50 +16,70 @@ const DashboardPage = () => {
     const [visitCount, setVisitCount] = useState(0);
     const [userVisitCount, setUserVisitCount] = useState(0);
 
-    useEffect(() => {
-        // Stable sessionId per tab (persists through refresh; new when tab closed)
-        let sessionId = sessionStorage.getItem('foodhub_session_id');
+    // Generate or retrieve session ID - THIS IS THE KEY FIX
+    const getSessionId = () => {
+        let sessionId = sessionStorage.getItem('visitSessionId');
+        
         if (!sessionId) {
-            sessionId = `sess_${crypto.randomUUID?.() || Date.now()}`;
-            sessionStorage.setItem('foodhub_session_id', sessionId);
+            // Only create NEW sessionId if it doesn't exist
+            sessionId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            sessionStorage.setItem('visitSessionId', sessionId);
             console.log('🆕 New tab session:', sessionId);
         } else {
             console.log('♻️ Reused session (refresh):', sessionId);
         }
+        
+        return sessionId;
+    };
 
-        const run = async () => {
+    useEffect(() => {
+        const trackVisit = async () => {
+            const sessionId = getSessionId(); // Get or create session ID
+            
             try {
                 if (user) {
-                    const r = await fetch('/api/visit/track', {
+                    // Track logged-in user
+                    const response = await fetch('/api/visit/track', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sessionId }),
-                        credentials: 'include'
+                        credentials: 'include',
+                        body: JSON.stringify({ sessionId })
                     });
-                    if (r.ok) {
-                        const data = await r.json();
-                        setVisitCount(data.totalVisits);
-                        setUserVisitCount(data.userVisitCount);
-                        console.log(data.incremented ? '✅ Count +1 (new tab)' : '⛔ No increment (refresh)');
+                    
+                    const data = await response.json();
+                    
+                    if (data.incremented) {
+                        console.log('✅ User visit +1');
+                    } else {
+                        console.log('ℹ️ Same session, no increment');
                     }
+                    
+                    setUserVisitCount(data.userVisitCount);
+                    setVisitCount(data.totalVisits);
                 } else {
-                    const r = await fetch('/api/visit/track-anonymous', {
+                    // Track anonymous user
+                    const response = await fetch('/api/visit/track-anonymous', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ sessionId })
                     });
-                    if (r.ok) {
-                        const data = await r.json();
-                        setVisitCount(data.totalVisits);
-                        console.log(data.incremented ? '✅ Anonymous +1' : '⛔ Anonymous no increment');
+                    
+                    const data = await response.json();
+                    
+                    if (data.incremented) {
+                        console.log('✅ Anonymous +1');
+                    } else {
+                        console.log('ℹ️ Same session, no increment');
                     }
+                    
+                    setVisitCount(data.totalVisits);
                 }
-            } catch (e) {
-                console.error('Visit track error:', e);
+            } catch (error) {
+                console.error('Error tracking visit:', error);
             }
         };
 
-        run();
+        trackVisit();
 
         const handleBeforeInstallPrompt = (e) => {
             e.preventDefault();
