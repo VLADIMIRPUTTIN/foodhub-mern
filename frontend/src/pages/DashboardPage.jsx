@@ -9,22 +9,18 @@ const DashboardPage = () => {
     const { user, logout } = useAuthStore();
     const navigate = useNavigate();
 
-    // PWA install prompt state
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [showInstallBtn, setShowInstallBtn] = useState(false);
     const [showInstallNotif, setShowInstallNotif] = useState(false);
     
-    // Visit counter state
     const [visitCount, setVisitCount] = useState(0);
     const [userVisitCount, setUserVisitCount] = useState(0);
 
     useEffect(() => {
-        // Generate or get session ID (stored in sessionStorage - clears when tab/browser closes)
         const getSessionId = () => {
             let sessionId = sessionStorage.getItem('foodhub_session_id');
             
             if (!sessionId) {
-                // Generate unique session ID
                 sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                 sessionStorage.setItem('foodhub_session_id', sessionId);
             }
@@ -32,43 +28,41 @@ const DashboardPage = () => {
             return sessionId;
         };
 
-        // Track visit
         const trackVisit = async () => {
-            // Only track if user is logged in
-            if (!user) {
-                console.log('User not logged in, skipping visit tracking');
-                return;
+            // ✅ For ALL users (logged-in or not), fetch total visits
+            try {
+                const response = await fetch('/api/visit/total');
+                if (response.ok) {
+                    const data = await response.json();
+                    setVisitCount(data.totalVisits);
+                }
+            } catch (error) {
+                console.error('Error fetching total visits:', error);
             }
 
-            try {
-                const sessionId = getSessionId();
-                
-                const response = await fetch('/api/visit/track', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ sessionId }),
-                    credentials: 'include'
-                });
+            // ✅ Only track individual visits if logged in
+            if (user) {
+                try {
+                    const sessionId = getSessionId();
+                    
+                    const response = await fetch('/api/visit/track', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ sessionId }),
+                        credentials: 'include'
+                    });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        setVisitCount(data.totalVisits);
+                        setUserVisitCount(data.userVisitCount);
+                        console.log('✅ Visit tracked:', data);
+                    }
+                } catch (error) {
+                    console.error('Error tracking user visit:', error);
                 }
-
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    console.log('Visit counter backend not ready');
-                    return;
-                }
-
-                const data = await response.json();
-                console.log('✅ Visit tracked successfully:', data);
-                setVisitCount(data.totalVisits);
-                setUserVisitCount(data.userVisitCount);
-                
-            } catch (error) {
-                console.error('❌ Visit tracking error:', error.message);
             }
         };
 
@@ -130,33 +124,6 @@ const DashboardPage = () => {
         <div className="dashboard-page">
             <Navbar />
             
-            {/* Visit Counter Display - Only show if logged in and has data */}
-            {user && userVisitCount > 0 && (
-                <div className="visit-counter-wrapper">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.5 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.5 }}
-                        className="visit-counter"
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <i className="bx bx-globe" style={{ fontSize: '18px' }}></i>
-                            <span>{visitCount.toLocaleString()} total visits</span>
-                        </div>
-                        <div style={{ 
-                            fontSize: '12px', 
-                            opacity: 0.9,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px'
-                        }}>
-                            <i className="bx bx-user" style={{ fontSize: '14px' }}></i>
-                            <span>You: {userVisitCount} {userVisitCount === 1 ? 'visit' : 'visits'}</span>
-                        </div>
-                    </motion.div>
-                </div>
-            )}
-
             {/* Install App Notification */}
             {showInstallNotif && (
                 <motion.div
@@ -204,6 +171,7 @@ const DashboardPage = () => {
                         >
                             {user ? `Welcome Back, ${user.name}!` : 'Welcome to FoodHub!'}
                         </motion.h1>
+
                         <motion.p
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -211,6 +179,65 @@ const DashboardPage = () => {
                         >
                             Discover delicious recipes based on what's already in your kitchen. Save time, reduce waste, and cook with confidence.
                         </motion.p>
+
+                        {/* ✅ Visit Counter - Below description */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.6, delay: 0.3 }}
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: 'rgba(207, 153, 108, 0.15)',
+                                backdropFilter: 'blur(10px)',
+                                padding: '6px 14px',
+                                borderRadius: '30px',
+                                marginBottom: '1rem',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+                            }}
+                        >
+                            <i className="bx bx-globe" style={{ fontSize: '16px', color: '#CF996C' }}></i>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <span style={{ 
+                                    fontSize: '14px', 
+                                    fontWeight: '700', 
+                                    color: 'white',
+                                    textShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                                }}>
+                                    {visitCount.toLocaleString()}
+                                </span>
+                                <span style={{ 
+                                    fontSize: '11px', 
+                                    color: 'rgba(255, 255, 255, 0.85)',
+                                    fontWeight: '500'
+                                }}>
+                                    visits
+                                </span>
+                            </div>
+                            {user && userVisitCount > 0 && (
+                                <>
+                                    <div style={{
+                                        width: '1px',
+                                        height: '18px',
+                                        background: 'rgba(255, 255, 255, 0.3)'
+                                    }}></div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <i className="bx bx-user" style={{ fontSize: '14px', color: '#CF996C' }}></i>
+                                        <span style={{ 
+                                            fontSize: '13px', 
+                                            fontWeight: '600', 
+                                            color: 'white',
+                                            textShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                                        }}>
+                                            {userVisitCount}
+                                        </span>
+                                    </div>
+                                </>
+                            )}
+                        </motion.div>
+
                         <div style={{ display: "flex", gap: "1rem", alignItems: "center", marginTop: "1.2rem", flexWrap: "wrap" }}>
                             {/* Primary action button */}
                             <motion.button

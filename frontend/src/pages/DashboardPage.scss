@@ -398,12 +398,12 @@ $transition: all 0.3s ease;
     .visit-counter-wrapper {
         position: fixed;
         bottom: 100px;
-        right: 20px;
+        left: 20px;  // Changed from right to left
         z-index: 999;
 
         @media (max-width: 768px) {
             bottom: 90px;
-            right: 15px;
+            left: 15px;  // Changed from right to left
         }
     }
 
