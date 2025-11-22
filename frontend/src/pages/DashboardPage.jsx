@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
@@ -16,12 +16,14 @@ const DashboardPage = () => {
     const [visitCount, setVisitCount] = useState(0);
     const [userVisitCount, setUserVisitCount] = useState(0);
 
-    // Generate or retrieve session ID - THIS IS THE KEY FIX
+    // ✅ Use ref to prevent double tracking
+    const hasTrackedRef = useRef(false);
+
+    // Generate or retrieve session ID
     const getSessionId = () => {
         let sessionId = sessionStorage.getItem('visitSessionId');
         
         if (!sessionId) {
-            // Only create NEW sessionId if it doesn't exist
             sessionId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             sessionStorage.setItem('visitSessionId', sessionId);
             console.log('🆕 New tab session:', sessionId);
@@ -33,12 +35,17 @@ const DashboardPage = () => {
     };
 
     useEffect(() => {
+        // ✅ Prevent double tracking on strict mode
+        if (hasTrackedRef.current) {
+            console.log('⚠️ Already tracked, skipping...');
+            return;
+        }
+
         const trackVisit = async () => {
-            const sessionId = getSessionId(); // Get or create session ID
+            const sessionId = getSessionId();
             
             try {
                 if (user) {
-                    // Track logged-in user
                     const response = await fetch('/api/visit/track', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -57,7 +64,6 @@ const DashboardPage = () => {
                     setUserVisitCount(data.userVisitCount);
                     setVisitCount(data.totalVisits);
                 } else {
-                    // Track anonymous user
                     const response = await fetch('/api/visit/track-anonymous', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -74,6 +80,10 @@ const DashboardPage = () => {
                     
                     setVisitCount(data.totalVisits);
                 }
+
+                // ✅ Mark as tracked
+                hasTrackedRef.current = true;
+                
             } catch (error) {
                 console.error('Error tracking visit:', error);
             }
