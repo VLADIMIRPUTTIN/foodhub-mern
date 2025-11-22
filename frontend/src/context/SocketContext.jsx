@@ -50,7 +50,11 @@ export const SocketProvider = ({ children }) => {
                 ? "http://localhost:5000"
                 : "";
                 
-            socketInstance = io(baseURL, {
+            const SOCKET_URL = import.meta.env.DEV
+              ? (import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:5000")
+              : window.location.origin;
+            
+            socketInstance = io(SOCKET_URL, {
                 withCredentials: true
             });
 

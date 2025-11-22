@@ -35,9 +35,9 @@ const SignUpPage = () => {
         try {
             console.log("Starting Google signup process...");
             
-            const baseURL = import.meta.env.MODE === "development" 
-                ? "http://localhost:5000" 
-                : "";
+            const baseURL = import.meta.env.DEV
+  ? (import.meta.env.VITE_API_URL || "http://localhost:5000")
+  : ""; // relative
                 
             const response = await axios.post(
                 `${baseURL}/api/auth/google-login`,
@@ -85,9 +85,9 @@ const SignUpPage = () => {
 
     const handleGoogleLogin = async (credentialResponse) => {
         try {
-            const baseURL = import.meta.env.MODE === "development" 
-                ? "http://localhost:5000" 
-                : "";
+            const baseURL = import.meta.env.DEV
+  ? (import.meta.env.VITE_API_URL || "http://localhost:5000")
+  : ""; // relative
                 
             const response = await axios.post(
                 `${baseURL}/api/auth/google-login`,

@@ -139,17 +139,18 @@ const DashboardWithOnboardingCheck = ({ children }) => {
 };
 
 function App() {
-    const { isCheckingAuth, checkAuth } = useAuthStore();
-    const [globalAccountStatus, setGlobalAccountStatus] = useState(null);
-
+    // Production: walang localhost fallback
     const API_BASE = import.meta.env.DEV
         ? (import.meta.env.VITE_API_URL || "http://localhost:5000")
-        : (import.meta.env.VITE_API_URL || window.location.origin);
+        : (import.meta.env.VITE_API_URL || ""); // empty => relative
 
     useEffect(() => {
-        console.log("[App] API_BASE:", API_BASE);
-        initVisitCounter(API_BASE);
+        console.log("[App] API_BASE:", API_BASE || "(relative)");
+        initVisitCounter(API_BASE || "");
     }, [API_BASE]);
+
+    const { isCheckingAuth, checkAuth } = useAuthStore();
+    const [globalAccountStatus, setGlobalAccountStatus] = useState(null);
 
     useEffect(() => {
         console.log("App initializing auth check...");

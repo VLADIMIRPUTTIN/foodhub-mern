@@ -11,18 +11,13 @@ export const ensureVisitorUid = () => {
 };
 
 export const initVisitCounter = async (API_BASE) => {
-  // Guard: if production build somehow still has localhost, skip to prevent prompt.
-  if (!import.meta.env.DEV && /localhost|127\.0\.0\.1/.test(API_BASE)) {
-    console.warn("[visitCounter] Skipping increment: API_BASE points to localhost in prod.");
-    return;
-  }
-
+  const base = (import.meta.env.DEV ? API_BASE : ""); // relative in prod
   const uid = ensureVisitorUid();
   if (sessionStorage.getItem("visit_session_active")) return;
   sessionStorage.setItem("visit_session_active", "1");
 
   try {
-    await fetch(`${API_BASE}/api/visits/increment`, {
+    await fetch(`${base}/api/visits/increment`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ visitorUid: uid })
