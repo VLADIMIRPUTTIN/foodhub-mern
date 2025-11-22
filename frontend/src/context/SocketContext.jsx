@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { io } from 'socket.io-client';
+import io from "socket.io-client";
 import { useAuthStore } from '../store/authStore';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -43,20 +43,22 @@ export const SocketProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        let socketInstance = null;
+        // Production: use relative path (empty string = same-origin)
+        // Dev: use explicit localhost
+        const SOCKET_URL = import.meta.env.DEV
+            ? (import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:5000")
+            : ""; // EMPTY = relative/same-origin in prod
+
+        console.log("[Socket] Connecting to:", SOCKET_URL || "(same-origin)");
+        
+        const socketInstance = io(SOCKET_URL, { 
+            withCredentials: true,
+            transports: ['websocket', 'polling'] // fallback if websocket blocked
+        });
+        
+        setSocket(socketInstance);
 
         if (isAuthenticated && user) {
-            const baseURL = import.meta.env.MODE === "development"
-                ? "http://localhost:5000"
-                : "";
-                
-            const SOCKET_URL = import.meta.env.DEV
-                ? (import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:5000")
-                : window.location.origin; // same-origin in prod
-
-            socketInstance = io(SOCKET_URL, { withCredentials: true });
-            // socketInstance = io(SOCKET_URL, { withCredentials: true });
-
             socketInstance.on('connect', () => {
                 console.log('Socket connected!');
                 socketInstance.emit('join', user._id);
@@ -113,16 +115,12 @@ export const SocketProvider = ({ children }) => {
                     playNotificationSound();
                 }
             });
-
-            setSocket(socketInstance);
         }
 
         return () => {
-            if (socketInstance) {
-                socketInstance.disconnect();
-            }
+            socketInstance.disconnect();
         };
-    }, [isAuthenticated, user, isAdmin]);
+    }, [user, isAuthenticated, isAdmin]);
 
     return (
         <SocketContext.Provider value={{ 

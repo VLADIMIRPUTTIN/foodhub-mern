@@ -69,25 +69,16 @@ const allowedOrigins = [
     "https://foodhubrecipe.shop"
 ];
 
-// Update the CORS configuration
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps, curl requests)
+        // Allow requests with no origin (same-origin requests have no Origin header)
         if (!origin) return callback(null, true);
         
         if (allowedOrigins.includes(origin)) {
             return callback(null, true);
         }
         
-        // For production, be more strict
-        if (process.env.NODE_ENV === "production") {
-            console.log("Blocked by CORS in production:", origin);
-            return callback(new Error('Not allowed by CORS'), false);
-        }
-        
-        // For development, allow all
-        console.log("Allowed in development:", origin);
-        return callback(null, true);
+        callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
