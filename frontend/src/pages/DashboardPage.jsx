@@ -6,7 +6,7 @@ import Navbar from "./NavbarPage";
 import './DashboardPage.scss';
 import { ensureVisitorUid, initVisitCounter } from "../utils/visitCounter";
 
-const DashboardPage = ({ visitCount: initialVisitCount = 0 }) => {
+const DashboardPage = ({ visitCount: initialVisitCount = 0, apiBase }) => {
     const { user, logout } = useAuthStore();
     const navigate = useNavigate();
 
@@ -18,35 +18,54 @@ const DashboardPage = ({ visitCount: initialVisitCount = 0 }) => {
     const [totalVisits, setTotalVisits] = useState(null); // optional global count
 
     // Decide API base: dev -> VITE_API_URL; prod -> VITE_API_URL or same-origin
-    const API_BASE = import.meta.env.DEV
+    const API_BASE = apiBase || (import.meta.env.DEV
         ? (import.meta.env.VITE_API_URL || "http://localhost:5000")
-        : ((import.meta.env.VITE_API_URL?.replace(/\/$/, "")) || window.location.origin);
+        : (import.meta.env.VITE_API_URL || window.location.origin));
 
     // Run once: increment + fetch my visits
     useEffect(() => {
         const run = async () => {
+            console.log("[Dashboard] API_BASE:", API_BASE);
             try {
-                // Increment (first time per tab)
                 await initVisitCounter(API_BASE);
-
-                // Fetch my visit count
                 const uid = ensureVisitorUid();
-                const res = await fetch(`${API_BASE}/api/visits/me?visitorUid=${encodeURIComponent(uid)}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.visits) setVisitCount(data.visits);
-                } else {
-                    console.warn("Fetch /me failed:", res.status);
+                const me = await fetch(`${API_BASE}/api/visits/me?visitorUid=${encodeURIComponent(uid)}`);
+                if (me.ok) {
+                    const data = await me.json();
+                    setVisitCount(data.visits || 1);
                 }
-
-                // Optional: fetch total visits
-                const totalRes = await fetch(`${API_BASE}/api/visits/total`);
-                if (totalRes.ok) {
-                    const totalData = await totalRes.json();
-                    setTotalVisits(totalData.total);
+                const tot = await fetch(`${API_BASE}/api/visits/total`);
+                if (tot.ok) {
+                    const tData = await tot.json();
+                    setTotalVisits(tData.total);
                 }
-            } catch (e) {
-                console.error("Visit counter error:", e);
+            } catch (err) {
+                console.error("[Dashboard] visit counter fetch failed:", err);
+                // Fallback: retry once using window.location.origin if currently pointing to localhost in production
+                if (!import.meta.env.DEV && API_BASE.includes("localhost")) {
+                    const fallback = window.location.origin;
+                    console.log("[Dashboard] Retrying with fallback origin:", fallback);
+                    try {
+                        const uid = ensureVisitorUid();
+                        await fetch(`${fallback}/api/visits/increment`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ visitorUid: uid })
+                        });
+                        const me2 = await fetch(`${fallback}/api/visits/me?visitorUid=${encodeURIComponent(uid)}`);
+                        if (me2.ok) {
+                            const data2 = await me2.json();
+                            setVisitCount(data2.visits || 1);
+                        }
+                        const tot2 = await fetch(`${fallback}/api/visits/total`);
+                        if (tot2.ok) {
+                            const td2 = await tot2.json();
+                            setTotalVisits(td2.total);
+                        }
+                    } catch (e2) {
+                        console.error("[Dashboard] Fallback origin also failed:", e2);
+                    }
+                }
             }
         };
         run();

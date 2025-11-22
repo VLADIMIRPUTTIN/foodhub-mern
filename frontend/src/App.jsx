@@ -143,10 +143,11 @@ function App() {
     const [globalAccountStatus, setGlobalAccountStatus] = useState(null);
 
     const API_BASE = import.meta.env.DEV
-    ? (import.meta.env.VITE_API_URL || "http://localhost:5000")
-    : ((import.meta.env.VITE_API_URL?.replace(/\/$/, "")) || window.location.origin);
+        ? (import.meta.env.VITE_API_URL || "http://localhost:5000")
+        : (import.meta.env.VITE_API_URL || window.location.origin);
 
     useEffect(() => {
+        console.log("[App] API_BASE:", API_BASE);
         initVisitCounter(API_BASE);
     }, [API_BASE]);
 
@@ -183,16 +184,14 @@ function App() {
             <SocketProvider>
                 <div>
                     <Routes>
-                        {/* ✅ Dashboard now checks for onboarding */}
                         <Route
                             path='/'
                             element={
                                 <DashboardWithOnboardingCheck>
-                                    <DashboardPage />
+                                    <DashboardPage apiBase={API_BASE} />
                                 </DashboardWithOnboardingCheck>
                             }
                         />
-                        {/* ✅ Recipes page also checks for onboarding if user is logged in */}
                         <Route
                             path='/recipes'
                             element={
