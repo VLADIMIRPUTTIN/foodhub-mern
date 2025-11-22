@@ -31,3 +31,14 @@ export const getMyVisit = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const getTotalVisits = async (req, res) => {
+  try {
+    const agg = await VisitCounter.aggregate([
+      { $group: { _id: null, total: { $sum: "$visits" } } }
+    ]);
+    res.json({ total: agg[0]?.total || 0 });
+  } catch {
+    res.status(500).json({ message: "Server error" });
+  }
+};

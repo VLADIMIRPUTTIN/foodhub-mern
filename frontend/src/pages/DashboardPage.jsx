@@ -4,6 +4,7 @@ import { useAuthStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./NavbarPage";
 import './DashboardPage.scss';
+import { ensureVisitorUid, initVisitCounter } from "../utils/visitCounter";
 
 const DashboardPage = ({ visitCount: initialVisitCount = 0 }) => {
     const { user, logout } = useAuthStore();
@@ -14,11 +15,42 @@ const DashboardPage = ({ visitCount: initialVisitCount = 0 }) => {
     const [showInstallBtn, setShowInstallBtn] = useState(false);
     const [showInstallNotif, setShowInstallNotif] = useState(false);
     const [visitCount, setVisitCount] = useState(initialVisitCount);
+    const [totalVisits, setTotalVisits] = useState(null); // optional global count
 
     // Decide API base: dev -> VITE_API_URL; prod -> VITE_API_URL or same-origin
     const API_BASE = import.meta.env.DEV
-      ? (import.meta.env.VITE_API_URL || "http://localhost:5000")
-      : ((import.meta.env.VITE_API_URL?.replace(/\/$/, "")) || window.location.origin);
+        ? (import.meta.env.VITE_API_URL || "http://localhost:5000")
+        : ((import.meta.env.VITE_API_URL?.replace(/\/$/, "")) || window.location.origin);
+
+    // Run once: increment + fetch my visits
+    useEffect(() => {
+        const run = async () => {
+            try {
+                // Increment (first time per tab)
+                await initVisitCounter(API_BASE);
+
+                // Fetch my visit count
+                const uid = ensureVisitorUid();
+                const res = await fetch(`${API_BASE}/api/visits/me?visitorUid=${encodeURIComponent(uid)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.visits) setVisitCount(data.visits);
+                } else {
+                    console.warn("Fetch /me failed:", res.status);
+                }
+
+                // Optional: fetch total visits
+                const totalRes = await fetch(`${API_BASE}/api/visits/total`);
+                if (totalRes.ok) {
+                    const totalData = await totalRes.json();
+                    setTotalVisits(totalData.total);
+                }
+            } catch (e) {
+                console.error("Visit counter error:", e);
+            }
+        };
+        run();
+    }, [API_BASE]);
 
     useEffect(() => {
         const handleBeforeInstallPrompt = (e) => {
@@ -75,28 +107,6 @@ const DashboardPage = ({ visitCount: initialVisitCount = 0 }) => {
         // Anyone can browse recipes
         navigate('/recipes');
     };
-
-    useEffect(() => {
-  const uid = localStorage.getItem("visitor_uid"); // created by initVisitCounter
-  if (!uid) return;
-
-  const load = async () => {
-    try {
-      const r = await fetch(`${API_BASE}/api/visits/me?visitorUid=${uid}`);
-      if (r.ok) {
-        const d = await r.json();
-        setVisitCount(d.visits);
-      } else if (r.status === 404) {
-        // doc might still be creating on very first load; retry shortly
-        setTimeout(load, 600);
-      }
-    } catch (err) {
-      console.error("Visit counter (read) error:", err);
-    }
-  };
-
-  load();
-}, [API_BASE]);
 
     return (
         <div className="dashboard-page">
@@ -176,6 +186,29 @@ const DashboardPage = ({ visitCount: initialVisitCount = 0 }) => {
                                 {visitCount}
                             </motion.span>
                         </motion.div>
+
+                        {/* Optional global visit counter badge */}
+                        {totalVisits !== null && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.6, delay: 0.4 }}
+                                className="visit-counter-badge"
+                                style={{ marginLeft: '8px' }}
+                            >
+                                <i className="bx bx-group"></i>
+                                <span className="visit-label">Total:</span>
+                                <motion.span 
+                                    className="visit-count"
+                                    key={totalVisits}
+                                    initial={{ scale: 1.3 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: "spring", stiffness: 300 }}
+                                >
+                                    {totalVisits}
+                                </motion.span>
+                            </motion.div>
+                        )}
 
                         <div style={{ display: "flex", gap: "1rem", alignItems: "center", marginTop: "1.2rem", flexWrap: "wrap" }}>
                             {/* Primary action button */}
