@@ -14,75 +14,31 @@ const DashboardPage = () => {
     const [showInstallNotif, setShowInstallNotif] = useState(false);
     
     const [visitCount, setVisitCount] = useState(0);
-    const [userVisitCount, setUserVisitCount] = useState(0);
-
-    // Generate or retrieve session ID
-    const getSessionId = () => {
-        let sessionId = sessionStorage.getItem('visitSessionId');
-        
-        if (!sessionId) {
-            sessionId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            sessionStorage.setItem('visitSessionId', sessionId);
-            console.log('🆕 New tab session:', sessionId);
-        } else {
-            console.log('♻️ Reused session (refresh):', sessionId);
-        }
-        
-        return sessionId;
-    };
 
     useEffect(() => {
-        const sessionId = getSessionId();
-        
-        // ✅ Check if already tracked in this session
-        const hasTracked = sessionStorage.getItem(`tracked_${sessionId}`);
-        
-        if (hasTracked === 'true') {
-            console.log('⚠️ Already tracked in this session, skipping...');
-            return;
-        }
-
+        // ✅ Track visit using CountAPI - idempotent per session
         const trackVisit = async () => {
             try {
-                if (user) {
-                    const response = await fetch('/api/visit/track', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({ sessionId })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.incremented) {
-                        console.log('✅ User visit +1');
-                    } else {
-                        console.log('ℹ️ Same session, no increment');
-                    }
-                    
-                    setUserVisitCount(data.userVisitCount);
-                    setVisitCount(data.totalVisits);
-                } else {
-                    const response = await fetch('/api/visit/track-anonymous', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sessionId })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.incremented) {
-                        console.log('✅ Anonymous +1');
-                    } else {
-                        console.log('ℹ️ Same session, no increment');
-                    }
-                    
-                    setVisitCount(data.totalVisits);
-                }
-
-                // ✅ Mark this session as tracked
-                sessionStorage.setItem(`tracked_${sessionId}`, 'true');
+                // Check if already counted in this session
+                const alreadyCounted = sessionStorage.getItem('visit_counted');
                 
+                if (alreadyCounted === 'true') {
+                    console.log('⚠️ Already counted in this session, fetching count only');
+                    // Just get the current count without incrementing
+                    const response = await fetch('https://api.countapi.xyz/get/foodhub-app/visits');
+                    const data = await response.json();
+                    setVisitCount(data.value || 0);
+                } else {
+                    console.log('✅ New session, incrementing count');
+                    // Increment the count
+                    const response = await fetch('https://api.countapi.xyz/hit/foodhub-app/visits');
+                    const data = await response.json();
+                    setVisitCount(data.value || 0);
+                    
+                    // Mark as counted in this session
+                    sessionStorage.setItem('visit_counted', 'true');
+                    console.log('✅ Visit counted! Total:', data.value);
+                }
             } catch (error) {
                 console.error('Error tracking visit:', error);
             }
@@ -109,7 +65,7 @@ const DashboardPage = () => {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
             window.removeEventListener('appinstalled', handleAppInstalled);
         };
-    }, [user]);
+    }, []);
 
     const handleInstallApp = async () => {
         if (deferredPrompt) {
@@ -202,7 +158,7 @@ const DashboardPage = () => {
                             Discover delicious recipes based on what's already in your kitchen. Save time, reduce waste, and cook with confidence.
                         </motion.p>
 
-                        {/* ✅ Visit Counter - Below description */}
+                        {/* ✅ Visit Counter - Compact badge style */}
                         <motion.div
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -213,17 +169,17 @@ const DashboardPage = () => {
                                 gap: '8px',
                                 background: 'rgba(207, 153, 108, 0.15)',
                                 backdropFilter: 'blur(10px)',
-                                padding: '6px 14px',
+                                padding: '8px 16px',
                                 borderRadius: '30px',
                                 marginBottom: '1rem',
                                 border: '1px solid rgba(255, 255, 255, 0.2)',
                                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
                             }}
                         >
-                            <i className="bx bx-globe" style={{ fontSize: '16px', color: '#CF996C' }}></i>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <i className="bx bx-globe" style={{ fontSize: '18px', color: '#CF996C' }}></i>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                 <span style={{ 
-                                    fontSize: '14px', 
+                                    fontSize: '16px', 
                                     fontWeight: '700', 
                                     color: 'white',
                                     textShadow: '0 1px 3px rgba(0,0,0,0.3)'
@@ -231,33 +187,13 @@ const DashboardPage = () => {
                                     {visitCount.toLocaleString()}
                                 </span>
                                 <span style={{ 
-                                    fontSize: '11px', 
-                                    color: 'rgba(255, 255, 255, 0.85)',
+                                    fontSize: '13px', 
+                                    color: 'rgba(255, 255, 255, 0.9)',
                                     fontWeight: '500'
                                 }}>
                                     visits
                                 </span>
                             </div>
-                            {user && userVisitCount > 0 && (
-                                <>
-                                    <div style={{
-                                        width: '1px',
-                                        height: '18px',
-                                        background: 'rgba(255, 255, 255, 0.3)'
-                                    }}></div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <i className="bx bx-user" style={{ fontSize: '14px', color: '#CF996C' }}></i>
-                                        <span style={{ 
-                                            fontSize: '13px', 
-                                            fontWeight: '600', 
-                                            color: 'white',
-                                            textShadow: '0 1px 3px rgba(0,0,0,0.3)'
-                                        }}>
-                                            {userVisitCount}
-                                        </span>
-                                    </div>
-                                </>
-                            )}
                         </motion.div>
 
                         <div style={{ display: "flex", gap: "1rem", alignItems: "center", marginTop: "1.2rem", flexWrap: "wrap" }}>
