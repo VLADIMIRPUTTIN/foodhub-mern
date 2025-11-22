@@ -43,11 +43,9 @@ export const SocketProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        // Production: use relative path (empty string = same-origin)
-        // Dev: use explicit localhost
         const SOCKET_URL = import.meta.env.DEV
             ? (import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:5000")
-            : ""; // EMPTY = relative/same-origin in prod
+            : ""; // ✅ Relative path = same origin (foodhubrecipe.shop)
 
         console.log("[Socket] Connecting to:", SOCKET_URL || "(same-origin)");
         
@@ -120,7 +118,7 @@ export const SocketProvider = ({ children }) => {
         return () => {
             socketInstance.disconnect();
         };
-    }, [user, isAuthenticated, isAdmin]);
+    }, [isAuthenticated, user]);
 
     return (
         <SocketContext.Provider value={{ 

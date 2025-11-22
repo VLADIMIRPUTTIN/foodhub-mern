@@ -26,7 +26,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
         origin: process.env.NODE_ENV === "production" 
-            ? ["https://www.foodhubrecipe.shop", "https://foodhubrecipe.shop"]
+            ? ["https://foodhubrecipe.shop"]  // ✅ Remove www
             : ["http://localhost:3000", "http://localhost:5173"],
         credentials: true
     }
@@ -65,8 +65,7 @@ const __dirname = path.resolve();
 const allowedOrigins = [
     "http://localhost:5173",
     "https://foodhub-mern-production.up.railway.app",
-    "https://www.foodhubrecipe.shop",
-    "https://foodhubrecipe.shop"
+    "https://foodhubrecipe.shop"  // ✅ Remove www variant kung di naka-setup
 ];
 
 app.use(cors({
