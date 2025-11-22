@@ -10,14 +10,15 @@ export const ensureVisitorUid = () => {
   return uid;
 };
 
-// Call this once per tab session
 export const initVisitCounter = async (API_BASE) => {
+  // Guard: if production build somehow still has localhost, skip to prevent prompt.
+  if (!import.meta.env.DEV && /localhost|127\.0\.0\.1/.test(API_BASE)) {
+    console.warn("[visitCounter] Skipping increment: API_BASE points to localhost in prod.");
+    return;
+  }
+
   const uid = ensureVisitorUid();
-
-  // Already counted in this tab session? stop.
   if (sessionStorage.getItem("visit_session_active")) return;
-
-  // Mark session BEFORE request so refresh/login/logout won’t double count
   sessionStorage.setItem("visit_session_active", "1");
 
   try {
