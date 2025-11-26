@@ -79,7 +79,7 @@ const RecipePage = () => {
     const matchesUserPreferences = (recipe) => {
         if (!user || !user.hasCompletedOnboarding) return true;
 
-        // Strict cuisine filter: Only show selected cuisines
+        // STRICT: Only show selected cuisines
         if (user.preferredCuisines && user.preferredCuisines.length > 0) {
             if (!recipe.cuisine || !user.preferredCuisines.includes(recipe.cuisine)) {
                 return false;
@@ -262,7 +262,6 @@ const RecipePage = () => {
             // First apply basic filters
             const recipeName = recipe.title || recipe.name || '';
             const matchesSearch = recipeName.toLowerCase().includes(searchTerm.toLowerCase());
-            
             const matchesIngredients =
                 selectedIngredients.length === 0 ||
                 (recipe.ingredients &&
@@ -274,23 +273,20 @@ const RecipePage = () => {
                         )
                     )
                 );
-                
             const matchesCategoryFilter = !categoryFilter || recipe.category === categoryFilter;
             const matchesMinPrice = !minPrice || (recipe.price && recipe.price >= Number(minPrice));
             const matchesMaxPrice = !maxPrice || (recipe.price && recipe.price <= Number(maxPrice));
-            
             return matchesSearch && matchesIngredients && matchesCategoryFilter && 
                 matchesMinPrice && matchesMaxPrice && matchesUserPreferences(recipe);
         })
         .sort((a, b) => {
-            // Prioritize selected cuisines
+            // Filipino (or selected cuisine) recipes first, others last
             if (user?.preferredCuisines?.length > 0) {
                 const aIsPreferred = user.preferredCuisines.includes(a.cuisine);
                 const bIsPreferred = user.preferredCuisines.includes(b.cuisine);
                 if (aIsPreferred && !bIsPreferred) return -1;
                 if (!aIsPreferred && bIsPreferred) return 1;
             }
-            // If both are preferred or both are not, keep original order
             return 0;
         });
 
