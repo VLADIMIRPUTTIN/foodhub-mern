@@ -236,7 +236,11 @@ const LoginPage = () => {
                         <div className="google-button-wrapper">
                             <GoogleLogin
                                 onSuccess={handleGoogleLogin}
-                                onError={() => alert("Google login failed")}
+                                onError={() => console.error("Google login failed")}
+                                useOneTap
+                                theme="outline"
+                                size="large"
+                                text="signin_with"
                             />
                         </div>
                     </div>

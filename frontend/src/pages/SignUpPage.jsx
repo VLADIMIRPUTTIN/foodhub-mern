@@ -241,7 +241,7 @@ const SignUpPage = () => {
                         <div className="google-button-wrapper">
                             <GoogleLogin
                                 onSuccess={handleGoogleSignUp}
-                                onError={handleGoogleError}
+                                onError={() => console.error("Google signup failed")}
                                 text="signup_with"
                                 theme="outline"
                                 size="large"

@@ -9,9 +9,11 @@ import axios from "axios"; // Add this import
 // Configure axios to send cookies with every request
 axios.defaults.withCredentials = true;
 
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID; // set this in .env
+
 ReactDOM.createRoot(document.getElementById("root")).render(
     <React.StrictMode>
-        <GoogleOAuthProvider clientId="209979773198-fl8bvitq2b48gfj6mhnomgiqr1tkbb0f.apps.googleusercontent.com">
+        <GoogleOAuthProvider clientId={googleClientId}>
             <BrowserRouter
                 future={{
                     v7_startTransition: true,
