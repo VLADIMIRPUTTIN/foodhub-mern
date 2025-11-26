@@ -14,7 +14,7 @@ const RecipeFull = () => {
   const [isTranslating, setIsTranslating] = useState(false);
   const [isTranslated, setIsTranslated] = useState(false);
   const [translationProgress, setTranslationProgress] = useState(0);
-  const [showIngredientsModal, setShowIngredientsModal] = useState(false); // ✅ New state
+  const [showIngredientsModal, setShowIngredientsModal] = useState(false); // ✅ NEW
 
   // API Base URL
   const API_BASE = import.meta.env.MODE === "development" 
@@ -27,12 +27,10 @@ const RecipeFull = () => {
       return 'https://via.placeholder.com/800x400?text=No+Image';
     }
     
-    // ✅ If it's already a full URL (Cloudinary), use it directly
     if (recipe.imageUrl.startsWith('http://') || recipe.imageUrl.startsWith('https://')) {
       return recipe.imageUrl;
     }
     
-    // ✅ Legacy support for old relative paths
     const baseURL = import.meta.env.MODE === "development" 
       ? "http://localhost:5000" 
       : "";
@@ -51,7 +49,7 @@ const RecipeFull = () => {
         params: {
           recipeName: recipeName
         },
-        timeout: 15000 // 15 second timeout
+        timeout: 15000
       });
 
       console.log("YouTube API response:", response.data);
@@ -60,7 +58,6 @@ const RecipeFull = () => {
         const videos = response.data.videos;
         setYoutubeVideos(videos);
         
-        // Automatically select the first video
         if (videos.length > 0) {
           setSelectedVideo(videos[0]);
           console.log("Selected first video:", videos[0].title);
@@ -95,7 +92,6 @@ const RecipeFull = () => {
         
         console.log("Recipe loaded:", recipeData.title || recipeData.name);
         
-        // Search for YouTube videos after recipe is loaded
         if (recipeData && (recipeData.title || recipeData.name)) {
           await searchYouTubeVideos(recipeData.title || recipeData.name);
         }
@@ -107,24 +103,22 @@ const RecipeFull = () => {
     fetchRecipe();
   }, [id]);
 
-  // Function to get YouTube embed URL with accessibility parameters
   const getYouTubeEmbedUrl = (videoId) => {
     const params = new URLSearchParams({
       autoplay: '0',
       rel: '0',
       modestbranding: '1',
-      iv_load_policy: '3', // Hide video annotations
-      cc_load_policy: '1', // Show captions by default
-      fs: '1', // Allow fullscreen
-      hl: 'en', // Interface language
-      enablejsapi: '1', // Enable JavaScript API
+      iv_load_policy: '3',
+      cc_load_policy: '1',
+      fs: '1',
+      hl: 'en',
+      enablejsapi: '1',
       origin: window.location.origin
     });
     
     return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
   };
 
-  // Function to format video duration or date
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -143,11 +137,9 @@ const RecipeFull = () => {
     try {
       console.log('🚀 Starting translation process...');
       
-      // Mark only icons and buttons we don't want to translate
       const skipElements = document.querySelectorAll('i.bx, .bx, svg');
       skipElements.forEach(el => {
         el.setAttribute('translate', 'no');
-        // Also mark parent button if it only contains icon
         if (el.parentElement && el.parentElement.tagName === 'BUTTON') {
           const buttonText = el.parentElement.textContent.trim();
           if (buttonText === '←' || buttonText === '→' || buttonText === '') {
@@ -156,7 +148,6 @@ const RecipeFull = () => {
         }
       });
 
-      // Get the main recipe container
       const recipeContainer = document.querySelector('.full-recipe-page');
       
       if (!recipeContainer) {
@@ -167,10 +158,9 @@ const RecipeFull = () => {
 
       console.log('📄 Found recipe container, starting translation...');
       
-      // Translate EVERYTHING in the container
       await translateContainer(
         recipeContainer,
-        'tl', // Tagalog/Filipino
+        'tl',
         (processed, total) => {
           const progress = Math.round((processed / total) * 100);
           setTranslationProgress(progress);
@@ -205,7 +195,6 @@ const RecipeFull = () => {
         <div className="full-recipe-overlay" />
         <button className="full-recipe-back" onClick={() => navigate(-1)}>← Back</button>
         
-        {/* Translate Button */}
         <button 
           className="translate-btn" 
           onClick={handleTranslate}
@@ -247,11 +236,9 @@ const RecipeFull = () => {
           </div>
           
           <p className="full-recipe-desc">{recipe.description}</p>
-
-          {/* ❌ REMOVED: Nutrition section from left side */}
         </div>
         
-        {/* ✅ Ingredients & Nutrition card (compact view) */}
+        {/* ✅ Ingredients & Nutrition Card (COMPACT) */}
         <div className="full-recipe-ingredients-card">
           <div className="card-header">
             <h2>Ingredients & Nutrition</h2>
@@ -264,7 +251,7 @@ const RecipeFull = () => {
             </button>
           </div>
           
-          {/* Nutrition section - COMPACT */}
+          {/* Nutrition Preview (TOP 3 only) */}
           {recipe.nutritionalInfo && Object.values(recipe.nutritionalInfo).some(val => val) && (
             <div className="nutrition-info-compact">
               <div className="nutrition-header">
@@ -300,7 +287,7 @@ const RecipeFull = () => {
             </div>
           )}
           
-          {/* Ingredients list - COMPACT */}
+          {/* Ingredients List (FIRST 5 only) */}
           <div className="full-recipe-ingredients-list">
             {recipe.ingredients && recipe.ingredients.slice(0, 5).map((ing, idx) => (
               <div key={idx} className="full-recipe-ingredient-row">
@@ -320,6 +307,7 @@ const RecipeFull = () => {
         </div>
       </div>
       
+      {/* How to Prepare Section */}
       <div className="full-recipe-steps-section">
         <h2>How to Prepare</h2>
         {(recipe.instructions || recipe.steps) && (recipe.instructions || recipe.steps).map((step, idx) => (
@@ -353,7 +341,6 @@ const RecipeFull = () => {
           </div>
         ) : youtubeVideos.length > 0 ? (
           <>
-            {/* Main Video Player */}
             {selectedVideo && (
               <div className="youtube-main-player">
                 <div className="video-container">
@@ -368,21 +355,17 @@ const RecipeFull = () => {
                     loading="lazy"
                     referrerPolicy="strict-origin-when-cross-origin"
                     sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
-                    aria-label={`Video tutorial for ${selectedVideo.title}`}
-                    tabIndex="0"
                   ></iframe>
                 </div>
                 <div className="video-info">
                   <h3>{selectedVideo.title}</h3>
                   <div className="video-meta">
-                    <span className="channel-name">
-                      <i className="bx bx-user" aria-hidden="true"></i>
-                      <span className="sr-only">Channel: </span>
+                    <span>
+                      <i className="bx bx-user"></i>
                       {selectedVideo.channelTitle}
                     </span>
-                    <span className="video-date">
-                      <i className="bx bx-calendar" aria-hidden="true"></i>
-                      <span className="sr-only">Published: </span>
+                    <span>
+                      <i className="bx bx-calendar"></i>
                       {formatDate(selectedVideo.publishedAt)}
                     </span>
                   </div>
@@ -395,25 +378,15 @@ const RecipeFull = () => {
               </div>
             )}
 
-            {/* Video Playlist */}
             {youtubeVideos.length > 1 && (
               <div className="youtube-playlist">
                 <h3>More Video Tutorials</h3>
-                <div className="video-grid" role="list">
-                  {youtubeVideos.map((video, index) => (
+                <div className="video-grid">
+                  {youtubeVideos.map((video) => (
                     <div 
                       key={video.id}
                       className={`video-card ${selectedVideo?.id === video.id ? 'active' : ''}`}
                       onClick={() => setSelectedVideo(video)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          setSelectedVideo(video);
-                        }
-                      }}
-                      role="listitem"
-                      tabIndex="0"
-                      aria-label={`Play video: ${video.title} by ${video.channelTitle}`}
                     >
                       <div className="video-thumbnail">
                         <img 
@@ -421,14 +394,9 @@ const RecipeFull = () => {
                           alt={`Thumbnail for ${video.title}`}
                           loading="lazy"
                         />
-                        <div className="play-overlay" aria-hidden="true">
+                        <div className="play-overlay">
                           <i className="bx bx-play"></i>
                         </div>
-                        {selectedVideo?.id === video.id && (
-                          <div className="currently-playing" aria-label="Currently playing">
-                            <i className="bx bx-play-circle"></i>
-                          </div>
-                        )}
                       </div>
                       <div className="video-card-info">
                         <h4>{video.title.length > 60 ? `${video.title.substring(0, 60)}...` : video.title}</h4>
@@ -439,35 +407,19 @@ const RecipeFull = () => {
                 </div>
               </div>
             )}
-
-            {/* Alternative link to YouTube */}
-            {selectedVideo && (
-              <div className="youtube-external-link">
-                <a 
-                  href={`https://www.youtube.com/watch?v=${selectedVideo.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="external-youtube-btn"
-                  aria-label={`Watch ${selectedVideo.title} on YouTube (opens in new tab)`}
-                >
-                  <i className="bx bxl-youtube"></i>
-                  Watch on YouTube
-                </a>
-              </div>
-            )}
           </>
         ) : (
           <div className="no-videos-found">
             <div className="no-videos-icon">
-              <i className="bx bxl-youtube" aria-hidden="true"></i>
+              <i className="bx bxl-youtube"></i>
             </div>
             <h3>No Videos Found</h3>
             <p>We couldn't find cooking videos for this recipe at the moment.</p>
           </div>
         )}
       </div>
-      
-      {/* ✅ NEW: Ingredients & Nutrition Modal */}
+
+      {/* ✅ NEW: Full Ingredients & Nutrition Modal */}
       {showIngredientsModal && (
         <div className="ingredients-modal-overlay" onClick={() => setShowIngredientsModal(false)}>
           <div className="ingredients-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -476,14 +428,13 @@ const RecipeFull = () => {
               <button 
                 className="modal-close-btn"
                 onClick={() => setShowIngredientsModal(false)}
-                aria-label="Close modal"
               >
                 <i className="bx bx-x"></i>
               </button>
             </div>
 
             <div className="modal-body">
-              {/* Full Nutrition Info */}
+              {/* FULL Nutrition Info */}
               {recipe.nutritionalInfo && Object.values(recipe.nutritionalInfo).some(val => val) && (
                 <div className="nutrition-section-full">
                   <h3>
@@ -570,7 +521,7 @@ const RecipeFull = () => {
                 </div>
               )}
 
-              {/* Full Ingredients List */}
+              {/* FULL Ingredients List */}
               <div className="ingredients-section-full">
                 <h3>
                   <i className="bx bx-list-ul"></i>
