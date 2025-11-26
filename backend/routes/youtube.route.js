@@ -71,32 +71,25 @@ router.get("/search", async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("YouTube API error:", error.response?.data || error.message);
-
-    // Serve stale cache on quota/403 if available
+    const gErr = error.response?.data?.error || {};
+    console.error("YouTube API error:", gErr.message || error.message, gErr);
     const { recipeName } = req.query || {};
     const key = (recipeName || "").trim().toLowerCase();
     const cached = searchCache.get(key);
 
     if (error.response?.status === 403) {
       if (cached) {
-        return res.status(200).json({
-          success: true,
-          videos: cached.videos,
-          count: cached.videos.length,
-          stale: true
-        });
+        return res.status(200).json({ success: true, videos: cached.videos, count: cached.videos.length, stale: true });
       }
       return res.status(403).json({
         success: false,
-        message: "YouTube API quota exceeded or API key is invalid"
+        message: gErr.message || "YouTube API quota exceeded or API key is invalid"
       });
     }
 
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch YouTube videos",
-      error: error.message
+      message: gErr.message || "Failed to fetch YouTube videos"
     });
   }
 });
