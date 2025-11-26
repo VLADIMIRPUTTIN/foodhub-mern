@@ -5,7 +5,6 @@ import cookieParser from "cookie-parser";
 import path from "path";
 import { Server } from 'socket.io';
 import http from 'http';
-import helmet from "helmet";
 
 import { connectDB } from "./db/connectDB.js";
 
@@ -115,21 +114,6 @@ app.use("/api/youtube", youtubeRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/translate", translateRoutes);
 app.use("/api/visit", visitRoute);
-
-app.use(
-  helmet.contentSecurityPolicy({
-    directives: {
-      defaultSrc: ["'self'"],
-      frameSrc: [
-        "'self'",
-        "https://accounts.google.com",
-        "https://www.youtube.com",
-        "https://youtube.com"
-      ],
-      // You can add other directives as needed
-    },
-  })
-);
 
 if (process.env.NODE_ENV === "production") {
     app.use(express.static(path.join(__dirname, "/frontend/dist")));
