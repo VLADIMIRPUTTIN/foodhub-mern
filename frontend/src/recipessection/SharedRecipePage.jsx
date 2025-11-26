@@ -302,14 +302,6 @@ const SharedRecipePage = () => {
                                                 <i className="bx bx-message-rounded-dots"></i>
                                                 <span>{recipe.commentCount || 0}</span>
                                             </button>
-
-                                            <button
-                                                className={`favorite-btn ${isFavorited(recipe._id) ? 'favorited' : ''}`}
-                                                onClick={(e) => handleToggleFavorite(recipe, e)}
-                                                title={isFavorited(recipe._id) ? 'Remove favorite' : 'Add favorite'}
-                                            >
-                                                <i className={`bx ${isFavorited(recipe._id) ? 'bxs-heart' : 'bx-heart'}`}></i>
-                                            </button>
                                         </div>
                                     </div>
                                 </div>
