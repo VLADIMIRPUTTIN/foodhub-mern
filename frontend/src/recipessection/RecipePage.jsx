@@ -79,37 +79,57 @@ const RecipePage = () => {
     const matchesUserPreferences = (recipe) => {
         if (!user || !user.hasCompletedOnboarding) return true;
 
-        // STRICT: Only show selected cuisines
-        if (user.preferredCuisines && user.preferredCuisines.length > 0) {
-            if (!recipe.cuisine || !user.preferredCuisines.includes(recipe.cuisine)) {
-                return false;
-            }
-        }
+        console.log('User preferences:', {
+            dietaryPreferences: user.dietaryPreferences,
+            allergies: user.allergies,
+            preferredCuisines: user.preferredCuisines
+        });
+        
+        console.log('Recipe data:', {
+            dietaryTags: recipe.dietaryTags,
+            allergens: recipe.allergens,
+            cuisine: recipe.cuisine
+        });
 
-        // Dietary preferences
+        // Check dietary preferences
         if (user.dietaryPreferences && user.dietaryPreferences.length > 0) {
             const hasMatchingDietary = user.dietaryPreferences.some(pref => 
                 recipe.dietaryTags && recipe.dietaryTags.includes(pref)
             );
-            if (!hasMatchingDietary) return false;
+            if (!hasMatchingDietary) {
+                console.log('Recipe excluded: no matching dietary preference');
+                return false;
+            }
         }
 
-        // Allergies
+        // Check allergies - exclude recipes containing user's allergens
         if (user.allergies && user.allergies.length > 0) {
             const hasAllergen = user.allergies.some(allergy => 
-                (recipe.allergens && recipe.allergens.some(allergen => 
+                recipe.allergens && recipe.allergens.some(allergen => 
                     allergen.toLowerCase().includes(allergy.toLowerCase())
-                )) ||
-                (recipe.ingredients && recipe.ingredients.some(ingredient => {
+                ) ||
+                recipe.ingredients && recipe.ingredients.some(ingredient => {
                     const ingredientName = typeof ingredient === 'string' 
                         ? ingredient 
                         : ingredient.name || '';
                     return ingredientName.toLowerCase().includes(allergy.toLowerCase());
-                }))
+                })
             );
-            if (hasAllergen) return false;
+            if (hasAllergen) {
+                console.log('Recipe excluded: contains allergen');
+                return false;
+            }
         }
 
+        // Check preferred cuisines
+        if (user.preferredCuisines && user.preferredCuisines.length > 0) {
+            if (recipe.cuisine && !user.preferredCuisines.includes(recipe.cuisine)) {
+                console.log('Recipe excluded: cuisine not preferred');
+                return false;
+            }
+        }
+
+        console.log('Recipe matches user preferences');
         return true;
     };
 
@@ -262,6 +282,7 @@ const RecipePage = () => {
             // First apply basic filters
             const recipeName = recipe.title || recipe.name || '';
             const matchesSearch = recipeName.toLowerCase().includes(searchTerm.toLowerCase());
+            
             const matchesIngredients =
                 selectedIngredients.length === 0 ||
                 (recipe.ingredients &&
@@ -273,21 +294,42 @@ const RecipePage = () => {
                         )
                     )
                 );
+                
             const matchesCategoryFilter = !categoryFilter || recipe.category === categoryFilter;
             const matchesMinPrice = !minPrice || (recipe.price && recipe.price >= Number(minPrice));
             const matchesMaxPrice = !maxPrice || (recipe.price && recipe.price <= Number(maxPrice));
+            
             return matchesSearch && matchesIngredients && matchesCategoryFilter && 
-                matchesMinPrice && matchesMaxPrice && matchesUserPreferences(recipe);
+                matchesMinPrice && matchesMaxPrice;
+        })
+        .map(recipe => {
+            // Add priority flag to each recipe
+            const isTimeMatch = matchesTimeOfDay(recipe);
+            const isPrefMatch = user?.hasCompletedOnboarding ? matchesUserPreferences(recipe) : true;
+            
+            let priority;
+            if (isTimeMatch && isPrefMatch) {
+                priority = 'time-and-preference';
+            } else if (!isTimeMatch && isPrefMatch) {
+                priority = 'preference-only';
+            } else if (isTimeMatch && !isPrefMatch) {
+                priority = 'time-only';
+            } else {
+                priority = 'other';
+            }
+            
+            return { ...recipe, priority };
         })
         .sort((a, b) => {
-            // Filipino (or selected cuisine) recipes first, others last
-            if (user?.preferredCuisines?.length > 0) {
-                const aIsPreferred = user.preferredCuisines.includes(a.cuisine);
-                const bIsPreferred = user.preferredCuisines.includes(b.cuisine);
-                if (aIsPreferred && !bIsPreferred) return -1;
-                if (!aIsPreferred && bIsPreferred) return 1;
-            }
-            return 0;
+            // Sort by priority
+            const priorityOrder = {
+                'time-and-preference': 0,
+                'preference-only': 1,
+                'time-only': 2,
+                'other': 3
+            };
+            
+            return priorityOrder[a.priority] - priorityOrder[b.priority];
         });
 
     const totalPages = Math.ceil(allFilteredRecipes.length / RECIPES_PER_PAGE);
