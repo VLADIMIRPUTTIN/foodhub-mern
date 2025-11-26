@@ -227,27 +227,8 @@ const RecipePage = () => {
                 });
                 let combined = publicRes.data.success ? publicRes.data.recipes : [];
 
-                if (user) {
-                    try {
-                        const userRes = await axios.get(`${baseURL}/api/recipes/user`, {
-                            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                        });
-                        if (userRes.data.success && userRes.data.recipes) {
-                            const map = new Map(combined.map(r => [r._id, r]));
-                            userRes.data.recipes.forEach(r => map.set(r._id, r));
-                            combined = Array.from(map.values());
-                        }
-                    } catch { /* silent */ }
-                }
-                // If diets selected, ensure merged list respects filters
-                if (selectedDiets.length) {
-                   const lower = selectedDiets.map(d => d.toLowerCase());
-                   combined = combined.filter(r => 
-                       (Array.isArray(r.dietCategories) && r.dietCategories.some(dc => lower.includes(dc.toLowerCase()))) ||
-                       (r.dietCategory && lower.includes(String(r.dietCategory).toLowerCase())) ||
-                       (Array.isArray(r.dietaryTags) && r.dietaryTags.some(t => lower.includes(String(t).toLowerCase())))
-                   );
-               }
+                // REMOVE merging user recipes here!
+                // Main Recipe Page should only show public recipes
 
                 setRecipes(combined);
             } catch (error) {
