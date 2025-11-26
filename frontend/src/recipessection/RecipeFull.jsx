@@ -15,6 +15,7 @@ const RecipeFull = () => {
   const [isTranslated, setIsTranslated] = useState(false);
   const [translationProgress, setTranslationProgress] = useState(0);
   const [showIngredientsModal, setShowIngredientsModal] = useState(false); // ✅ NEW
+  const [videoError, setVideoError] = useState(null);
 
   // API Base URL
   const API_BASE = import.meta.env.MODE === "development" 
@@ -40,8 +41,8 @@ const RecipeFull = () => {
   // Function to search YouTube videos using backend API
   const searchYouTubeVideos = async (recipeName) => {
     if (!recipeName) return;
-    
     setLoadingVideos(true);
+    setVideoError(null);
     try {
       console.log("Searching for videos:", recipeName);
       
@@ -68,15 +69,11 @@ const RecipeFull = () => {
       }
     } catch (error) {
       console.error('Error fetching YouTube videos:', error);
-      
-      if (error.response) {
-        console.error('API Error Response:', error.response.data);
-      } else if (error.request) {
-        console.error('Network Error - No response received');
+      if (error.response?.status === 403) {
+        setVideoError('Videos are temporarily unavailable (YouTube quota or API key issue).');
       } else {
-        console.error('Request Setup Error:', error.message);
+        setVideoError('Failed to load tutorial videos.');
       }
-      
       setYoutubeVideos([]);
     } finally {
       setLoadingVideos(false);
@@ -414,7 +411,7 @@ const RecipeFull = () => {
               <i className="bx bxl-youtube"></i>
             </div>
             <h3>No Videos Found</h3>
-            <p>We couldn't find cooking videos for this recipe at the moment.</p>
+            <p>{videoError || "We couldn't find cooking videos for this recipe at the moment."}</p>
           </div>
         )}
       </div>

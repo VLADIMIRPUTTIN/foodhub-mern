@@ -6,24 +6,24 @@ dotenv.config();
 
 const router = express.Router();
 
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+const searchCache = new Map();
+
 // Search YouTube videos for recipe tutorials
 router.get("/search", async (req, res) => {
   try {
     const { recipeName } = req.query;
-    
     if (!recipeName) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Recipe name is required" 
-      });
+      return res.status(400).json({ success: false, message: "Recipe name is required" });
+    }
+    if (!process.env.YOUTUBE_API_KEY) {
+      return res.status(500).json({ success: false, message: "YouTube API is not configured" });
     }
 
-    // Check if YouTube API key is configured
-    if (!process.env.YOUTUBE_API_KEY) {
-      return res.status(500).json({
-        success: false,
-        message: "YouTube API is not configured"
-      });
+    const key = recipeName.trim().toLowerCase();
+    const cached = searchCache.get(key);
+    if (cached && cached.expiresAt > Date.now()) {
+      return res.json({ success: true, videos: cached.videos, count: cached.videos.length, cached: true });
     }
 
     // Create search query with recipe name and cooking keywords
@@ -58,15 +58,10 @@ router.get("/search", async (req, res) => {
         publishedAt: item.snippet.publishedAt,
         channelId: item.snippet.channelId
       }));
-      
-      console.log(`Found ${videos.length} videos for recipe: ${recipeName}`);
-      
-      res.json({
-        success: true,
-        videos,
-        count: videos.length,
-        query: searchQuery
-      });
+
+      searchCache.set(key, { videos, expiresAt: Date.now() + CACHE_TTL_MS });
+
+      return res.json({ success: true, videos, count: videos.length, query: searchQuery });
     } else {
       res.json({
         success: true,
@@ -77,23 +72,28 @@ router.get("/search", async (req, res) => {
     }
   } catch (error) {
     console.error("YouTube API error:", error.response?.data || error.message);
-    
-    // Return specific error messages based on the error type
+
+    // Serve stale cache on quota/403 if available
+    const { recipeName } = req.query || {};
+    const key = (recipeName || "").trim().toLowerCase();
+    const cached = searchCache.get(key);
+
     if (error.response?.status === 403) {
+      if (cached) {
+        return res.status(200).json({
+          success: true,
+          videos: cached.videos,
+          count: cached.videos.length,
+          stale: true
+        });
+      }
       return res.status(403).json({
         success: false,
         message: "YouTube API quota exceeded or API key is invalid"
       });
     }
-    
-    if (error.response?.status === 400) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid YouTube API request parameters"
-      });
-    }
-    
-    res.status(500).json({
+
+    return res.status(500).json({
       success: false,
       message: "Failed to fetch YouTube videos",
       error: error.message
