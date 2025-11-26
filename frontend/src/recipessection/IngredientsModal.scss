@@ -254,8 +254,9 @@
         grid-column: span 2;
         font-size: 0.9rem;
         display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
+        flex-direction: row; // ✅ Changed from column to row
+        align-items: center;
+        gap: 0.4rem;
         
         i {
             font-size: 1rem;
@@ -263,6 +264,94 @@
         
         @media (max-width: 480px) {
             grid-column: span 3;
+        }
+    }
+}
+
+// ✅ New custom amount input styles
+.custom-amount-input {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+    
+    label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #4b5563;
+        margin-bottom: 0.5rem;
+    }
+    
+    input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #BB8860;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #374151;
+        transition: all 0.2s;
+        
+        &:focus {
+            outline: none;
+            border-color: #a67a5a;
+            box-shadow: 0 0 0 3px rgba(187, 136, 96, 0.1);
+        }
+        
+        &::placeholder {
+            color: #9ca3af;
+            font-weight: 400;
+        }
+    }
+    
+    .custom-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        
+        button {
+            flex: 1;
+            padding: 0.65rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+            
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+        }
+        
+        .custom-cancel-btn {
+            background: #f1f5f9;
+            color: #6b7280;
+            
+            &:hover:not(:disabled) {
+                background: #e2e8f0;
+            }
+        }
+        
+        .custom-submit-btn {
+            background: linear-gradient(135deg, #BB8860, #a67a5a);
+            color: white;
+            
+            &:hover:not(:disabled) {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(187, 136, 96, 0.3);
+            }
+            
+            i {
+                font-size: 1rem;
+            }
         }
     }
 }

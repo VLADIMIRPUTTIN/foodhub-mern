@@ -14,6 +14,7 @@ const RecipeFull = () => {
   const [isTranslating, setIsTranslating] = useState(false);
   const [isTranslated, setIsTranslated] = useState(false);
   const [translationProgress, setTranslationProgress] = useState(0);
+  const [showIngredientsModal, setShowIngredientsModal] = useState(false); // ✅ New state
 
   // API Base URL
   const API_BASE = import.meta.env.MODE === "development" 
@@ -234,13 +235,74 @@ const RecipeFull = () => {
           <div className="full-recipe-tags">
             <span className="tag">{recipe.category}</span>
             <span className="tag">Added: {new Date(recipe.createdAt).toLocaleDateString()}</span>
+
+            {Array.isArray(recipe.dietCategories) && recipe.dietCategories.length > 0
+              ? recipe.dietCategories.map(dc => (
+                  <span key={dc} className="tag diet-tag">{dc}</span>
+                ))
+              : (recipe.dietCategory && recipe.dietCategory !== 'None' && (
+                  <span className="tag diet-tag">{recipe.dietCategory}</span>
+                ))
+            }
           </div>
+          
           <p className="full-recipe-desc">{recipe.description}</p>
+
+          {/* ❌ REMOVED: Nutrition section from left side */}
         </div>
+        
+        {/* ✅ Ingredients & Nutrition card (compact view) */}
         <div className="full-recipe-ingredients-card">
-          <h2>Ingredients</h2>
+          <div className="card-header">
+            <h2>Ingredients & Nutrition</h2>
+            <button 
+              className="maximize-btn"
+              onClick={() => setShowIngredientsModal(true)}
+              title="View full details"
+            >
+              <i className="bx bx-fullscreen"></i>
+            </button>
+          </div>
+          
+          {/* Nutrition section - COMPACT */}
+          {recipe.nutritionalInfo && Object.values(recipe.nutritionalInfo).some(val => val) && (
+            <div className="nutrition-info-compact">
+              <div className="nutrition-header">
+                <i className="bx bx-line-chart"></i>
+                <span>Nutrition</span>
+                {recipe.servingSize && (
+                  <span className="serving-size">{recipe.servingSize}</span>
+                )}
+              </div>
+              
+              <div className="nutrition-grid-preview">
+                {recipe.nutritionalInfo.calories && (
+                  <div className="nutrition-item">
+                    <i className="bx bx-bolt"></i>
+                    <span className="value">{recipe.nutritionalInfo.calories} kcal</span>
+                  </div>
+                )}
+                
+                {recipe.nutritionalInfo.protein && (
+                  <div className="nutrition-item">
+                    <i className="bx bx-dumbbell"></i>
+                    <span className="value">{recipe.nutritionalInfo.protein}g</span>
+                  </div>
+                )}
+                
+                {recipe.nutritionalInfo.carbs && (
+                  <div className="nutrition-item">
+                    <i className="bx bx-food-menu"></i>
+                    <span className="value">{recipe.nutritionalInfo.carbs}g</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* Ingredients list - COMPACT */}
           <div className="full-recipe-ingredients-list">
-            {recipe.ingredients && recipe.ingredients.map((ing, idx) => (
+            {recipe.ingredients && recipe.ingredients.slice(0, 5).map((ing, idx) => (
               <div key={idx} className="full-recipe-ingredient-row">
                 <span className="amount">
                   {ing.amount && <b>{ing.amount} </b>}
@@ -250,8 +312,8 @@ const RecipeFull = () => {
               </div>
             ))}
             {recipe.ingredients && recipe.ingredients.length > 5 && (
-              <div className="scroll-indicator" aria-hidden="true">
-                <i className="bx bx-chevron-down"></i>
+              <div className="more-indicator">
+                +{recipe.ingredients.length - 5} more ingredients
               </div>
             )}
           </div>
@@ -404,6 +466,136 @@ const RecipeFull = () => {
           </div>
         )}
       </div>
+      
+      {/* ✅ NEW: Ingredients & Nutrition Modal */}
+      {showIngredientsModal && (
+        <div className="ingredients-modal-overlay" onClick={() => setShowIngredientsModal(false)}>
+          <div className="ingredients-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Ingredients & Nutrition</h2>
+              <button 
+                className="modal-close-btn"
+                onClick={() => setShowIngredientsModal(false)}
+                aria-label="Close modal"
+              >
+                <i className="bx bx-x"></i>
+              </button>
+            </div>
+
+            <div className="modal-body">
+              {/* Full Nutrition Info */}
+              {recipe.nutritionalInfo && Object.values(recipe.nutritionalInfo).some(val => val) && (
+                <div className="nutrition-section-full">
+                  <h3>
+                    <i className="bx bx-line-chart"></i>
+                    Nutrition Facts
+                    {recipe.servingSize && (
+                      <span className="serving-badge">{recipe.servingSize}</span>
+                    )}
+                  </h3>
+                  
+                  <div className="nutrition-grid-full">
+                    {recipe.nutritionalInfo.calories && (
+                      <div className="nutrition-item-full">
+                        <div className="icon-wrapper">
+                          <i className="bx bx-bolt"></i>
+                        </div>
+                        <div className="nutrition-info">
+                          <span className="label">Calories</span>
+                          <span className="value">{recipe.nutritionalInfo.calories} kcal</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {recipe.nutritionalInfo.protein && (
+                      <div className="nutrition-item-full">
+                        <div className="icon-wrapper">
+                          <i className="bx bx-dumbbell"></i>
+                        </div>
+                        <div className="nutrition-info">
+                          <span className="label">Protein</span>
+                          <span className="value">{recipe.nutritionalInfo.protein}g</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {recipe.nutritionalInfo.carbs && (
+                      <div className="nutrition-item-full">
+                        <div className="icon-wrapper">
+                          <i className="bx bx-food-menu"></i>
+                        </div>
+                        <div className="nutrition-info">
+                          <span className="label">Carbohydrates</span>
+                          <span className="value">{recipe.nutritionalInfo.carbs}g</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {recipe.nutritionalInfo.fat && (
+                      <div className="nutrition-item-full">
+                        <div className="icon-wrapper">
+                          <i className="bx bx-droplet"></i>
+                        </div>
+                        <div className="nutrition-info">
+                          <span className="label">Fat</span>
+                          <span className="value">{recipe.nutritionalInfo.fat}g</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {recipe.nutritionalInfo.fiber && (
+                      <div className="nutrition-item-full">
+                        <div className="icon-wrapper">
+                          <i className="bx bx-leaf"></i>
+                        </div>
+                        <div className="nutrition-info">
+                          <span className="label">Fiber</span>
+                          <span className="value">{recipe.nutritionalInfo.fiber}g</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {recipe.nutritionalInfo.sugar && (
+                      <div className="nutrition-item-full">
+                        <div className="icon-wrapper">
+                          <i className="bx bx-cookie"></i>
+                        </div>
+                        <div className="nutrition-info">
+                          <span className="label">Sugar</span>
+                          <span className="value">{recipe.nutritionalInfo.sugar}g</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Full Ingredients List */}
+              <div className="ingredients-section-full">
+                <h3>
+                  <i className="bx bx-list-ul"></i>
+                  Ingredients ({recipe.ingredients?.length || 0})
+                </h3>
+                
+                <div className="ingredients-list-full">
+                  {recipe.ingredients && recipe.ingredients.map((ing, idx) => (
+                    <div key={idx} className="ingredient-item-full">
+                      <span className="ingredient-number">{idx + 1}</span>
+                      <div className="ingredient-details">
+                        <span className="ingredient-amount">
+                          {ing.amount && <b>{ing.amount} </b>}
+                          {ing.unit && <b>{ing.unit}</b>}
+                        </span>
+                        <span className="ingredient-name">{ing.name}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

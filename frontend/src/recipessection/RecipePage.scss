@@ -345,6 +345,7 @@ i[class*=" bx-"] {
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      line-clamp: 2;
     }
 
     .recipe-desc {
@@ -365,6 +366,7 @@ i[class*=" bx-"] {
       /* Ensure consistent height regardless of content */
       min-height: 2.8em;
       flex: 0 0 auto; /* Don't allow flex to stretch this element */
+      line-clamp: 2;
     }
 
     .recipe-category {
@@ -821,27 +823,20 @@ i[class*=" bx-"] {
         font-weight: 700;
       }
 
-      .page-separator {
-        color: #999;
-      }
+      .page-separator { color: #999; }
 
       .total-pages {
         color: #666;
         font-weight: 700;
       }
+    }
+  }
 }
 
-// Mobile pagination adjustments
+// Mobile pagination visibility
 @media (max-width: 768px) {
-  // Hide desktop pagination controls on mobile
-  .pagination-controls {
-    display: none !important;
-  }
-
-  // Show mobile pagination container (but we'll keep it hidden for now as requested)
-  .mobile-pagination-container {
-    display: none; // Keep hidden as requested by user
-  }
+  .pagination-controls { display: none !important; }
+  .mobile-pagination-container { display: none; } // keep hidden as requested
 }
 
 
@@ -857,33 +852,29 @@ i[class*=" bx-"] {
 // MOBILE RESPONSIVE GRID FIXES - COMPLETE OVERHAUL
 // =============================================================================
 @media (max-width: 768px) {
-  // Main page container - prevent over-scrolling
+  // Main page container - normal scroll behavior
   .recipe-page {
-    height: 100vh !important;
+    min-height: 100vh !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
+    position: relative !important;
   }
 
-  // Main content - remove all padding/margins that create extra space
+  // Main content - natural sizing
   .main-content {
-    height: calc(100vh - 120px) !important; // Account for navbar height
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
+    height: auto !important;
+    min-height: calc(100vh - 80px) !important;
+    overflow: visible !important;
     padding: 0.5rem !important;
     margin: 0 !important;
+    margin-top: 0 !important; // ✅ Reset margin
     box-sizing: border-box !important;
   }
 
-  // Recipe container - fit content exactly
+  // Recipe container - allow content to flow
   .recipe-container {
-    height: 100% !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
+    height: auto !important;
+    overflow: visible !important;
     padding: 0 !important;
     margin: 0 !important;
     display: flex !important;
@@ -894,62 +885,188 @@ i[class*=" bx-"] {
   .recipe-header-bg {
     height: 100px !important;
     margin-bottom: 0.5rem !important;
-    margin-top: 0 !important;
+    margin-top: -1rem !important; // ✅ Reset negative margin
     flex-shrink: 0 !important;
+    
+    .header-bg-text {
+      margin-left: 0 !important;
+      
+      h1 {
+        font-size: 1.8rem !important;
+        font-weight: 700 !important;
+        text-align: center !important;
+        margin: 0 !important;
+      }
+    }
   }
 
   .recipe-header {
     margin-bottom: 0.5rem !important;
     flex-shrink: 0 !important;
+    text-align: center !important; // ✅ Center on mobile
+    
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.3rem;
+    }
+
+    p {
+      font-size: 1.5rem;
+      margin-right: 0 !important; // ✅ Reset margin
+      position: relative;
+      display: inline-block;
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 4px;
+        background: linear-gradient(90deg, #ffb97a 0%, #CF996C 100%);
+        border-radius: 4px;
+      }
+    }
   }
 
   // Controls section - minimal space
   .recipe-controls {
-    margin-bottom: 1rem !important;
+    margin-bottom: 0.8rem !important;
     flex-shrink: 0 !important;
   }
 
-  // Grid container - CRITICAL: Remove all fixed heights and let it size naturally
+  .recipe-filters {
+    margin-bottom: 0.8rem !important;
+  }
+
+  // Grid container - natural sizing (NO transform!)
   .recipes-grid-container {
-    flex: 1 !important;
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
     overflow: visible !important;
     position: relative !important;
+    margin-top: 0.5rem !important;
   }
 
-  // Grid itself - natural sizing
+  // Grid itself - 2 columns on mobile
   .recipes-grid {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.8rem !important;
+    gap: 0.6rem !important;
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
     margin-bottom: 0 !important;
-    padding-bottom: 1rem !important; // Small padding at bottom only
+    padding-bottom: 1rem !important;
   }
 
-  // Recipe cards - fixed height but allow grid to size naturally
+  // Recipe cards - compact height
   .recipe-card {
-    height: 280px !important;
+    height: 320px !important; // ✅ Increased height for action buttons
     margin-bottom: 0 !important;
+    
+    .recipe-image {
+      height: 140px !important;
+    }
+    
+    .recipe-content {
+      padding: 0.8rem !important;
+      
+      .recipe-title {
+        font-size: 0.95rem !important;
+        margin-bottom: 0.4rem !important;
+      }
+      
+      .recipe-desc {
+        font-size: 0.8rem !important;
+        margin-bottom: 0.6rem !important;
+        -webkit-line-clamp: 2 !important;
+      }
+      
+      .recipe-category {
+        font-size: 0.7rem !important;
+        padding: 0.2rem 0.6rem !important;
+      }
+      
+      .recipe-price {
+        font-size: 0.75rem !important;
+        padding: 0.3rem 0.6rem !important;
+      }
+
+      // ✅ NEW: Meta container on mobile
+      .recipe-meta-container {
+        margin-bottom: 0.6rem !important;
+        gap: 0.3rem !important;
+      }
+
+      .recipe-servings {
+        font-size: 0.65rem !important;
+        padding: 0.2rem 0.4rem !important;
+      }
+    }
+    
+    .favorite-btn {
+      top: 8px !important;
+      right: 8px !important;
+      width: 32px !important;
+      height: 32px !important;
+
+      i {
+        font-size: 1.1rem !important;
+      }
+    }
   }
 
-  // No recipes state - prevent it from creating extra space
+  // ✅ CRITICAL FIX: No recipes state
   .no-recipes-enhanced {
     position: relative !important;
-    transform: none !important;
-    margin: 1rem 0 0 0 !important;
-    padding: 1rem !important;
+    transform: none !important; // ✅ Remove ALL transforms
+    margin: 1rem 0 !important;
+    padding: 1.5rem 0.8rem !important;
     height: auto !important;
-    min-height: 200px !important;
+    min-height: auto !important;
     max-height: none !important;
     grid-column: 1 / -1 !important;
+    
+    // ✅ Override any animation transforms
+    .no-recipes-animation {
+      .chef-hat i {
+        font-size: 3.5rem !important;
+      }
+    }
+    
+    .no-recipes-content {
+      padding: 0.5rem !important;
+      max-width: 100% !important;
+      
+      .no-recipes-title {
+        font-size: 1.4rem !important;
+        margin-bottom: 0.8rem !important;
+        line-height: 1.2 !important;
+      }
+      
+      .no-recipes-subtitle {
+        font-size: 0.9rem !important;
+        margin-bottom: 1rem !important;
+        line-height: 1.4 !important;
+      }
+
+      .no-recipes-actions {
+        gap: 0.8rem !important;
+
+        .cta-button {
+          padding: 0.8rem 1.5rem !important;
+          font-size: 0.85rem !important;
+        }
+      }
+    }
   }
 
-  // Remove pagination spacing that might cause issues
+  // Remove pagination spacing
   .pagination-controls {
     display: none !important;
   }
@@ -958,44 +1075,140 @@ i[class*=" bx-"] {
     display: none !important;
   }
 
-  // Selected ingredients component - make sure it doesn't add extra space
+  // Selected ingredients component
   .selected-ingredients {
     margin-bottom: 0.5rem !important;
     flex-shrink: 0 !important;
   }
 
-  // Ingredients sheet adjustments
-  .ingredients-sheet-content {
-    max-height: 70vh !important;
-    overflow-y: auto !important;
-  }
-}
-
-// Additional specific fixes
-.recipes-grid-container {
-  @media (max-width: 768px) {
-    // Force the container to only be as tall as its content
-    display: flex !important;
-    flex-direction: column !important;
-    height: auto !important;
-    min-height: 0 !important;
+  // Time-based section mobile
+  .time-based-section {
+    margin-bottom: 1rem !important;
     
-    .recipes-grid {
-      flex: 0 0 auto !important; // Don't grow, don't shrink, size to content
-      width: 100% !important;
+    .time-header {
+      margin-bottom: 1rem !important;
+
+      h2 {
+        font-size: 1.2rem !important;
+        
+        .greeting {
+          font-size: 0.85rem !important;
+        }
+        
+        .meal-suggestion {
+          font-size: 1.1rem !important;
+        }
+      }
+
+      .time-header-icon {
+        width: 44px !important;
+        height: 44px !important;
+
+        i {
+          font-size: 1.5rem !important;
+        }
+      }
+    }
+    
+    .time-recipes-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 0.6rem !important;
+      
+      .time-recipe-card {
+        height: 280px !important;
+        
+        .time-recipe-image {
+          height: 140px !important;
+        }
+        
+        .time-recipe-content {
+          padding: 0.8rem !important;
+          
+          h3 {
+            font-size: 0.9rem !important;
+          }
+          
+          .time-recipe-desc {
+            font-size: 0.75rem !important;
+          }
+
+          .time-recipe-meta {
+            font-size: 0.7rem !important;
+          }
+        }
+      }
+    }
+  }
+
+  // Recipe counts badges
+  .recipe-counts {
+    margin-bottom: 0.5rem !important;
+    gap: 0.4rem !important;
+    
+    .count-badge {
+      font-size: 0.7rem !important;
+      padding: 0.3rem 0.6rem !important;
+      
+      i {
+        font-size: 0.75rem !important;
+      }
+    }
+  }
+
+  // Personalization notice
+  .personalization-notice {
+    margin-bottom: 1rem !important;
+    
+    .personalization-content {
+      flex-direction: column !important;
+      text-align: center !important;
+      padding: 1rem !important;
+      gap: 0.8rem !important;
+      
+      i {
+        font-size: 1.5rem !important;
+      }
+      
+      .personalization-text {
+        h3 {
+          font-size: 1rem !important;
+        }
+
+        p {
+          font-size: 0.85rem !important;
+        }
+      }
+
+      .personalize-btn {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 0.7rem 1.2rem !important;
+      }
+    }
+  }
+
+  // ✅ Recipe badges positioning
+  .recipe-badges {
+    max-width: 60% !important;
+    gap: 3px !important;
+
+    .time-badge,
+    .preference-badge {
+      font-size: 0.65rem !important;
+      padding: 0.2rem 0.4rem !important;
     }
   }
 }
 
-// Ensure body/html don't interfere (add this if needed)
+// Ensure body/html don't interfere
 @media (max-width: 768px) {
   body, html {
-    height: 100% !important;
-    overflow: hidden !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
   }
   
   #root {
-    height: 100% !important;
+    overflow-x: hidden !important;
   }
 }
 
@@ -1147,6 +1360,7 @@ i[class*=" bx-"] {
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 2;
         overflow: hidden;
+        line-clamp: 2;
       }
 
       .time-recipe-desc {
@@ -1158,6 +1372,7 @@ i[class*=" bx-"] {
         -webkit-line-clamp: 2;
         overflow: hidden;
         flex: 1;
+        line-clamp: 2;
       }
       
       .time-recipe-meta {
@@ -1432,5 +1647,11 @@ i[class*=" bx-"] {
         }
     }
 }
-  }
+
+.recipe-filters {
+  margin-bottom: 1.2rem; // added spacing
+}
+
+.recipes-grid-container {
+  margin-top: 0.4rem;
 }

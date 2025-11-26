@@ -7,6 +7,8 @@ const IngredientsModal = ({ isOpen, onClose, onIngredientSelect, allIngredients,
     const [selectedIngredient, setSelectedIngredient] = useState(null);
     const [selectedUnit, setSelectedUnit] = useState(null);
     const [filter, setFilter] = useState('');
+    const [customAmount, setCustomAmount] = useState(''); // ✅ New state for custom input
+    const [showCustomInput, setShowCustomInput] = useState(false); // ✅ Toggle custom input
     
     // Reset steps when modal opens/closes
     useEffect(() => {
@@ -15,6 +17,8 @@ const IngredientsModal = ({ isOpen, onClose, onIngredientSelect, allIngredients,
             setSelectedIngredient(null);
             setSelectedUnit(null);
             setFilter('');
+            setCustomAmount('');
+            setShowCustomInput(false);
         }
     }, [isOpen]);
     
@@ -43,10 +47,20 @@ const IngredientsModal = ({ isOpen, onClose, onIngredientSelect, allIngredients,
             amount: amount.toString()
         });
         
-        // Reset for next selection or close
+        // Reset for next selection
         setStep(1);
         setSelectedIngredient(null);
         setSelectedUnit(null);
+        setShowCustomInput(false);
+        setCustomAmount('');
+    };
+
+    // ✅ Handle custom amount submission
+    const handleCustomSubmit = () => {
+        const amount = parseFloat(customAmount);
+        if (!isNaN(amount) && amount > 0) {
+            handleAmountSelect(customAmount);
+        }
     };
     
     // If modal is not open, don't render anything
@@ -166,40 +180,80 @@ const IngredientsModal = ({ isOpen, onClose, onIngredientSelect, allIngredients,
                             
                             <button 
                                 className="back-button"
-                                onClick={() => setStep(2)}
+                                onClick={() => {
+                                    setStep(2);
+                                    setShowCustomInput(false);
+                                    setCustomAmount('');
+                                }}
                             >
                                 <i className="bx bx-left-arrow-alt"></i>
                                 Back to Units
                             </button>
                             
-                            <div className="amount-grid">
-                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(amount => (
+                            {/* ✅ Show custom input OR amount grid */}
+                            {showCustomInput ? (
+                                <div className="custom-amount-input">
+                                    <label>Enter custom amount:</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.1"
+                                        value={customAmount}
+                                        onChange={(e) => setCustomAmount(e.target.value)}
+                                        placeholder="e.g. 2.5"
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleCustomSubmit();
+                                        }}
+                                    />
+                                    <div className="custom-actions">
+                                        <button
+                                            type="button"
+                                            className="custom-cancel-btn"
+                                            onClick={() => {
+                                                setShowCustomInput(false);
+                                                setCustomAmount('');
+                                            }}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="custom-submit-btn"
+                                            onClick={handleCustomSubmit}
+                                            disabled={!customAmount || parseFloat(customAmount) <= 0}
+                                        >
+                                            <i className="bx bx-check"></i>
+                                            Add
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="amount-grid">
+                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(amount => (
+                                        <motion.button
+                                            key={amount}
+                                            className="amount-button"
+                                            onClick={() => handleAmountSelect(amount)}
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                        >
+                                            {amount}
+                                        </motion.button>
+                                    ))}
+                                    
+                                    {/* ✅ Custom button now toggles input */}
                                     <motion.button
-                                        key={amount}
-                                        className="amount-button"
-                                        onClick={() => handleAmountSelect(amount)}
+                                        className="amount-button custom"
+                                        onClick={() => setShowCustomInput(true)}
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
                                     >
-                                        {amount}
+                                        <i className="bx bx-edit-alt"></i>
+                                        Custom
                                     </motion.button>
-                                ))}
-                                
-                                {/* Custom amount option */}
-                                <motion.button
-                                    className="amount-button custom"
-                                    onClick={() => {
-                                        const amount = prompt('Enter custom amount:');
-                                        if (amount && !isNaN(amount) && parseFloat(amount) > 0) {
-                                            handleAmountSelect(amount);
-                                        }
-                                    }}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    Custom
-                                </motion.button>
-                            </div>
+                                </div>
+                            )}
                         </motion.div>
                     )}
                 </AnimatePresence>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from '../pages/NavbarPage';
 import RecipeModal from './RecipeModal';
@@ -22,6 +22,7 @@ const RecipePage = () => {
     const { user } = useAuthStore();
     const { toast } = useToast();
     const navigate = useNavigate();
+    const location = useLocation();
     
     const [recipes, setRecipes] = useState([]);
     const [ingredients, setIngredients] = useState([]);
@@ -57,6 +58,9 @@ const RecipePage = () => {
     
     const sidebarRef = useRef(null);
     const recipeContainerRef = useRef(null);
+
+    // NEW STATE FOR DIET FILTERS
+    const [selectedDiets, setSelectedDiets] = useState([]);
 
     // Function to scroll to top of recipe container
     const scrollToTop = () => {
@@ -201,24 +205,51 @@ const RecipePage = () => {
         setTouchEnd(null);
     };
 
+    // Read diet filters from URL: /recipes?diets=Keto,Low-Carb
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const dietsParam = params.get('diets');
+        if (dietsParam) {
+            const list = dietsParam.split(',').map(s => s.trim()).filter(Boolean);
+            setSelectedDiets(list);
+        } else {
+            setSelectedDiets([]);
+        }
+    }, [location.search]);
+
     // Fetch recipes
     useEffect(() => {
-        const baseURL = import.meta.env.MODE === "development"
-            ? "http://localhost:5000"
-            : "";
+        const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
         const fetchRecipes = async () => {
             try {
-                const res = await axios.get(`${baseURL}/api/recipes`);
-                
-                let recipesData = [];
-                
-                if (res.data.success && res.data.recipes) {
-                    recipesData = res.data.recipes;
-                } else if (Array.isArray(res.data)) {
-                    recipesData = res.data;
+                const publicRes = await axios.get(`${baseURL}/api/recipes`, {
+                    params: selectedDiets.length ? { diets: selectedDiets.join(',') } : undefined
+                });
+                let combined = publicRes.data.success ? publicRes.data.recipes : [];
+
+                if (user) {
+                    try {
+                        const userRes = await axios.get(`${baseURL}/api/recipes/user`, {
+                            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                        });
+                        if (userRes.data.success && userRes.data.recipes) {
+                            const map = new Map(combined.map(r => [r._id, r]));
+                            userRes.data.recipes.forEach(r => map.set(r._id, r));
+                            combined = Array.from(map.values());
+                        }
+                    } catch { /* silent */ }
                 }
-                
-                setRecipes(recipesData);
+                // If diets selected, ensure merged list respects filters
+                if (selectedDiets.length) {
+                   const lower = selectedDiets.map(d => d.toLowerCase());
+                   combined = combined.filter(r => 
+                       (Array.isArray(r.dietCategories) && r.dietCategories.some(dc => lower.includes(dc.toLowerCase()))) ||
+                       (r.dietCategory && lower.includes(String(r.dietCategory).toLowerCase())) ||
+                       (Array.isArray(r.dietaryTags) && r.dietaryTags.some(t => lower.includes(String(t).toLowerCase())))
+                   );
+               }
+
+                setRecipes(combined);
             } catch (error) {
                 console.error("Failed to fetch recipes", error);
                 toast({
@@ -229,7 +260,15 @@ const RecipePage = () => {
             }
         };
         fetchRecipes();
-    }, [toast]);
+    }, [toast, user, selectedDiets]);
+
+    // ✅ NEW: Ensure no auto-selected ingredients after recipe fetch/update
+    useEffect(() => {
+        // Only clear if there are any unintended auto values (defensive)
+        if (selectedIngredients.length > 0) {
+            setSelectedIngredients([]);
+        }
+    }, [recipes]); 
 
     // Fetch ingredients
     useEffect(() => {
@@ -335,7 +374,7 @@ const RecipePage = () => {
     }, [allFilteredRecipes.length, totalPages]);
 
     const handleIngredientClick = (ing) => {
-        setSelectedIngredients(selected =>
+        safeSetSelectedIngredients(selected =>
             selected.includes(ing)
                 ? selected.filter(i => i !== ing)
                 : [...selected, ing]
@@ -344,6 +383,20 @@ const RecipePage = () => {
 
     const handleRemoveIngredient = (ingredientToRemove) => {
         setSelectedIngredients(selectedIngredients.filter(ing => ing !== ingredientToRemove));
+    };
+
+    // Protected setter wrapper
+    const safeSetSelectedIngredients = (updater) => {
+        // Only allow if event came from explicit ingredient click
+        // (you can refine using a ref flag; simple version below)
+        setSelectedIngredients(prev => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            // Reject if next suddenly equals a full ingredient list from a recipe
+            if (recipes.some(r => Array.isArray(r.ingredients) && next.length === r.ingredients.length)) {
+                return prev; // ignore suspicious bulk assignment
+            }
+            return next;
+        });
     };
 
     // Handle open/close with animation
@@ -518,6 +571,17 @@ const RecipePage = () => {
         console.log('User preferences applied:', user?.hasCompletedOnboarding);
     }, [recipes, allFilteredRecipes, user]);
 
+    // Sync URL with selected diets
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (selectedDiets.length) {
+            params.set('diets', selectedDiets.join(','));
+        } else {
+            params.delete('diets');
+        }
+        navigate({ search: params.toString() }, { replace: true });
+    }, [selectedDiets]);
+
     return (
         <div className="recipe-page">
             <Navbar />
@@ -585,6 +649,9 @@ const RecipePage = () => {
                         setMinPrice={setMinPrice}
                         maxPrice={maxPrice}
                         setMaxPrice={setMaxPrice}
+                        // NEW
+                        selectedDiets={selectedDiets}
+                        setSelectedDiets={setSelectedDiets}
                     />
 
                     {/* Single grid showing all recipes in prioritized order */}

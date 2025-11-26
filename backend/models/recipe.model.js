@@ -44,6 +44,54 @@ const recipeSchema = new mongoose.Schema({
     commentCount: {
         type: Number,
         default: 0
+    },
+    nutritionalInfo: {
+        calories: {
+            type: Number,
+            min: 0
+        },
+        protein: {
+            type: Number,
+            min: 0
+        },
+        fat: {
+            type: Number,
+            min: 0
+        },
+        carbs: {
+            type: Number,
+            min: 0
+        },
+        fiber: {
+            type: Number,
+            min: 0
+        },
+        sugar: {
+            type: Number,
+            min: 0
+        }
+    },
+    dietCategory: {
+        type: String,
+        enum: ['Low-Carb', 'High-Protein', 'Low-Fat', 'Keto', 'Vegetarian', 'Vegan', 'Paleo', 'Balanced', 'None'],
+        default: 'None'
+    },
+    servingSize: {
+        type: String,
+        default: '1 serving'
+    },
+    dietCategories: {
+        type: [String],
+        enum: [
+            'Low-Carb',
+            'High-Protein',
+            'Keto',
+            'Vegan',
+            'Low-Fat',
+            'Gluten-Free',
+            'Sugar-Free'
+        ],
+        default: []
     }
 }, { timestamps: true });
 

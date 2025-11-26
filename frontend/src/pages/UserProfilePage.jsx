@@ -333,8 +333,18 @@ const UserProfilePage = () => {
     };
 
     const getProfileImageUrl = () => {
-        if (imagePreview) return imagePreview;
-        return user?.profileImage || DEFAULT_PROFILE_IMAGE;
+        if (imagePreview) return imagePreview; // local preview while editing
+        const src = user?.profileImage;
+        const DEFAULT = DEFAULT_PROFILE_IMAGE;
+        if (!src) return DEFAULT;
+        if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) return src;
+        const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+        if (cloudName && !src.startsWith('/') && !src.startsWith('uploads')) {
+            return `https://res.cloudinary.com/${cloudName}/image/upload/${src}`;
+        }
+        const path = src.startsWith('/') ? src : `/${src}`;
+        const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
+        return `${baseURL}${path}`;
     };
 
     // ✅ SIMPLIFIED: Recipe image URL handler
@@ -805,7 +815,13 @@ const UserProfilePage = () => {
                             <form onSubmit={handleSaveProfile} className="edit-form">
                                 <div className="profile-image-section">
                                     <div className="profile-image-container">
-                                        <img src={getProfileImageUrl()} alt="Profile" className="profile-image" />
+                                        <img
+                                            src={getProfileImageUrl()}
+                                            alt="Profile"
+                                            className="profile-image"
+                                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_PROFILE_IMAGE; }}
+                                            loading="lazy"
+                                        />
                                         <label htmlFor="profile-image-input" className="image-upload-btn">
                                             <i className="bx bx-camera"></i>
                                         </label>

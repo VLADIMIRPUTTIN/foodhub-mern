@@ -21,21 +21,17 @@ const RecipeGrid = ({
 }) => {
     return (
         <div 
-            className="recipes-grid-container"
+            className={`recipes-grid ${isSwiping ? 'swiping' : ''}`}
             ref={gridContainerRef}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
         >
-            <div className={`recipes-grid ${isSwiping ? 'swiping' : ''}`}>
-                {gridRecipes.map((recipe, idx) =>
-                    recipe ? (
-                        <div key={recipe._id} className="recipe-card-wrapper">
-                            <div
-                                className={`recipe-card ${recipe.priority === 'time-and-preference' ? 'highlight-card' : ''}`}
-                                onClick={() => setSelectedRecipe(recipe)}
-                                style={{ cursor: "pointer" }}
-                            >
+            {gridRecipes.map((recipe, index) => {
+                return (
+                    <div key={index} className="recipe-card-wrapper">
+                        {recipe ? (
+                            <div className={`recipe-card ${recipe.priority === 'time-and-preference' ? 'highlight-card' : ''}`} onClick={() => setSelectedRecipe(recipe)} style={{ cursor: "pointer" }}>
                                 <div className="recipe-image">
                                     <img 
                                         src={getImageUrl(recipe)} 
@@ -69,7 +65,6 @@ const RecipeGrid = ({
                                     </button>
                                 </div>
                                 <div className="recipe-content">
-                                    {/* Fix: Make sure recipe title shows properly */}
                                     <h3 className="recipe-title">
                                         {recipe.title || recipe.name || 'Untitled Recipe'}
                                     </h3>
@@ -77,31 +72,31 @@ const RecipeGrid = ({
                                     {/* Category Badge */}
                                     {recipe.category && (
                                         <div className="recipe-category">
-                                            <i className="bx bx-category"></i>
+                                            <i className="bx bx-food-menu"></i>
                                             {recipe.category}
                                         </div>
                                     )}
                                     
                                     {/* Fix: Make sure description shows properly */}
                                     <p className="recipe-desc">
-                                        {recipe.description ? `${recipe.description.substring(0, 100)}...` : "No description available"}
+                                        {recipe.description?.substring(0, 100) || "No description"}...
                                     </p>
                                     
                                     {/* Group meta items in container */}
                                     <div className="recipe-meta-container">
                                         {/* Estimated Cost */}
-                                        {recipe.price > 0 && (
+                                        {recipe.price && (
                                             <div className="recipe-price">
                                                 <i className="bx bx-money"></i>
-                                                <span>₱{recipe.price.toFixed(2)}</span>
+                                                ₱{recipe.price.toFixed(2)}
                                             </div>
                                         )}
                                         
                                         {/* Servings */}
-                                        {recipe.servings > 0 && (
+                                        {recipe.servings && (
                                             <div className="recipe-servings">
                                                 <i className="bx bx-group"></i>
-                                                <span>{recipe.servings} {recipe.servings === 1 ? 'serving' : 'servings'}</span>
+                                                {recipe.servings} servings
                                             </div>
                                         )}
                                     </div>
@@ -148,31 +143,12 @@ const RecipeGrid = ({
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ) : (
-                        // Empty grid cell for consistent layout
-                        <div key={`empty-${idx}`} className="recipe-card-wrapper">
-                            <div className="recipe-card empty-card"></div>
-                        </div>
-                    )
-                )}
-            </div>
-            
-            <div className="mobile-pagination-container">
-                <div className="mobile-pagination-swipe">
-                    <div className="swipe-indicator">
-                        <i className='bx bx-chevrons-left'></i>
-                        <span>Swipe to browse recipes</span>
-                        <i className='bx bx-chevrons-right'></i>
+                        ) : (
+                            <div className="empty-slot" />
+                        )}
                     </div>
-                    
-                    <div className="mobile-page-info">
-                        <span className="current-page">{currentPage}</span>
-                        <span className="page-separator">of</span>
-                        <span className="total-pages">{Math.ceil(filteredRecipes.length / gridRecipes.length) || 1}</span>
-                    </div>
-                </div>
-            </div>
+                );
+            })}
         </div>
     );
 };

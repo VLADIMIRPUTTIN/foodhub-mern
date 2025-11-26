@@ -48,8 +48,20 @@ const Navbar = () => {
     const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/WvG991xq/profile-default.png";
 
     const getProfileImageUrl = () => {
-        if (!user) return DEFAULT_PROFILE_IMAGE;
-        return user.profileImage || DEFAULT_PROFILE_IMAGE;
+        const src = user?.profileImage;
+        const DEFAULT = DEFAULT_PROFILE_IMAGE;
+        if (!src) return DEFAULT;
+        // Base64 or absolute URL (Cloudinary secure_url)
+        if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) return src;
+        // If Cloudinary publicId (no protocol), build URL if cloud name is provided
+        const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+        if (cloudName && !src.startsWith('/') && !src.startsWith('uploads')) {
+            return `https://res.cloudinary.com/${cloudName}/image/upload/${src}`;
+        }
+        // Relative path from backend (e.g., /uploads/...)
+        const path = src.startsWith('/') ? src : `/${src}`;
+        const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
+        return `${baseURL}${path}`;
     };
 
     const openSideNav = () => setIsSideNavOpen(true);
@@ -95,7 +107,12 @@ const Navbar = () => {
                             </div>
                             <div className="profile-container">
                                 <div className="profile-image" onClick={handleProfileImageClick} style={{ cursor: 'pointer' }}>
-                                    <img src={getProfileImageUrl()} alt="User Profile" />
+                                    <img
+                                        src={getProfileImageUrl()}
+                                        alt="User Profile"
+                                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_PROFILE_IMAGE; }}
+                                        loading="lazy"
+                                    />
                                 </div>
                                 <button className="dropdown-toggle" onClick={toggleProfileMenu}>
                                     <i className={`bx bx-chevron-down chevron ${isProfileMenuOpen ? 'rotated' : ''}`}></i>

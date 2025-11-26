@@ -862,6 +862,89 @@
   }
 }
 
+// Nutrition Grid - Ultra Compact
+.nutrition-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+// Nutrition Summary - Ultra Compact
+.nutrition-summary {
+  background: rgba(207, 153, 108, 0.1);
+  border: 2px solid rgba(207, 153, 108, 0.3);
+  border-radius: 12px;
+  padding: 1.2rem;
+  margin-top: 1.5rem;
+  
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #CF996C;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    
+    i {
+      font-size: 1.3rem;
+    }
+  }
+  
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.8rem;
+  }
+  
+  .summary-item {
+    background: white;
+    border-radius: 8px;
+    padding: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    
+    .label {
+      font-size: 0.85rem;
+      color: #666;
+      font-weight: 500;
+    }
+    
+    .value {
+      font-size: 1.1rem;
+      color: #CF996C;
+      font-weight: 700;
+    }
+  }
+}
+
+// Mobile responsive
+@media (max-width: 768px) {
+    .nutrition-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.8rem;
+    }
+    
+    .nutrition-summary {
+        .summary-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .nutrition-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .nutrition-summary {
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+}
+
 // Mobile-First Responsive Design
 @media (max-width: 768px) {
   .create-recipe {
