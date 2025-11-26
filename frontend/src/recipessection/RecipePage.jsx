@@ -300,36 +300,18 @@ const RecipePage = () => {
             const matchesMaxPrice = !maxPrice || (recipe.price && recipe.price <= Number(maxPrice));
             
             return matchesSearch && matchesIngredients && matchesCategoryFilter && 
-                matchesMinPrice && matchesMaxPrice;
-        })
-        .map(recipe => {
-            // Add priority flag to each recipe
-            const isTimeMatch = matchesTimeOfDay(recipe);
-            const isPrefMatch = user?.hasCompletedOnboarding ? matchesUserPreferences(recipe) : true;
-            
-            let priority;
-            if (isTimeMatch && isPrefMatch) {
-                priority = 'time-and-preference';
-            } else if (!isTimeMatch && isPrefMatch) {
-                priority = 'preference-only';
-            } else if (isTimeMatch && !isPrefMatch) {
-                priority = 'time-only';
-            } else {
-                priority = 'other';
-            }
-            
-            return { ...recipe, priority };
+                matchesMinPrice && matchesMaxPrice && matchesUserPreferences(recipe);
         })
         .sort((a, b) => {
-            // Sort by priority
-            const priorityOrder = {
-                'time-and-preference': 0,
-                'preference-only': 1,
-                'time-only': 2,
-                'other': 3
-            };
-            
-            return priorityOrder[a.priority] - priorityOrder[b.priority];
+            // Prioritize selected cuisines
+            if (user?.preferredCuisines?.length > 0) {
+                const aIsPreferred = user.preferredCuisines.includes(a.cuisine);
+                const bIsPreferred = user.preferredCuisines.includes(b.cuisine);
+                if (aIsPreferred && !bIsPreferred) return -1;
+                if (!aIsPreferred && bIsPreferred) return 1;
+            }
+            // If both are preferred or both are not, keep original order
+            return 0;
         });
 
     const totalPages = Math.ceil(allFilteredRecipes.length / RECIPES_PER_PAGE);
