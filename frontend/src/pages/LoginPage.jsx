@@ -65,12 +65,8 @@ const LoginPage = () => {
 
     const handleGoogleLogin = async (credentialResponse) => {
         try {
-            const baseURL = import.meta.env.MODE === "development" 
-                ? "http://localhost:5000" 
-                : "";
-                
             const response = await axios.post(
-                `${baseURL}/api/auth/google-login`,
+                `/api/auth/google-login`,
                 { credential: credentialResponse.credential },
                 { withCredentials: true }
             );

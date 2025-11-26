@@ -8,6 +8,7 @@ import axios from "axios"; // Add this import
 
 // Configure axios to send cookies with every request
 axios.defaults.withCredentials = true;
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || "";
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID; // set this in .env
 

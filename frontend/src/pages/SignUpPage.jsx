@@ -33,14 +33,8 @@ const SignUpPage = () => {
 
     const handleGoogleSignUp = async (credentialResponse) => {
         try {
-            console.log("Starting Google signup process...");
-            
-            const baseURL = import.meta.env.MODE === "development" 
-                ? "http://localhost:5000" 
-                : "";
-                
             const response = await axios.post(
-                `${baseURL}/api/auth/google-login`,
+                `/api/auth/google-login`,
                 { credential: credentialResponse.credential },
                 { withCredentials: true }
             );

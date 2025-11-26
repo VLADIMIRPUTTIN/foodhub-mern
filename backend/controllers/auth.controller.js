@@ -7,7 +7,7 @@ import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js
 import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendResetSuccessEmail } from "../mailtrap/emails.js";
 import { User } from "../models/user.model.js";
 
-const client = new OAuth2Client("209979773198-fl8bvitq2b48gfj6mhnomgiqr1tkbb0f.apps.googleusercontent.com");
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const signup = async (req, res) => {
     const { email, password, name } = req.body;
@@ -439,186 +439,186 @@ export const checkAuth = async (req, res) => {
 // Update the googleLogin function to use verification with Resend
 
 export const googleLogin = async (req, res) => {
-    const { credential } = req.body;
-    try {
-        console.log("Google login attempt received");
+  const { credential } = req.body;
+  try {
+    console.log("Google login attempt received");
+    
+    if (!credential) {
+      return res.status(400).json({ 
+          success: false, 
+          message: "No Google credential provided" 
+      });
+    }
+    
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+    
+    const payload = ticket.getPayload();
+    console.log("Google auth successful for email:", payload.email);
+    
+    const googleProfileImage = payload.picture;
+
+    // Check if user exists
+    let user = await User.findOne({ email: payload.email });
+    console.log("User exists in database:", !!user);
+    
+    if (user) {
+        console.log("Existing user - Role:", user.role, "Verification status:", user.isVerified);
         
-        if (!credential) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "No Google credential provided" 
-            });
+        // Update profile image if not set
+        if (!user.profileImage && googleProfileImage) {
+            user.profileImage = googleProfileImage;
+            await user.save();
+            console.log("Updated existing user with Google profile image");
         }
         
-        const ticket = await client.verifyIdToken({
-            idToken: credential,
-            audience: "209979773198-fl8bvitq2b48gfj6mhnomgiqr1tkbb0f.apps.googleusercontent.com"
-        });
-        
-        const payload = ticket.getPayload();
-        console.log("Google auth successful for email:", payload.email);
-        
-        const googleProfileImage = payload.picture;
+        // Check account status
+        if (user.status === "banned") {
+            return res.status(403).json({
+                success: false,
+                message: "Your account has been banned.",
+                statusData: {
+                    status: 'banned',
+                    message: "Your account has been permanently banned from accessing FoodHub.",
+                    banReason: user.banReason,
+                    bannedAt: user.updatedAt
+                }
+            });
+        }
 
-        // Check if user exists
-        let user = await User.findOne({ email: payload.email });
-        console.log("User exists in database:", !!user);
-        
-        if (user) {
-            console.log("Existing user - Role:", user.role, "Verification status:", user.isVerified);
-            
-            // Update profile image if not set
-            if (!user.profileImage && googleProfileImage) {
-                user.profileImage = googleProfileImage;
-                await user.save();
-                console.log("Updated existing user with Google profile image");
-            }
-            
-            // Check account status
-            if (user.status === "banned") {
+        if (user.status === "suspended") {
+            if (user.suspendedUntil && user.suspendedUntil > new Date()) {
+                const timeRemaining = Math.ceil((user.suspendedUntil - new Date()) / 60000);
                 return res.status(403).json({
                     success: false,
-                    message: "Your account has been banned.",
+                    message: `Your account is suspended for ${timeRemaining} more minute(s).`,
                     statusData: {
-                        status: 'banned',
-                        message: "Your account has been permanently banned from accessing FoodHub.",
-                        banReason: user.banReason,
-                        bannedAt: user.updatedAt
+                        status: 'suspended',
+                        message: `Your account is temporarily suspended.`,
+                        timeRemaining: timeRemaining,
+                        suspendedUntil: user.suspendedUntil
                     }
                 });
-            }
-
-            if (user.status === "suspended") {
-                if (user.suspendedUntil && user.suspendedUntil > new Date()) {
-                    const timeRemaining = Math.ceil((user.suspendedUntil - new Date()) / 60000);
-                    return res.status(403).json({
-                        success: false,
-                        message: `Your account is suspended for ${timeRemaining} more minute(s).`,
-                        statusData: {
-                            status: 'suspended',
-                            message: `Your account is temporarily suspended.`,
-                            timeRemaining: timeRemaining,
-                            suspendedUntil: user.suspendedUntil
-                        }
-                    });
-                } else {
-                    // Suspension expired, reactivate
-                    user.status = "active";
-                    user.suspendedUntil = null;
-                    await user.save();
-                }
-            }
-
-            // Handle unverified existing user (except admin)
-            if (!user.isVerified && user.role !== 'admin') {
-                // Generate new verification code for existing unverified user
-                const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
-                user.verificationToken = verificationToken;
-                user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
+            } else {
+                // Suspension expired, reactivate
+                user.status = "active";
+                user.suspendedUntil = null;
                 await user.save();
-                
-                // Send verification email
-                await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
-                
-                // Generate token for the session
-                generateTokenAndSetCookie(res, user._id);
-                
-                return res.status(200).json({
-                    success: true,
-                    message: "Please verify your email to continue. A verification code has been sent.",
-                    user: {
-                        ...user._doc,
-                        password: undefined
-                    }
-                });
             }
-            
-            // User is verified or is admin - complete login
-            user.lastLogin = new Date();
+        }
+
+        // Handle unverified existing user (except admin)
+        if (!user.isVerified && user.role !== 'admin') {
+            // Generate new verification code for existing unverified user
+            const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+            user.verificationToken = verificationToken;
+            user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
             await user.save();
             
-            // Generate token and return user
-            generateTokenAndSetCookie(res, user._id);
+            // Send verification email
+            await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
             
-            const loginMessage = user.role === 'admin' 
-                ? "Admin logged in successfully with Google" 
-                : "Logged in successfully with Google";
+            // Generate token for the session
+            generateTokenAndSetCookie(res, user._id);
             
             return res.status(200).json({
                 success: true,
-                message: loginMessage,
+                message: "Please verify your email to continue. A verification code has been sent.",
                 user: {
                     ...user._doc,
                     password: undefined
-                },
-                // Add flag to indicate if user needs onboarding
-                needsOnboarding: !user.hasCompletedOnboarding && user.role !== 'admin'
-            });
-        } else {
-            // Create new user with Google data
-            console.log("Creating new user with Google data");
-            
-            // Check if this should be an admin account
-            let role = 'user';
-            let isVerified = false;
-            
-            // If the email is admin@foodhub.com, make it admin
-            if (payload.email === 'admin@foodhub.com') {
-                role = 'admin';
-                isVerified = true;
-            }
-            
-            const verificationToken = !isVerified ? Math.floor(100000 + Math.random() * 900000).toString() : undefined;
-            
-            // Create a random password for Google users
-            const randomPassword = Math.random().toString(36).slice(-8);
-            const hashedPassword = await bcryptjs.hash(randomPassword, 10);
-            
-            user = new User({
-                email: payload.email,
-                password: hashedPassword,
-                name: payload.name,
-                role: role,
-                verificationToken: verificationToken,
-                verificationTokenExpiresAt: !isVerified ? Date.now() + 15 * 60 * 1000 : undefined,
-                isVerified: isVerified,
-                profileImage: googleProfileImage,
-                hasCompletedOnboarding: role === 'admin' // Admin doesn't need onboarding
-            });
-            
-            await user.save();
-            console.log("New Google user created:", user.email, "Role:", user.role);
-            
-            // Send verification email only if not admin
-            if (!isVerified) {
-                await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
-            }
-            
-            // Generate token
-            generateTokenAndSetCookie(res, user._id);
-            
-            const successMessage = role === 'admin' 
-                ? "Admin account created and logged in successfully with Google"
-                : "Account created with Google. Please verify your email to continue.";
-            
-            return res.status(201).json({
-                success: true,
-                message: successMessage,
-                user: {
-                    ...user._doc,
-                    password: undefined
-                },
-                // New users always need onboarding (except admin)
-                needsOnboarding: role !== 'admin'
+                }
             });
         }
-    } catch (error) {
-        console.error("Google login error:", error);
-        res.status(500).json({ 
-            success: false, 
-            message: "Error logging in with Google: " + error.message 
+        
+        // User is verified or is admin - complete login
+        user.lastLogin = new Date();
+        await user.save();
+        
+        // Generate token and return user
+        generateTokenAndSetCookie(res, user._id);
+        
+        const loginMessage = user.role === 'admin' 
+            ? "Admin logged in successfully with Google" 
+            : "Logged in successfully with Google";
+        
+        return res.status(200).json({
+            success: true,
+            message: loginMessage,
+            user: {
+                ...user._doc,
+                password: undefined
+            },
+            // Add flag to indicate if user needs onboarding
+            needsOnboarding: !user.hasCompletedOnboarding && user.role !== 'admin'
+        });
+    } else {
+        // Create new user with Google data
+        console.log("Creating new user with Google data");
+        
+        // Check if this should be an admin account
+        let role = 'user';
+        let isVerified = false;
+        
+        // If the email is admin@foodhub.com, make it admin
+        if (payload.email === 'admin@foodhub.com') {
+            role = 'admin';
+            isVerified = true;
+        }
+        
+        const verificationToken = !isVerified ? Math.floor(100000 + Math.random() * 900000).toString() : undefined;
+        
+        // Create a random password for Google users
+        const randomPassword = Math.random().toString(36).slice(-8);
+        const hashedPassword = await bcryptjs.hash(randomPassword, 10);
+        
+        user = new User({
+            email: payload.email,
+            password: hashedPassword,
+            name: payload.name,
+            role: role,
+            verificationToken: verificationToken,
+            verificationTokenExpiresAt: !isVerified ? Date.now() + 15 * 60 * 1000 : undefined,
+            isVerified: isVerified,
+            profileImage: googleProfileImage,
+            hasCompletedOnboarding: role === 'admin' // Admin doesn't need onboarding
+        });
+        
+        await user.save();
+        console.log("New Google user created:", user.email, "Role:", user.role);
+        
+        // Send verification email only if not admin
+        if (!isVerified) {
+            await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
+        }
+        
+        // Generate token
+        generateTokenAndSetCookie(res, user._id);
+        
+        const successMessage = role === 'admin' 
+            ? "Admin account created and logged in successfully with Google"
+            : "Account created with Google. Please verify your email to continue.";
+        
+        return res.status(201).json({
+            success: true,
+            message: successMessage,
+            user: {
+                ...user._doc,
+                password: undefined
+            },
+            // New users always need onboarding (except admin)
+            needsOnboarding: role !== 'admin'
         });
     }
+  } catch (error) {
+    console.error("Google login error:", error);
+    res.status(500).json({ 
+        success: false, 
+        message: "Error logging in with Google: " + error.message 
+    });
+  }
 };
 
 export const resendVerification = async (req, res) => {
