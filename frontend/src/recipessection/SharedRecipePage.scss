@@ -434,6 +434,78 @@
       }
     }
   }
+
+  // Floating favorite button on card image
+  .recipe-card .favorite-fab {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(207,153,108,0.25);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    color: #CF996C;
+    cursor: pointer;
+    transition: all .2s ease;
+    z-index: 3;
+
+    &:hover {
+      transform: translateY(-1px);
+      background: #fff;
+    }
+
+    &.favorited {
+      color: #e11d48; // red-600
+      border-color: rgba(225,29,72,0.25);
+      background: rgba(255,255,255,0.95);
+    }
+  }
+
+  // Actions row under meta
+  .recipe-card .card-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: .35rem;
+
+    .comment-btn,
+    .favorite-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(207,153,108,0.08);
+      border: 1px solid rgba(207,153,108,0.25);
+      color: #8b5e34;
+      padding: .25rem .5rem;
+      border-radius: 8px;
+      font-size: .7rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s ease;
+
+      i {
+        font-size: 1rem;
+        line-height: 1;
+      }
+
+      &:hover {
+        background: rgba(207,153,108,0.15);
+      }
+    }
+
+    .favorite-btn.favorited {
+      background: rgba(225,29,72,0.08);
+      border-color: rgba(225,29,72,0.25);
+      color: #e11d48;
+
+      &:hover {
+        background: rgba(225,29,72,0.15);
+      }
+    }
+  }
 }
 
 // =============================================================================

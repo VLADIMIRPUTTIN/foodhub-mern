@@ -5,6 +5,8 @@ import { useSocket } from '../context/SocketContext';
 import { useAuthStore } from '../store/authStore';
 import CommunityRateRecipe from '../components/CommunityRateRecipe';
 import RatingModal from '../components/RatingModal';
+import axios from "axios"; // ADDED
+import CommentModal from './components/CommentModal'; // ADDED
 import "./SharedRecipePage.scss";
 
 const SharedRecipePage = () => {
@@ -12,33 +14,48 @@ const SharedRecipePage = () => {
     const [loading, setLoading] = useState(true);
     const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
     const [selectedRecipeForRating, setSelectedRecipeForRating] = useState(null);
+
+    // ADDED: favorites and comments state
+    const [favoriteSet, setFavoriteSet] = useState(new Set());
+    const [isCommentOpen, setIsCommentOpen] = useState(false);
+    const [selectedRecipeForComment, setSelectedRecipeForComment] = useState(null);
+
     const navigate = useNavigate();
     const { socket } = useSocket();
     const { isAuthenticated } = useAuthStore();
 
     // Fetch shared recipes from the server
-    const fetchSharedRecipes = () => {
-        const baseURL = import.meta.env.MODE === "development"
-            ? "http://localhost:5000"
-            : "";
-        
-        fetch(`${baseURL}/api/recipes/shared`)
-            .then(res => res.json())
-            .then(data => {
-                if (Array.isArray(data.recipes)) {
-                    setRecipes(data.recipes);
-                } else if (Array.isArray(data.sharedRecipes)) {
-                    setRecipes(data.sharedRecipes);
-                } else {
-                    setRecipes([]);
-                }
-                setLoading(false);
-            })
-            .catch((error) => {
-                console.error('Error fetching shared recipes:', error);
-                setRecipes([]);
-                setLoading(false);
-            });
+    const fetchSharedRecipes = async () => {
+        try {
+            setLoading(true);
+            const { data } = await axios.get(`/api/recipes/shared`);
+            const list = Array.isArray(data.recipes) ? data.recipes
+                        : Array.isArray(data.sharedRecipes) ? data.sharedRecipes
+                        : [];
+            setRecipes(list);
+        } catch (error) {
+            console.error('Error fetching shared recipes:', error);
+            setRecipes([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // ADDED: fetch favorites for current user
+    const fetchFavorites = async () => {
+        if (!isAuthenticated) {
+            setFavoriteSet(new Set());
+            return;
+        }
+        try {
+            const { data } = await axios.get(`/api/favorites`);
+            const ids = (data?.favorites || [])
+                .map(f => f.recipe?._id)
+                .filter(Boolean);
+            setFavoriteSet(new Set(ids));
+        } catch (err) {
+            console.error('Error fetching favorites:', err);
+        }
     };
 
     useEffect(() => {
@@ -46,13 +63,15 @@ const SharedRecipePage = () => {
     }, []);
 
     useEffect(() => {
+        if (isAuthenticated) fetchFavorites();
+    }, [isAuthenticated]);
+
+    useEffect(() => {
         if (socket) {
             const handleRecipeApproved = () => {
                 fetchSharedRecipes();
             };
-
             socket.on('recipeApproved', handleRecipeApproved);
-
             return () => {
                 socket.off('recipeApproved', handleRecipeApproved);
             };
@@ -73,6 +92,42 @@ const SharedRecipePage = () => {
         return `/${cleanPath}`;
     };
 
+    const isFavorited = (id) => favoriteSet.has(id);
+
+    const handleToggleFavorite = async (recipe, e) => {
+        e.stopPropagation();
+        if (!isAuthenticated) {
+            navigate('/login');
+            return;
+        }
+        const id = recipe._id;
+        try {
+            if (isFavorited(id)) {
+                await axios.delete(`/api/favorites/${id}`);
+                const next = new Set(favoriteSet);
+                next.delete(id);
+                setFavoriteSet(next);
+            } else {
+                await axios.post(`/api/favorites`, { recipeId: id });
+                const next = new Set(favoriteSet);
+                next.add(id);
+                setFavoriteSet(next);
+            }
+        } catch (err) {
+            console.error('Error toggling favorite:', err);
+        }
+    };
+
+    const handleOpenComments = (recipe, e) => {
+        e.stopPropagation();
+        if (!isAuthenticated) {
+            navigate('/login');
+            return;
+        }
+        setSelectedRecipeForComment(recipe);
+        setIsCommentOpen(true);
+    };
+
     const handleRateRecipe = (recipe, e) => {
         e.stopPropagation();
         if (!isAuthenticated) {
@@ -86,10 +141,20 @@ const SharedRecipePage = () => {
     const handleRatingModalClose = (updatedRecipe) => {
         setIsRatingModalOpen(false);
         setSelectedRecipeForRating(null);
-        
         if (updatedRecipe) {
             fetchSharedRecipes();
         }
+    };
+
+    // ADDED: update comment count in list after add/delete
+    const handleCommentUpdate = (recipeId, action) => {
+        setRecipes(prev =>
+            prev.map(r =>
+                r._id === recipeId
+                    ? { ...r, commentCount: Math.max(0, (r.commentCount || 0) + (action === 'add' ? 1 : -1)) }
+                    : r
+            )
+        );
     };
 
     const handleCardClick = (recipeId) => {
@@ -158,12 +223,21 @@ const SharedRecipePage = () => {
                                                 e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
                                             }}
                                         />
+                                        {/* Favorite quick button on image */}
+                                        <button
+                                            className={`favorite-fab ${isFavorited(recipe._id) ? 'favorited' : ''}`}
+                                            onClick={(e) => handleToggleFavorite(recipe, e)}
+                                            aria-label="Toggle favorite"
+                                            title={isFavorited(recipe._id) ? 'Remove from favorites' : 'Add to favorites'}
+                                        >
+                                            <i className={`bx ${isFavorited(recipe._id) ? 'bxs-heart' : 'bx-heart'}`}></i>
+                                        </button>
                                     </div>
                                     <div className="recipe-content">
                                         <h3 className="recipe-title">{recipe.title}</h3>
                                         <p className="recipe-desc">{recipe.description}</p>
                                         
-                                        {/* Match RecipePage layout: category and rate button in same row */}
+                                        {/* Category + Rate button */}
                                         <div className="recipe-meta">
                                             <div className="recipe-category">{recipe.category}</div>
                                             <CommunityRateRecipe 
@@ -171,8 +245,8 @@ const SharedRecipePage = () => {
                                                 onRateClick={handleRateRecipe}
                                             />
                                         </div>
-                                        
-                                        {/* Rating Display */}
+
+                                        {/* Rating display */}
                                         {recipe.averageRating > 0 && (
                                             <div className="recipe-rating-display">
                                                 <div className="stars">
@@ -189,8 +263,8 @@ const SharedRecipePage = () => {
                                                 </span>
                                             </div>
                                         )}
-                                        
-                                        {/* Enhanced Author Info */}
+
+                                        {/* Author */}
                                         <div className="recipe-meta author-meta">
                                             <i className="bx bx-user-circle"></i>
                                             <span>
@@ -201,8 +275,8 @@ const SharedRecipePage = () => {
                                                         : "Anonymous Chef"}
                                             </span>
                                         </div>
-                                        
-                                        {/* Additional Meta Information */}
+
+                                        {/* Time + date */}
                                         <div className="recipe-meta-row">
                                             {recipe.cookingTime && (
                                                 <div className="recipe-meta">
@@ -217,6 +291,26 @@ const SharedRecipePage = () => {
                                                 </div>
                                             )}
                                         </div>
+
+                                        {/* ADDED: actions row */}
+                                        <div className="card-actions">
+                                            <button
+                                                className="comment-btn"
+                                                onClick={(e) => handleOpenComments(recipe, e)}
+                                                title="View/Add comments"
+                                            >
+                                                <i className="bx bx-message-rounded-dots"></i>
+                                                <span>{recipe.commentCount || 0}</span>
+                                            </button>
+
+                                            <button
+                                                className={`favorite-btn ${isFavorited(recipe._id) ? 'favorited' : ''}`}
+                                                onClick={(e) => handleToggleFavorite(recipe, e)}
+                                                title={isFavorited(recipe._id) ? 'Remove favorite' : 'Add favorite'}
+                                            >
+                                                <i className={`bx ${isFavorited(recipe._id) ? 'bxs-heart' : 'bx-heart'}`}></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -230,6 +324,14 @@ const SharedRecipePage = () => {
                 isOpen={isRatingModalOpen}
                 onClose={handleRatingModalClose}
                 recipe={selectedRecipeForRating}
+            />
+
+            {/* ADDED: Comment Modal */}
+            <CommentModal
+                isOpen={isCommentOpen}
+                onClose={() => setIsCommentOpen(false)}
+                recipe={selectedRecipeForComment}
+                onCommentUpdate={handleCommentUpdate}
             />
         </>
     );

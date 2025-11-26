@@ -21,11 +21,7 @@ const CommentModal = ({ isOpen, onClose, recipe, onCommentUpdate }) => {
     const fetchComments = async () => {
         setIsLoading(true);
         try {
-            const baseURL = import.meta.env.MODE === "development"
-                ? "http://localhost:5000"
-                : "";
-                
-            const response = await axios.get(`${baseURL}/api/comments/recipe/${recipe._id}`);
+            const response = await axios.get(`/api/comments/recipe/${recipe._id}`);
             if (response.data.success) {
                 setComments(response.data.comments);
             }
@@ -39,46 +35,25 @@ const CommentModal = ({ isOpen, onClose, recipe, onCommentUpdate }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
         if (!user) {
             toast.error("Login Required", "Please login to comment on recipes");
             return;
         }
-        
         if (!comment.trim()) {
             toast.error("Empty Comment", "Please enter a comment");
             return;
         }
-        
         setIsSubmitting(true);
         try {
-            const baseURL = import.meta.env.MODE === "development"
-                ? "http://localhost:5000"
-                : "";
-                
-            const response = await axios.post(
-                `${baseURL}/api/comments`,
-                { 
-                    recipeId: recipe._id, 
-                    text: comment 
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                }
-            );
-            
+            const response = await axios.post(`/api/comments`, { 
+                recipeId: recipe._id, 
+                text: comment 
+            });
             if (response.data.success) {
                 toast.success("Comment Added", "Your comment has been posted successfully");
                 setComment('');
-                // Add new comment to the top of the list
                 setComments([response.data.comment, ...comments]);
-                
-                // Notify parent component to update recipe data
-                if (onCommentUpdate) {
-                    onCommentUpdate(recipe._id, 'add');
-                }
+                if (onCommentUpdate) onCommentUpdate(recipe._id, 'add');
             }
         } catch (error) {
             console.error('Error submitting comment:', error);
@@ -90,29 +65,11 @@ const CommentModal = ({ isOpen, onClose, recipe, onCommentUpdate }) => {
 
     const handleDeleteComment = async (commentId) => {
         try {
-            const baseURL = import.meta.env.MODE === "development"
-                ? "http://localhost:5000"
-                : "";
-                
-            const response = await axios.delete(
-                `${baseURL}/api/comments/${commentId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                }
-            );
-            
+            const response = await axios.delete(`/api/comments/${commentId}`);
             if (response.data.success) {
                 toast.success("Comment Deleted", "Your comment has been removed");
-                
-                // Remove the deleted comment from the list
                 setComments(comments.filter(c => c._id !== commentId));
-                
-                // Notify parent component to update recipe data
-                if (onCommentUpdate) {
-                    onCommentUpdate(recipe._id, 'delete');
-                }
+                if (onCommentUpdate) onCommentUpdate(recipe._id, 'delete');
             }
         } catch (error) {
             console.error('Error deleting comment:', error);
