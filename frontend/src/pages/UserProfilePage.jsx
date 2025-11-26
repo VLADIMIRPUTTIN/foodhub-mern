@@ -185,21 +185,8 @@ const UserProfilePage = () => {
     };
 
     const fetchUserRecipes = async () => {
-        try {
-            const baseURL = import.meta.env.MODE === "development" 
-                ? "http://localhost:5000" 
-                : "";
-                
-            const response = await axios.get(
-                `${baseURL}/api/recipes/user`,
-                { withCredentials: true }
-            );
-            
-            setUserRecipes(response.data.recipes || []);
-        } catch (error) {
-            console.error('Error fetching user recipes:', error);
-            setUserRecipes([]);
-        }
+        const response = await axios.get('/api/recipes/user', { withCredentials: true });
+        setUserRecipes(response.data.recipes); // These are user's own recipes
     };
 
     const fetchUserFavorites = async () => {
