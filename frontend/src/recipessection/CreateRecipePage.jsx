@@ -209,8 +209,7 @@ const CreateRecipePage = () => {
 
             if (response.data.success) {
                 toast.success('Recipe created successfully!');
-                
-                // Trigger a small delay before navigation to ensure toast shows
+                // ✅ Navigate to user profile "My Recipes" tab
                 setTimeout(() => {
                     navigate('/profile', { state: { refreshRecipes: true } });
                 }, 500);
