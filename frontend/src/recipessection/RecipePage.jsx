@@ -79,57 +79,37 @@ const RecipePage = () => {
     const matchesUserPreferences = (recipe) => {
         if (!user || !user.hasCompletedOnboarding) return true;
 
-        console.log('User preferences:', {
-            dietaryPreferences: user.dietaryPreferences,
-            allergies: user.allergies,
-            preferredCuisines: user.preferredCuisines
-        });
-        
-        console.log('Recipe data:', {
-            dietaryTags: recipe.dietaryTags,
-            allergens: recipe.allergens,
-            cuisine: recipe.cuisine
-        });
+        // Strict cuisine filter: Only show selected cuisines
+        if (user.preferredCuisines && user.preferredCuisines.length > 0) {
+            if (!recipe.cuisine || !user.preferredCuisines.includes(recipe.cuisine)) {
+                return false;
+            }
+        }
 
-        // Check dietary preferences
+        // Dietary preferences
         if (user.dietaryPreferences && user.dietaryPreferences.length > 0) {
             const hasMatchingDietary = user.dietaryPreferences.some(pref => 
                 recipe.dietaryTags && recipe.dietaryTags.includes(pref)
             );
-            if (!hasMatchingDietary) {
-                console.log('Recipe excluded: no matching dietary preference');
-                return false;
-            }
+            if (!hasMatchingDietary) return false;
         }
 
-        // Check allergies - exclude recipes containing user's allergens
+        // Allergies
         if (user.allergies && user.allergies.length > 0) {
             const hasAllergen = user.allergies.some(allergy => 
-                recipe.allergens && recipe.allergens.some(allergen => 
+                (recipe.allergens && recipe.allergens.some(allergen => 
                     allergen.toLowerCase().includes(allergy.toLowerCase())
-                ) ||
-                recipe.ingredients && recipe.ingredients.some(ingredient => {
+                )) ||
+                (recipe.ingredients && recipe.ingredients.some(ingredient => {
                     const ingredientName = typeof ingredient === 'string' 
                         ? ingredient 
                         : ingredient.name || '';
                     return ingredientName.toLowerCase().includes(allergy.toLowerCase());
-                })
+                }))
             );
-            if (hasAllergen) {
-                console.log('Recipe excluded: contains allergen');
-                return false;
-            }
+            if (hasAllergen) return false;
         }
 
-        // Check preferred cuisines
-        if (user.preferredCuisines && user.preferredCuisines.length > 0) {
-            if (recipe.cuisine && !user.preferredCuisines.includes(recipe.cuisine)) {
-                console.log('Recipe excluded: cuisine not preferred');
-                return false;
-            }
-        }
-
-        console.log('Recipe matches user preferences');
         return true;
     };
 
