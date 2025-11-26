@@ -15,12 +15,18 @@ const ManageRecipeAndIngredientsPage = ({
     handleEditIngredient,
     handleDeleteIngredient,
     fetchRecipes,
-    fetchIngredients
+    fetchIngredients,
+    // ADD: bulk handlers from parent
+    handleBulkDeleteRecipes,
+    handleBulkDeleteIngredients,
 }) => {
     const [editingRecipe, setEditingRecipe] = useState(null);
     const [editingIngredient, setEditingIngredient] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('recipes');
+    // ADD: selection state
+    const [selectedRecipeIds, setSelectedRecipeIds] = useState([]);
+    const [selectedIngredientIds, setSelectedIngredientIds] = useState([]);
 
     const handleIngredientUpdated = (updatedIngredient) => {
         setEditingIngredient(null);
@@ -56,6 +62,24 @@ const ManageRecipeAndIngredientsPage = ({
         const baseURL = import.meta.env.MODE === 'development' ? 'http://localhost:5000' : '';
         const cleanPath = recipe.imageUrl.startsWith('/') ? recipe.imageUrl.slice(1) : recipe.imageUrl;
         return `${baseURL}/${cleanPath}`;
+    };
+
+    // ADD: selection helpers
+    const toggleRecipeSelection = (id) => {
+        setSelectedRecipeIds(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
+    const toggleIngredientSelection = (id) => {
+        setSelectedIngredientIds(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
+    const selectAllRecipes = (checked) => {
+        setSelectedRecipeIds(checked ? filteredRecipes.map(r => r._id) : []);
+    };
+    const selectAllIngredients = (checked) => {
+        setSelectedIngredientIds(checked ? filteredIngredients.map(i => i._id) : []);
     };
 
     return (
@@ -119,6 +143,32 @@ const ManageRecipeAndIngredientsPage = ({
                                     </button>
                                 )}
                             </div>
+                            {/* ADD: bulk actions for recipes */}
+                            <div className="bulk-actions">
+                                <label className="select-all">
+                                    <input
+                                        type="checkbox"
+                                        checked={
+                                            filteredRecipes.length > 0 &&
+                                            selectedRecipeIds.length === filteredRecipes.map(r => r._id).filter(Boolean).length
+                                        }
+                                        onChange={(e) => selectAllRecipes(e.target.checked)}
+                                    />
+                                    <span>Select All</span>
+                                </label>
+                                <button
+                                    className="bulk-delete-btn"
+                                    disabled={selectedRecipeIds.length === 0}
+                                    onClick={async () => {
+                                        await handleBulkDeleteRecipes(selectedRecipeIds);
+                                        setSelectedRecipeIds([]);
+                                    }}
+                                    title="Delete selected recipes"
+                                >
+                                    <i className="bx bx-trash"></i>
+                                    Delete Selected ({selectedRecipeIds.length})
+                                </button>
+                            </div>
                         </div>
 
                         {/* Recipes List */}
@@ -143,6 +193,14 @@ const ManageRecipeAndIngredientsPage = ({
                                         transition={{ delay: index * 0.03 }}
                                     >
                                         <div className="recipe-main">
+                                            {/* ADD: item checkbox */}
+                                            <input
+                                                type="checkbox"
+                                                className="item-checkbox"
+                                                checked={selectedRecipeIds.includes(recipe._id)}
+                                                onChange={() => toggleRecipeSelection(recipe._id)}
+                                                aria-label={`Select ${recipe.title || recipe.name}`}
+                                            />
                                             <div className="recipe-image-small">
                                                 <img
                                                     src={getImageUrl(recipe)}
@@ -219,6 +277,32 @@ const ManageRecipeAndIngredientsPage = ({
                                     </button>
                                 )}
                             </div>
+                            {/* ADD: bulk actions for ingredients */}
+                            <div className="bulk-actions">
+                                <label className="select-all">
+                                    <input
+                                        type="checkbox"
+                                        checked={
+                                            filteredIngredients.length > 0 &&
+                                            selectedIngredientIds.length === filteredIngredients.map(i => i._id).filter(Boolean).length
+                                        }
+                                        onChange={(e) => selectAllIngredients(e.target.checked)}
+                                    />
+                                    <span>Select All</span>
+                                </label>
+                                <button
+                                    className="bulk-delete-btn"
+                                    disabled={selectedIngredientIds.length === 0}
+                                    onClick={async () => {
+                                        await handleBulkDeleteIngredients(selectedIngredientIds);
+                                        setSelectedIngredientIds([]);
+                                    }}
+                                    title="Delete selected ingredients"
+                                >
+                                    <i className="bx bx-trash"></i>
+                                    Delete Selected ({selectedIngredientIds.length})
+                                </button>
+                            </div>
                         </div>
 
                         {/* Ingredients List */}
@@ -243,6 +327,14 @@ const ManageRecipeAndIngredientsPage = ({
                                         transition={{ delay: index * 0.03 }}
                                     >
                                         <div className="ingredient-main">
+                                            {/* ADD: item checkbox */}
+                                            <input
+                                                type="checkbox"
+                                                className="item-checkbox"
+                                                checked={selectedIngredientIds.includes(ingredient._id)}
+                                                onChange={() => toggleIngredientSelection(ingredient._id)}
+                                                aria-label={`Select ${ingredient.name}`}
+                                            />
                                             <div className="ingredient-icon">
                                                 <i className="bx bx-leaf"></i>
                                             </div>

@@ -158,6 +158,67 @@
         }
     }
 
+    // ADD: bulk actions bar
+    .bulk-actions {
+        margin-top: 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+
+        .select-all {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            input[type="checkbox"] {
+                width: 18px;
+                height: 18px;
+                accent-color: #CF996C;
+                cursor: pointer;
+            }
+
+            span {
+                color: #1e293b;
+                font-weight: 600;
+            }
+        }
+
+        .bulk-delete-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            border: none;
+            border-radius: 10px;
+            background: #ef4444;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+            transition: all 0.2s ease;
+
+            &:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                box-shadow: none;
+            }
+
+            &:not(:disabled):hover {
+                transform: translateY(-1px);
+            }
+        }
+    }
+
+    // ADD: item checkbox style
+    .item-checkbox {
+        width: 18px;
+        height: 18px;
+        accent-color: #CF996C;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
     .items-list {
         display: flex;
         flex-direction: column;

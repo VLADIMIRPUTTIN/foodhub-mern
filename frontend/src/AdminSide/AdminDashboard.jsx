@@ -520,6 +520,9 @@ const AdminDashboard = () => {
                             handleDeleteIngredient={handleDeleteIngredient}
                             fetchRecipes={fetchRecipes}
                             fetchIngredients={fetchIngredients}
+                            // ADD: pass bulk handlers
+                            handleBulkDeleteRecipes={handleBulkDeleteRecipes}
+                            handleBulkDeleteIngredients={handleBulkDeleteIngredients}
                         />
                     )}
 
@@ -547,3 +550,65 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
+// ADD: bulk delete handlers
+const handleBulkDeleteRecipes = async (ids) => {
+    if (!ids?.length) return;
+    const result = await Swal.fire({
+        title: 'Delete selected recipes?',
+        text: `This will delete ${ids.length} recipe(s).`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#aaa',
+        confirmButtonText: 'Delete'
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+        Swal.fire({ title: 'Deleting...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        await Promise.all(
+            ids.map(id =>
+                axios.delete(`${baseURL}/api/recipes/${id}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                })
+            )
+        );
+        const updatedRecipes = recipes.filter(r => !ids.includes(r._id));
+        setRecipes(updatedRecipes);
+        updateStats(users, updatedRecipes);
+        Swal.fire('Deleted!', 'Selected recipes were deleted.', 'success');
+    } catch (error) {
+        Swal.fire('Error', 'Failed to delete selected recipes.', 'error');
+    }
+};
+
+const handleBulkDeleteIngredients = async (ids) => {
+    if (!ids?.length) return;
+    const result = await Swal.fire({
+        title: 'Delete selected ingredients?',
+        text: `This will delete ${ids.length} ingredient(s).`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#aaa',
+        confirmButtonText: 'Delete'
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+        Swal.fire({ title: 'Deleting...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        await Promise.all(
+            ids.map(id =>
+                axios.delete(`${baseURL}/api/ingredients/${id}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                })
+            )
+        );
+        const updatedIngredients = ingredients.filter(i => !ids.includes(i._id));
+        setIngredients(updatedIngredients);
+        Swal.fire('Deleted!', 'Selected ingredients were deleted.', 'success');
+    } catch (error) {
+        Swal.fire('Error', 'Failed to delete selected ingredients.', 'error');
+    }
+};
