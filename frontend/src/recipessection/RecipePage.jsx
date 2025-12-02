@@ -80,48 +80,35 @@ const RecipePage = () => {
     const matchesUserPreferences = (recipe) => {
         if (!user || !user.hasCompletedOnboarding) return true;
 
-        let score = 0; // Use scoring instead of strict boolean
+        let score = 0;
 
-        // ✅ PRIORITY 1: Preferred Cuisines (MOST IMPORTANT)
-        if (user.preferredCuisines && user.preferredCuisines.length > 0) {
-            if (recipe.cuisine && user.preferredCuisines.includes(recipe.cuisine)) {
-                score += 100; // High score for cuisine match
-            } else {
-                return false; // ❌ Exclude recipes that don't match preferred cuisines
-            }
-        }
-
-        // ✅ PRIORITY 2: Check allergies - ALWAYS exclude recipes with allergens
-        if (user.allergies && user.allergies.length > 0) {
-            const hasAllergen = user.allergies.some(allergy => 
-                recipe.allergens && recipe.allergens.some(allergen => 
-                    allergen.toLowerCase().includes(allergy.toLowerCase())
-                ) ||
-                recipe.ingredients && recipe.ingredients.some(ingredient => {
-                    const ingredientName = typeof ingredient === 'string' 
-                        ? ingredient 
-                        : ingredient.name || '';
-                    return ingredientName.toLowerCase().includes(allergy.toLowerCase());
-                })
-            );
-            if (hasAllergen) {
-                return false; // ❌ HARD EXCLUDE - Safety first!
-            }
-        }
-
-        // ✅ PRIORITY 3: Dietary preferences (BONUS, not required)
+        // ❌ REMOVED: Cuisine preference matching - no longer affects score
+        
+        // ✅ PRIORITY 2: Dietary Tags
         if (user.dietaryPreferences && user.dietaryPreferences.length > 0) {
-            const hasMatchingDietary = user.dietaryPreferences.some(pref => 
-                recipe.dietaryTags && recipe.dietaryTags.includes(pref) ||
-                recipe.dietCategories && recipe.dietCategories.includes(pref)
+            const recipeTags = recipe.dietaryTags || [];
+            const hasMatch = user.dietaryPreferences.some(pref => 
+                recipeTags.map(tag => tag.toLowerCase()).includes(pref.toLowerCase())
             );
-            if (hasMatchingDietary) {
-                score += 50; // Bonus score for dietary match
+            
+            if (hasMatch) {
+                score += 50; // Medium score for dietary match
             }
-            // ⚠️ Don't exclude if no dietary match - it's just a preference
         }
 
-        return true; // ✅ Passed all filters
+        // ✅ PRIORITY 3: Allergen Check (BLOCKING)
+        if (user.allergies && user.allergies.length > 0) {
+            const hasAllergen = user.allergies.some(allergy =>
+                recipe.ingredients && recipe.ingredients.some(ingredient => 
+                    ingredient.name && 
+                    ingredient.name.toLowerCase().includes(allergy.toLowerCase())
+                )
+            );
+            
+            if (hasAllergen) return false; // Block recipes with allergens
+        }
+
+        return score > 0 ? score : true;
     };
 
     // Helper function to check if recipe matches current time of day
@@ -271,76 +258,60 @@ const RecipePage = () => {
     // Apply all filters and sort recipes by priority
     const allFilteredRecipes = recipes
         .filter(recipe => {
-            // First apply basic filters
             const recipeName = recipe.title || recipe.name || '';
             const matchesSearch = recipeName.toLowerCase().includes(searchTerm.toLowerCase());
             
             const matchesIngredients =
                 selectedIngredients.length === 0 ||
-                (recipe.ingredients &&
-                    selectedIngredients.every(selIng =>
-                        recipe.ingredients.some(ri => 
-                            typeof ri === 'string' 
-                                ? ri.toLowerCase().includes(selIng.toLowerCase())
-                                : (ri.name && ri.name.toLowerCase().includes(selIng.toLowerCase()))
-                        )
+                selectedIngredients.every(selectedIng =>
+                    (recipe.ingredients || []).some(recipeIng =>
+                        (recipeIng.name || recipeIng).toLowerCase().includes(selectedIng.toLowerCase())
                     )
                 );
-                
-            const matchesCategoryFilter = !categoryFilter || recipe.category === categoryFilter;
-            const matchesMinPrice = !minPrice || (recipe.price && recipe.price >= Number(minPrice));
-            const matchesMaxPrice = !maxPrice || (recipe.price && recipe.price <= Number(maxPrice));
-            
-            return matchesSearch && matchesIngredients && matchesCategoryFilter && 
-                matchesMinPrice && matchesMaxPrice;
+
+            const matchesCategory = !categoryFilter || recipe.category === categoryFilter;
+
+            const matchesPrice = 
+                (!minPrice || (recipe.price && recipe.price >= parseFloat(minPrice))) &&
+                (!maxPrice || (recipe.price && recipe.price <= parseFloat(maxPrice)));
+
+            const matchesDiet = selectedDiets.length === 0 || 
+                selectedDiets.every(diet => 
+                    (recipe.dietCategories && recipe.dietCategories.includes(diet)) ||
+                    (recipe.dietCategory && recipe.dietCategory === diet) ||
+                    (recipe.dietaryTags && recipe.dietaryTags.some(tag => 
+                        tag.toLowerCase() === diet.toLowerCase()
+                    ))
+                );
+
+            return matchesSearch && matchesIngredients && matchesCategory && matchesPrice && matchesDiet;
         })
         .map(recipe => {
-            // Add priority flag to each recipe
-            const isTimeMatch = matchesTimeOfDay(recipe);
-            const isPrefMatch = user?.hasCompletedOnboarding ? matchesUserPreferences(recipe) : true;
+            const matchesTime = matchesTimeOfDay(recipe);
+            const prefScore = matchesUserPreferences(recipe);
             
-            // ✅ NEW: Check if cuisine matches user preference
-            const isCuisineMatch = user?.preferredCuisines?.length > 0 
-                ? user.preferredCuisines.includes(recipe.cuisine)
-                : true;
+            let priority = null;
             
-            let priority;
-            // ✅ UPDATED PRIORITY SYSTEM - Cuisine is now most important
-            if (isCuisineMatch && isTimeMatch && isPrefMatch) {
-                priority = 'cuisine-time-preference'; // Best match
-            } else if (isCuisineMatch && isPrefMatch) {
-                priority = 'cuisine-preference'; // Good match
-            } else if (isCuisineMatch && isTimeMatch) {
-                priority = 'cuisine-time'; // Decent match
-            } else if (isCuisineMatch) {
-                priority = 'cuisine-only'; // At least cuisine matches
-            } else if (isTimeMatch && isPrefMatch) {
-                priority = 'time-preference'; // No cuisine but good
-            } else if (isPrefMatch) {
-                priority = 'preference-only'; // Just preferences
-            } else if (isTimeMatch) {
-                priority = 'time-only'; // Just time
+            if (matchesTime && prefScore && prefScore !== true) {
+                priority = 'time-and-preference';
+                recipe.sortOrder = 1;
+            } else if (matchesTime) {
+                priority = 'time-only';
+                recipe.sortOrder = 2;
+            } else if (prefScore && prefScore !== true) {
+                priority = 'preference-only';
+                recipe.sortOrder = 3;
             } else {
-                priority = 'other'; // Doesn't match much
+                recipe.sortOrder = 4;
             }
             
-            return { ...recipe, priority, isCuisineMatch, isTimeMatch, isPrefMatch };
-        })
-        .sort((a, b) => {
-            // ✅ Sort by priority - Cuisine matches come first
-            const priorityOrder = {
-                'cuisine-time-preference': 0,
-                'cuisine-preference': 1,
-                'cuisine-time': 2,
-                'cuisine-only': 3,
-                'time-preference': 4,
-                'preference-only': 5,
-                'time-only': 6,
-                'other': 7
+            return {
+                ...recipe,
+                priority,
+                // ❌ REMOVED: isCuisineMatch flag - no longer needed
             };
-            
-            return priorityOrder[a.priority] - priorityOrder[b.priority];
-        });
+        })
+        .sort((a, b) => a.sortOrder - b.sortOrder);
 
     const totalPages = Math.ceil(allFilteredRecipes.length / RECIPES_PER_PAGE);
     
