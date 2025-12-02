@@ -246,7 +246,7 @@ i[class*=" bx-"] {
 // Dark mode (optional detection)
 @media (prefers-color-scheme: dark) {
   .ingredient-btn {
-    background: linear-gradient(135deg,#3d291d 0%, #5a3a28 100%);
+    background: linear-gradient(135deg,#3d291d 0%, #ffb76f 100%);
     color: #fbe6d3;
     border: 2px solid rgba(255,200,160,0.35);
     box-shadow:
