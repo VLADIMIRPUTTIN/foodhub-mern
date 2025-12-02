@@ -190,20 +190,6 @@ const DashboardPage = () => {
                                     whileTap={{ scale: 0.95 }}
                                     onClick={handleExploreRecipes}
                                     className="explore-btn"
-                                    style={{
-                                        background: 'transparent',
-                                        border: '2px solid rgba(255,255,255,0.8)',
-                                        color: 'white',
-                                        padding: '12px 24px',
-                                        borderRadius: '50px',
-                                        fontSize: '1rem',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        transition: 'all 0.3s ease'
-                                    }}
                                 >
                                     <i className="bx bx-book-open"></i>Browse Recipes
                                 </motion.button>
