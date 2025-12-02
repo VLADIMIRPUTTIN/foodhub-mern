@@ -218,7 +218,7 @@
     position: absolute;
     top: 8px;
     right: 8px;
-    width: 32px; // Smaller heart button
+    width: 32px;
     height: 32px;
     background: rgba(0, 0, 0, 0.6);
     border: none;
@@ -233,7 +233,7 @@
     z-index: 20;
 
     i {
-      font-size: 1.1rem; // Smaller icon
+      font-size: 1.1rem;
       color: #bbb;
       transition: all 0.3s ease;
       font-family: 'boxicons' !important;
@@ -255,14 +255,28 @@
       transform: scale(0.96);
     }
 
+    // ✅ FIX: Red background and white heart when favorited
     &.favorited {
-      background: rgba(255, 107, 107, 0.18);
-      border: 2px solid rgba(255, 107, 107, 0.25);
+      background: rgba(255, 45, 85, 0.95) !important;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      
       i {
-        color: #ff2d55;
-        filter: drop-shadow(0 0 16px #ff2d5588);
+        color: #ffffff !important;
+        filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.8));
         animation: heartPulse 0.7s;
-        text-shadow: 0 0 8px #ff2d55, 0 0 16px #ff6b6b55;
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+      }
+
+      &:hover {
+        background: rgba(255, 45, 85, 1) !important;
+        transform: scale(1.15);
+        box-shadow: 0 8px 24px rgba(255, 45, 85, 0.5);
+        
+        i {
+          color: #ffffff !important;
+          filter: drop-shadow(0 0 20px rgba(255, 255, 255, 1));
+          transform: scale(1.2);
+        }
       }
     }
   }

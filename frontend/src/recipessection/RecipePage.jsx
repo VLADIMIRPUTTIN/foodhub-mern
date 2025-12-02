@@ -476,16 +476,21 @@ const RecipePage = () => {
             } else {
                 const response = await api.post('/api/favorites', { recipeId });
                 if (response.data.success) {
-                  await fetchFavoriteRecipes();
-                  toast.success('Added to favorites!');
+                    await fetchFavoriteRecipes();
+                    toast.success('Added to favorites!');
                 }
-              }
+            }
         } catch (error) {
             console.error('Error toggling favorite:', error);
             toast.error('Failed to update favorites');
         }
     };
-  
+
+    // ✅ NEW: Helper function to check if recipe is favorited
+    const isRecipeFavorited = (recipeId) => {
+        return favoriteRecipes.some(recipe => recipe._id === recipeId);
+    };
+
     // Handle rating button click
     const handleRateClick = (recipe, e) => {
         e.stopPropagation();
@@ -654,6 +659,7 @@ const RecipePage = () => {
                                     setSelectedRecipe={setSelectedRecipe}
                                     handleFavoriteToggle={handleFavoriteToggle}
                                     favoriteRecipes={favoriteRecipes}
+                                    isRecipeFavorited={isRecipeFavorited} // ✅ Pass the helper
                                     handleTouchStart={handleTouchStart}
                                     handleTouchMove={handleTouchMove}
                                     handleTouchEnd={handleTouchEnd}

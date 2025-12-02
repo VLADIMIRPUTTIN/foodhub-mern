@@ -56,12 +56,12 @@ const RecipeGrid = ({
                                     )}
                                     
                                     <button
-                                        className={`favorite-btn${favoriteRecipes.includes(recipe._id) ? ' favorited' : ''}`}
+                                        className={`favorite-btn ${favoriteRecipes.some(fav => fav._id === recipe._id) ? 'favorited' : ''}`}
                                         onClick={e => handleFavoriteToggle(recipe._id, e)}
-                                        aria-label={favoriteRecipes.includes(recipe._id) ? "Unfavorite" : "Favorite"}
+                                        aria-label={favoriteRecipes.some(fav => fav._id === recipe._id) ? "Unfavorite" : "Favorite"}
                                         tabIndex={0}
                                     >
-                                        <i className={favoriteRecipes.includes(recipe._id) ? "bx bxs-heart" : "bx bx-heart"}></i>
+                                        <i className={favoriteRecipes.some(fav => fav._id === recipe._id) ? "bx bxs-heart" : "bx bx-heart"}></i>
                                     </button>
                                 </div>
                                 <div className="recipe-content">
