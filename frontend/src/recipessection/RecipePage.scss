@@ -481,6 +481,53 @@ i[class*=" bx-"] {
       }
     }
   }
+
+  .priority-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(207, 153, 108, 0.95);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 2;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    i {
+      font-size: 1rem;
+    }
+
+    &.time-match {
+      background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+    }
+
+    &.preference-match {
+      background: linear-gradient(135deg, #4CAF50, #45a049);
+    }
+
+    // ✅ NEW: Cuisine match badge
+    &.cuisine-match {
+      top: 45px; // Place below time badge if both exist
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      animation: pulse-cuisine 2s ease-in-out infinite;
+    }
+  }
+}
+
+// ✅ Add animation for cuisine badge
+@keyframes pulse-cuisine {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
+  }
 }
 
 // Mobile adjustments

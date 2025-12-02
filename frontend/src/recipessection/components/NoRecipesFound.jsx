@@ -1,95 +1,108 @@
-import { useState, useEffect } from 'react';
-import api from '../../utils/apiClient';
+import { useState, useEffect } from 'react';'react';
+import api from '../../utils/apiClient'; 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import './NoRecipesFound.scss';
+import './NoRecipesFound.scss';peModal';
 import { buildRecipeImageUrl } from '../../utils/imageUrls';
-
+import SelectedIngredients from './SelectedIngredients';
 const NoRecipesFound = ({ onReload, selectedIngredients = [] }) => { // ADD selectedIngredients prop with default
-    const [allRecipes, setAllRecipes] = useState([]);
+    const [allRecipes, setAllRecipes] = useState([]);ntsSidebar';
     const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
-    const { user } = useAuthStore();
-
-    useEffect(() => {
+    const navigate = useNavigate();omponents/PaginationControls';
+    const { user } = useAuthStore();ents/NoRecipesFound';
+import { useToast } from '../components/ui/toast';
+    useEffect(() => { } from '../store/authStore';
         const fetchAllRecipes = async () => {
-            try {
-                const response = await api.get('/api/recipes');
+            try {l from '../components/RatingModal';
+                const response = await api.get('/api/recipes');al';
                 setAllRecipes(response.data.recipes || []);
-            } catch (error) {
+            } catch (error) {omponents/CameraModal';
                 console.error('Error fetching recipes:', error);
-                setAllRecipes([]);
+                setAllRecipes([]);oast';
             } finally {
                 setLoading(false);
-            }
-        };
-
-        fetchAllRecipes();
+            }ser } = useAuthStore();
+        };{ toast } = useToast();
+    const navigate = useNavigate();
+        fetchAllRecipes();cation();
     }, []);
-
-    // Helper function to get image URL
-    const getImageUrl = (recipe) => {
-        return buildRecipeImageUrl(recipe?.imageUrl);
-    };
-
+    const [recipes, setRecipes] = useState([]);
+    // Helper function to get image URL = useState([]);
+    const getImageUrl = (recipe) => { = useState('');
+        return buildRecipeImageUrl(recipe?.imageUrl);seState('');
+    };nst [filteredIngredients, setFilteredIngredients] = useState([]);
+    const [selectedRecipe, setSelectedRecipe] = useState(null);
     const handleRecipeClick = (recipeId) => {
-        navigate(`/recipe/${recipeId}`);
-    };
-
-    return (
-        <>
+        navigate(`/recipe/${recipeId}`);auto-selection
+    };nst [selectedIngredients, setSelectedIngredients] = useState([]);
+    
+    return (ategoryFilter, setCategoryFilter] = useState('');
+        <>[minPrice, setMinPrice] = useState('');
             <div className="no-recipes-enhanced">
                 <div className="no-recipes-animation">
-                    <div className="chef-hat">
+                    <div className="chef-hat">tate(false);
                         <i className="bx bx-restaurant"></i>
-                    </div>
-                </div>
-                
-                <div className="no-recipes-content">
+                    </div>eetOut] = useState(false);
+                </div>ipes, setFavoriteRecipes] = useState([]);
+                oginPrompt, setShowLoginPrompt] = useState(false);
+                <div className="no-recipes-content">eState(false);
                     <h3 className="no-recipes-title">No Delicious Recipes Found</h3>
-                    <p className="no-recipes-subtitle">
-                        {selectedIngredients.length > 0 
+                    <p className="no-recipes-subtitle">;
+                        {selectedIngredients.length > 0 tate(false);
                             ? "Try adjusting your ingredient selection or search filters"
                             : "Looks like our kitchen is empty right now"
-                        }
+                        } setSelectedDiets] = useState([]);
                     </p>
+                    {user?.preferredCuisines?.length > 0 && (dling refs and states
+                        <p style={{ marginTop: '15px', color: '#667eea', fontWeight: '600' }}>ainerRef = useRef(null);
+                            🌍 Looking for {user.preferredCuisines.join(', ')} recipes    const [touchStart, setTouchStart] = useState(null);
+                        </p>
+                    )}e);
                 </div>
             </div>
 
             {/* Display all available recipes below the "no recipes found" message */}
             {!loading && allRecipes.length > 0 && (
-                <div className="all-recipes-section">
+                <div className="all-recipes-section">ner
                     <h2 className="all-recipes-title">All Other Recipes ({allRecipes.length})</h2>
                     <div className="recipes-grid">
-                        {allRecipes.map(recipe => (
+                        {allRecipes.map(recipe => (f.current.scrollTo({
                             <div 
                                 key={recipe._id} 
                                 className="recipe-card"
                                 onClick={() => handleRecipeClick(recipe._id)}
                             >
                                 <div className="recipe-image">
-                                    <img 
-                                        src={getImageUrl(recipe)} 
+    // PAGINATION LOGIC - 8 recipes per page (2 rows × 4 columns)
+    const RECIPES_PER_PAGE = 8;         src={getImageUrl(recipe)} 
                                         alt={recipe.title || recipe.name}
-                                        onError={(e) => {
-                                            e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
-                                        }}
+    // Function to check if recipe matches user's dietary preferences and allergies
+    const matchesUserPreferences = (recipe) => {rget.src = 'https://via.placeholder.com/300x200?text=No+Image';
+        if (!user || !user.hasCompletedOnboarding) return true;
                                     />
-                                </div>
+        let score = 0; // Use scoring instead of strict boolean
                                 <div className="recipe-content">
-                                    <h3 className="recipe-title">{recipe.title || recipe.name}</h3>
-                                    {recipe.category && (
-                                        <div className="recipe-category">{recipe.category}</div>
-                                    )}
-                                    <p className="recipe-desc">{recipe.description?.substring(0, 100) || ""}...</p>
-                                </div>
-                            </div>
-                        ))}
+        // ✅ PRIORITY 1: Preferred Cuisines (MOST IMPORTANT)tle">{recipe.title || recipe.name}</h3>
+        if (user.preferredCuisines && user.preferredCuisines.length > 0) {
+            if (recipe.cuisine && user.preferredCuisines.includes(recipe.cuisine)) {egory}</div>
+                score += 100; // High score for cuisine match
+            } else {                <p className="recipe-desc">{recipe.description?.substring(0, 100) || ""}...</p>
+                return false; // ❌ Exclude recipes that don't match preferred cuisines
+            }               </div>
+        }               ))}
                     </div>
-                </div>
-            )}
-        </>
+        // ✅ PRIORITY 2: Check allergies - ALWAYS exclude recipes with allergens
+        if (user.allergies && user.allergies.length > 0) {
+            const hasAllergen = user.allergies.some(allergy => 
+                recipe.allergens && recipe.allergens.some(allergen => 
+                    allergen.toLowerCase().includes(allergy.toLowerCase())
+                ) ||
+                recipe.ingredients && recipe.ingredients.some(ingredient => {                    const ingredientName = typeof ingredient === 'string'                         ? ingredient                         : ingredient.name || '';                    return ingredientName.toLowerCase().includes(allergy.toLowerCase());                })            );            if (hasAllergen) {                return false; // ❌ HARD EXCLUDE - Safety first!            }        }        // ✅ PRIORITY 3: Dietary preferences (BONUS, not required)        if (user.dietaryPreferences && user.dietaryPreferences.length > 0) {            const hasMatchingDietary = user.dietaryPreferences.some(pref =>                 recipe.dietaryTags && recipe.dietaryTags.includes(pref) ||                recipe.dietCategories && recipe.dietCategories.includes(pref)            );            if (hasMatchingDietary) {                score += 50; // Bonus score for dietary match            }            // ⚠️ Don't exclude if no dietary match - it's just a preference        }        return true; // ✅ Passed all filters    };    // Helper function to check if recipe matches current time of day    const matchesTimeOfDay = (recipe) => {        return recipe.category && recipe.category.toLowerCase() === currentMealType.toLowerCase();    };    // Detect mobile device    useEffect(() => {        const checkMobile = () => {            setIsMobile(window.innerWidth < 768);        };                checkMobile();        window.addEventListener('resize', checkMobile);                return () => window.removeEventListener('resize', checkMobile);    }, []);        // Determine current meal type based on time    useEffect(() => {        const getCurrentMealType = () => {            const currentHour = new Date().getHours();                        if (currentHour >= 5 && currentHour < 11) {                return 'Breakfast';            } else if (currentHour >= 11 && currentHour < 15) {                return 'Lunch';            } else if (currentHour >= 15 && currentHour < 18) {                return 'Snack';            } else {                return 'Dinner';            }        };                setCurrentMealType(getCurrentMealType());    }, []);    // Touch handling functions    const handleTouchStart = (e) => {        if (!isMobile) return;        setTouchEnd(null);        setTouchStart(e.targetTouches[0].clientX);        setIsSwiping(true);    };    const handleTouchMove = (e) => {        if (!isMobile || !touchStart) return;        setTouchEnd(e.targetTouches[0].clientX);    };    const handleTouchEnd = () => {        if (!isMobile || !touchStart || !touchEnd) {            setIsSwiping(false);            return;        }                const distance = touchStart - touchEnd;        const isLeftSwipe = distance > 50;        const isRightSwipe = distance < -50;                if (isLeftSwipe && currentPage < totalPages) {            setCurrentPage(prev => prev + 1);        }                if (isRightSwipe && currentPage > 1) {            setCurrentPage(prev => prev - 1);        }                setIsSwiping(false);        setTouchStart(null);        setTouchEnd(null);    };    // Read diet filters from URL    useEffect(() => {        const params = new URLSearchParams(location.search);        const dietsParam = params.get('diets');        if (dietsParam) {            const list = dietsParam.split(',').map(s => s.trim()).filter(Boolean);            setSelectedDiets(list);        } else {            setSelectedDiets([]);        }    }, [location.search]);    // Fetch recipes    const fetchRecipes = async () => {        try {            const params = selectedDiets.length               ? { diets: selectedDiets.join(',') }               : undefined;                        const res = await api.get('/api/recipes', { params });            const combined = res.data.success ? res.data.recipes : [];            setRecipes(combined);        } catch (error) {            console.error("Failed to fetch recipes", error);            toast.error('Failed to load recipes');            setRecipes([]);        }    };    useEffect(() => {        fetchRecipes();    }, [selectedDiets]);    // Fetch ingredients    useEffect(() => {        const baseURL = import.meta.env.MODE === "development"            ? "http://localhost:5000"            : "";        axios.get(`${baseURL}/api/ingredients`)            .then(res => {                if (res.data.success && res.data.ingredients) {                    setIngredients(res.data.ingredients.map(ing => ing.name));                } else if (Array.isArray(res.data)) {                    setIngredients(res.data);                }            })            .catch(() => setIngredients([]));    }, []);    // Filter ingredients based on search    useEffect(() => {        setFilteredIngredients(            ingredients.filter(ing =>                ing.toLowerCase().includes(ingredientSearch.toLowerCase())            )        );    }, [ingredientSearch, ingredients]);    // ✅ Manual ingredient selection/deselection ONLY    const handleIngredientClick = (ing) => {        setSelectedIngredients(selected =>            selected.includes(ing)                ? selected.filter(i => i !== ing)                : [...selected, ing]        );    };    // ✅ Manual ingredient removal ONLY    const handleRemoveIngredient = (ingredientToRemove) => {        setSelectedIngredients(selectedIngredients.filter(ing => ing !== ingredientToRemove));    };    // Apply all filters and sort recipes by priority    const allFilteredRecipes = recipes        .filter(recipe => {            // First apply basic filters            const recipeName = recipe.title || recipe.name || '';            const matchesSearch = recipeName.toLowerCase().includes(searchTerm.toLowerCase());                        const matchesIngredients =                selectedIngredients.length === 0 ||                (recipe.ingredients &&                    selectedIngredients.every(selIng =>                        recipe.ingredients.some(ri =>                             typeof ri === 'string'                                 ? ri.toLowerCase().includes(selIng.toLowerCase())                                : (ri.name && ri.name.toLowerCase().includes(selIng.toLowerCase()))                        )                    )                );                            const matchesCategoryFilter = !categoryFilter || recipe.category === categoryFilter;            const matchesMinPrice = !minPrice || (recipe.price && recipe.price >= Number(minPrice));            const matchesMaxPrice = !maxPrice || (recipe.price && recipe.price <= Number(maxPrice));                        return matchesSearch && matchesIngredients && matchesCategoryFilter &&                 matchesMinPrice && matchesMaxPrice;        })        .map(recipe => {            // Add priority flag to each recipe            const isTimeMatch = matchesTimeOfDay(recipe);            const isPrefMatch = user?.hasCompletedOnboarding ? matchesUserPreferences(recipe) : true;                        // ✅ NEW: Check if cuisine matches user preference            const isCuisineMatch = user?.preferredCuisines?.length > 0                 ? user.preferredCuisines.includes(recipe.cuisine)                : true;                        let priority;            // ✅ UPDATED PRIORITY SYSTEM - Cuisine is now most important            if (isCuisineMatch && isTimeMatch && isPrefMatch) {                priority = 'cuisine-time-preference'; // Best match            } else if (isCuisineMatch && isPrefMatch) {                priority = 'cuisine-preference'; // Good match            } else if (isCuisineMatch && isTimeMatch) {                priority = 'cuisine-time'; // Decent match            } else if (isCuisineMatch) {                priority = 'cuisine-only'; // At least cuisine matches            } else if (isTimeMatch && isPrefMatch) {                priority = 'time-preference'; // No cuisine but good            } else if (isPrefMatch) {                priority = 'preference-only'; // Just preferences            } else if (isTimeMatch) {                priority = 'time-only'; // Just time            } else {                priority = 'other'; // Doesn't match much            }                        return { ...recipe, priority, isCuisineMatch, isTimeMatch, isPrefMatch };        })        .sort((a, b) => {            // ✅ Sort by priority - Cuisine matches come first            const priorityOrder = {                'cuisine-time-preference': 0,                'cuisine-preference': 1,                'cuisine-time': 2,                'cuisine-only': 3,                'time-preference': 4,                'preference-only': 5,                'time-only': 6,                'other': 7            };                        return priorityOrder[a.priority] - priorityOrder[b.priority];        });    const totalPages = Math.ceil(allFilteredRecipes.length / RECIPES_PER_PAGE);        // Get current page of recipes    const currentRecipes = allFilteredRecipes.slice(        (currentPage - 1) * RECIPES_PER_PAGE,        currentPage * RECIPES_PER_PAGE    );        // Fill grid with exact number of slots    const gridRecipes = Array(RECIPES_PER_PAGE).fill(null);    currentRecipes.forEach((recipe, index) => {        gridRecipes[index] = recipe;    });    // Reset to page 1 if filters change and current page is out of range    useEffect(() => {        if (currentPage > totalPages && totalPages > 0) {            setCurrentPage(1);        }        scrollToTop();    }, [allFilteredRecipes.length, totalPages]);    // Fetch user's favorite recipes    useEffect(() => {        if (user) {            fetchFavoriteRecipes();        } else {            setFavoriteRecipes([]);        }    }, [user]);    const fetchFavoriteRecipes = async () => {        try {            const response = await api.get('/api/favorites');            if (response.data.success && response.data.favorites) {                setFavoriteRecipes(response.data.favorites.map(fav => fav.recipe));            }        } catch (error) {            console.error("Error fetching favorites:", error);        }    };    const handleFavoriteToggle = async (recipeId, event) => {        event.stopPropagation();        if (!user) {            setShowLoginPrompt(true);            return;        }        try {            const isFavorited = favoriteRecipes.some(recipe => recipe._id === recipeId);                        if (isFavorited) {                await api.delete(`/api/favorites/${recipeId}`);                setFavoriteRecipes(prev => prev.filter(recipe => recipe._id !== recipeId));                toast.success('Removed from favorites');            } else {                const response = await api.post('/api/favorites', { recipeId });                if (response.data.success) {                    await fetchFavoriteRecipes();                    toast.success('Added to favorites!');                }            }        } catch (error) {            console.error('Error toggling favorite:', error);            toast.error('Failed to update favorites');        }    };    const isRecipeFavorited = (recipeId) => {        return favoriteRecipes.some(recipe => recipe._id === recipeId);    };    const handleRateClick = (recipe, e) => {        e.stopPropagation();        if (!user) {            setShowLoginPrompt(true);            return;        }        setRecipeToRate(recipe);        setRatingModalOpen(true);    };    const handleRatingModalClose = (updatedRecipe) => {        setRatingModalOpen(false);        setRecipeToRate(null);                if (updatedRecipe) {            setRecipes(recipes.map(r =>                 r._id === updatedRecipe._id ? updatedRecipe : r            ));        }    };    const handleCommentClick = (recipe, e) => {        e.stopPropagation();        setRecipeToComment(recipe);        setCommentModalOpen(true);    };    const handleCommentUpdate = (recipeId, action) => {        setRecipes(prevRecipes =>             prevRecipes.map(recipe => {                if (recipe._id === recipeId) {                    const currentCount = recipe.commentCount || 0;                    return {                        ...recipe,                        commentCount: action === 'add' ? currentCount + 1 : Math.max(0, currentCount - 1)                    };                }                return recipe;            })        );    };    const handleSheetOpenChange = (isOpen) => {        if (isOpen) {            setIsSheetOpen(true);            setSheetAnimate(true);            setSheetOut(false);        } else {            setSheetOut(true);            setTimeout(() => {                setIsSheetOpen(false);                setSheetAnimate(false);                setSheetOut(false);            }, 300);        }    };    // Sync URL with selected diets    useEffect(() => {        const params = new URLSearchParams(location.search);        if (selectedDiets.length) {            params.set('diets', selectedDiets.join(','));        } else {            params.delete('diets');        }        navigate({ search: params.toString() }, { replace: true });    }, [selectedDiets, navigate]);    return (        <div className="recipe-page">            <Navbar />            <div className="main-content">                {/* Responsive Ingredients Sidebar */}                <div className="ingredients-responsive">                    {/* Mobile: Sheet Button */}                    <MobileIngredientSheet                         isSheetOpen={isSheetOpen}                        setIsSheetOpen={setIsSheetOpen}                        sheetAnimate={sheetAnimate}                        sheetOut={sheetOut}                        handleSheetOpenChange={handleSheetOpenChange}                        ingredientSearch={ingredientSearch}                        setIngredientSearch={setIngredientSearch}                        filteredIngredients={filteredIngredients}                        selectedIngredients={selectedIngredients}                        handleIngredientClick={handleIngredientClick}                        isMobile={isMobile}                    />                                        {/* Desktop: Sidebar */}                    <IngredientsSidebar                         ingredientSearch={ingredientSearch}                        setIngredientSearch={setIngredientSearch}                        filteredIngredients={filteredIngredients}                        selectedIngredients={selectedIngredients}                        handleIngredientClick={handleIngredientClick}                    />                </div>                                {/* Main Recipe Content */}                <div className="recipe-container" ref={recipeContainerRef}>                    {/* Header with background image */}                    <div className="recipe-header-bg">                        <img                            src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"                            alt="Food Banner"                            className="header-bg-img"                        />                        <div className="header-bg-overlay"></div>                        <div className="header-bg-text">                            <h1>                                {user && user.hasCompletedOnboarding ? (                                    user.preferredCuisines && user.preferredCuisines.length > 0 ?                                         `Perfect ${currentMealType} - ${user.preferredCuisines.join(', ')} Cuisine` :                                         `Perfect ${currentMealType} for You`                                ) :                                     `Perfect ${currentMealType} Recipes`                                }                            </h1>                            {user?.preferredCuisines?.length > 0 && (                                <p style={{ color: 'white', marginTop: '10px', fontSize: '1.1rem' }}>                                    🌍 Showing {user.preferredCuisines.join(', ')} recipes just for you!                                </p>                            )}                        </div>                    </div>                    {/* Selected ingredients display */}                    <SelectedIngredients                         selectedIngredients={selectedIngredients}                        onRemoveIngredient={handleRemoveIngredient}                    />                    {/* Filter controls */}                    <RecipeFilters                         searchTerm={searchTerm}                        setSearchTerm={setSearchTerm}                        categoryFilter={categoryFilter}                        setCategoryFilter={setCategoryFilter}                        minPrice={minPrice}                        setMinPrice={setMinPrice}                        maxPrice={maxPrice}                        setMaxPrice={setMaxPrice}                        selectedDiets={selectedDiets}                        setSelectedDiets={setSelectedDiets}                    />                    {/* Single grid showing all recipes in prioritized order */}                    <div className="recipe-grid-container">                                                {allFilteredRecipes.length === 0 ? (                            <NoRecipesFound                                 onReload={fetchRecipes}                                selectedIngredients={selectedIngredients}                            />                        ) : (                            <>                                {/* Main Recipe Grid */}                                <RecipeGrid                                     gridRecipes={gridRecipes}                                    isSwiping={isSwiping}                                    setSelectedRecipe={setSelectedRecipe}                                    handleFavoriteToggle={handleFavoriteToggle}                                    favoriteRecipes={favoriteRecipes}                                    isRecipeFavorited={isRecipeFavorited}                                    handleTouchStart={handleTouchStart}                                    handleTouchMove={handleTouchMove}                                    handleTouchEnd={handleTouchEnd}                                    gridContainerRef={gridContainerRef}                                    filteredRecipes={allFilteredRecipes}                                    handleRateClick={handleRateClick}                                    currentMealType={currentMealType}                                    handleCommentClick={handleCommentClick}                                    currentPage={currentPage}                                    userPreferences={user?.hasCompletedOnboarding}                                />                                {/* Pagination controls */}                                <PaginationControls                                     currentPage={currentPage}                                    setCurrentPage={setCurrentPage}                                    totalPages={totalPages}                                />                            </>                        )}                    </div>                </div>            </div>                        {/* Modals */}            <LoginPromptModal                 isOpen={showLoginPrompt}                onClose={() => setShowLoginPrompt(false)}            />                        <RecipeModal                open={!!selectedRecipe}                recipe={selectedRecipe}                onClose={() => setSelectedRecipe(null)}                onViewFull={() => {                    window.location.href = `/recipe/${selectedRecipe._id}`;                }}            />                        {ratingModalOpen && recipeToRate && (                <RatingModal                     isOpen={ratingModalOpen}                    recipe={recipeToRate}                    onClose={handleRatingModalClose}                />            )}            {/* Comment Modal */}            <CommentModal                isOpen={commentModalOpen}                onClose={() => setCommentModalOpen(false)}
+                recipe={recipeToComment}
+                onCommentUpdate={handleCommentUpdate}
+            />
+        </div>
     );
 };
 
-export default NoRecipesFound;
+export default RecipePage;
