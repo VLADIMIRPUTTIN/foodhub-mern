@@ -92,7 +92,7 @@ $transition: all 0.3s ease;
                     background: transparent;
                     border: 2px solid rgba(255, 255, 255, 0.85);
                     color: #fff;
-                    padding: 15px 30px;         // same as .get-started-btn
+                    padding: 20px 30px;         // same as .get-started-btn
                     border-radius: 30px;
                     font-size: 1.1rem;
                     font-weight: 600;
@@ -102,7 +102,7 @@ $transition: all 0.3s ease;
                     gap: 10px;
                     transition: all 0.3s ease;
                     position: relative;
-                    top: 2px;                   // lower a little to align visually
+                    top: 16px;                   // lower a little to align visually
                     height: 54px;               // consistent height
                     box-sizing: border-box;
                     background-clip: padding-box;
