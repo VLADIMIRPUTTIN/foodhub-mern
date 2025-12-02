@@ -3,6 +3,7 @@ import api from '../../utils/apiClient';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import './NoRecipesFound.scss';
+import { buildRecipeImageUrl } from '../../utils/imageUrls';
 
 const NoRecipesFound = ({ onReload, selectedIngredients = [] }) => { // ADD selectedIngredients prop with default
     const [allRecipes, setAllRecipes] = useState([]);
@@ -28,15 +29,7 @@ const NoRecipesFound = ({ onReload, selectedIngredients = [] }) => { // ADD sele
 
     // Helper function to get image URL
     const getImageUrl = (recipe) => {
-        if (!recipe.imageUrl) {
-            return 'https://via.placeholder.com/300x200?text=No+Image';
-        }
-        if (recipe.imageUrl.startsWith('http')) {
-            return recipe.imageUrl;
-        }
-        const cleanPath = recipe.imageUrl.startsWith('/') ? recipe.imageUrl.slice(1) : recipe.imageUrl;
-        const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
-        return `${baseURL}/${cleanPath}`;
+        return buildRecipeImageUrl(recipe?.imageUrl);
     };
 
     const handleRecipeClick = (recipeId) => {

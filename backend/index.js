@@ -98,10 +98,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser()); // allows us to parse incoming cookies
-
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(cookieParser());
 
 // Routes
 app.use("/api/auth", authRoutes);

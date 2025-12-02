@@ -4,6 +4,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import cloudinary from '../utils/cloudinary.js';
+import mongoose from "mongoose"; // ✅ ADD THIS IMPORT
 
 // Update the file upload configuration
 const storage = multer.diskStorage({
@@ -107,7 +108,7 @@ export const createRecipe = async (req, res) => {
             console.log("Optional fields parsing error:", parseError);
         }
 
-        // ✅ FIX: Handle Cloudinary image upload correctly
+        // ✅ Handle Cloudinary image upload correctly
         let imageUrl = null;
         if (req.file) {
             try {
@@ -118,7 +119,7 @@ export const createRecipe = async (req, res) => {
                     resource_type: 'image'
                 });
                 
-                // ✅ Store the secure_url from Cloudinary (full HTTPS URL)
+                // ✅ Store the FULL secure_url from Cloudinary
                 imageUrl = result.secure_url;
                 
                 console.log("✅ Cloudinary upload successful:", imageUrl);
@@ -244,91 +245,198 @@ export const getAllRecipesForAdmin = async (req, res) => {
 
 export const updateRecipe = async (req, res) => {
     try {
+        console.log("📝 Update recipe request received:", req.params.id);
+        console.log("📦 Request body:", req.body);
+        console.log("📸 Has file:", !!req.file);
+
         const { id } = req.params;
-        const {
-            name,
-            category,
-            description,
-            ingredients,
-            steps,
-            imageUrl,
-            price,
-            servings,
-            cookingTime,
-            difficulty,
-            dietaryTags,
-            cuisine,
-            allergens,
-            // Add nutritional fields
-            nutritionalInfo,
-            dietCategory,
-            servingSize,
-            dietCategories
-        } = req.body;
+        
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ success: false, message: "Invalid recipe ID format" });
+        }
 
-        // ...existing validation...
+        const recipe = await Recipe.findById(id);
+        if (!recipe) {
+            return res.status(404).json({ success: false, message: "Recipe not found" });
+        }
 
-        let normalizedDietCategories = [];
-        if (Array.isArray(dietCategories)) {
-            normalizedDietCategories = dietCategories;
-        } else if (typeof dietCategories === 'string' && dietCategories.trim()) {
+        const user = await User.findById(req.userId);
+        if (!user) {
+            return res.status(401).json({ success: false, message: "User not found" });
+        }
+
+        const isOwner = recipe.createdBy && recipe.createdBy.toString() === req.userId;
+        const isAdmin = user.role === 'admin';
+
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({ success: false, message: "You can only edit your own recipes or must be an admin" });
+        }
+
+        // ✅ Handle image upload to Cloudinary
+        let imageUrl = recipe.imageUrl; // Keep existing image by default
+        
+        if (req.file) {
             try {
-                const maybeJson = JSON.parse(dietCategories);
-                normalizedDietCategories = Array.isArray(maybeJson) ? maybeJson : [];
-            } catch {
-                normalizedDietCategories = dietCategories.split(',').map(s => s.trim()).filter(Boolean);
+                console.log("📤 Uploading image to Cloudinary:", req.file.path);
+                
+                const result = await cloudinary.uploader.upload(req.file.path, {
+                    folder: 'foodhub/recipes',
+                    resource_type: 'image',
+                    transformation: [
+                        { width: 800, height: 600, crop: 'limit' },
+                        { quality: 'auto' }
+                    ]
+                });
+                
+                imageUrl = result.secure_url;
+                console.log("✅ Cloudinary upload successful:", imageUrl);
+                
+                // Delete old image from Cloudinary if it exists
+                if (recipe.imageUrl && recipe.imageUrl.includes('cloudinary.com')) {
+                    try {
+                        // Extract public_id from the Cloudinary URL
+                        // Example: https://res.cloudinary.com/duceirdeu/image/upload/v1234567890/foodhub/recipes/abc123.jpg
+                        const urlParts = recipe.imageUrl.split('/');
+                        const uploadIndex = urlParts.indexOf('upload');
+                        if (uploadIndex !== -1 && uploadIndex + 1 < urlParts.length) {
+                            // Get everything after 'upload/' and remove file extension
+                            const publicIdWithVersion = urlParts.slice(uploadIndex + 1).join('/');
+                            const publicId = publicIdWithVersion.split('.')[0].replace(/^v\d+\//, '');
+                            
+                            console.log("🗑️ Attempting to delete old image:", publicId);
+                            await cloudinary.uploader.destroy(publicId);
+                            console.log("✅ Old image deleted from Cloudinary");
+                        }
+                    } catch (deleteError) {
+                        console.error("⚠️ Error deleting old image:", deleteError.message);
+                        // Don't fail the update if old image deletion fails
+                    }
+                }
+                
+                // Clean up temp file
+                fs.unlink(req.file.path, (err) => {
+                    if (err) console.error("⚠️ Error removing temp file:", err);
+                });
+            } catch (uploadError) {
+                console.error("❌ Cloudinary upload error:", uploadError);
+                
+                // Clean up temp file even on error
+                if (req.file && req.file.path) {
+                    fs.unlink(req.file.path, (err) => {
+                        if (err) console.error("⚠️ Error removing temp file:", err);
+                    });
+                }
+                
+                return res.status(500).json({ 
+                    success: false, 
+                    message: "Image upload failed: " + uploadError.message 
+                });
             }
         }
 
-        const updateData = {
-            name,
-            title: name,
-            category,
-            description,
-            ingredients,
-            steps,
-            price: price ? parseFloat(price) : undefined,
-            servings: servings ? parseInt(servings) : undefined,
-            cookingTime: cookingTime ? parseInt(cookingTime) : undefined,
-            difficulty: difficulty || 'Easy',
-            dietaryTags,
-            cuisine,
-            allergens,
-            // Add nutritional fields
-            nutritionalInfo,
-            dietCategory: dietCategory || 'None',
-            servingSize: servingSize || '1 serving',
-            dietCategories: normalizedDietCategories
-        };
+        // ✅ Parse ingredients and instructions safely
+        let parsedIngredients = recipe.ingredients;
+        let parsedInstructions = recipe.instructions;
+        let parsedDietaryTags = recipe.dietaryTags || [];
+        
+        try {
+            if (req.body.ingredients) {
+                parsedIngredients = typeof req.body.ingredients === 'string' 
+                    ? JSON.parse(req.body.ingredients) 
+                    : req.body.ingredients;
+            }
+            
+            if (req.body.instructions) {
+                parsedInstructions = typeof req.body.instructions === 'string' 
+                    ? JSON.parse(req.body.instructions) 
+                    : req.body.instructions;
+            }
 
-        if (imageUrl) {
-            updateData.imageUrl = imageUrl;
-        }
-
-        const updatedRecipe = await Recipe.findByIdAndUpdate(
-            id,
-            updateData,
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedRecipe) {
-            return res.status(404).json({
-                success: false,
-                message: 'Recipe not found'
+            if (req.body.dietaryTags) {
+                parsedDietaryTags = typeof req.body.dietaryTags === 'string'
+                    ? JSON.parse(req.body.dietaryTags)
+                    : req.body.dietaryTags;
+            }
+        } catch (parseError) {
+            console.error("❌ Parse error:", parseError);
+            return res.status(400).json({ 
+                success: false, 
+                message: "Invalid data format: " + parseError.message 
             });
         }
 
-        res.json({
-            success: true,
-            message: 'Recipe updated successfully',
-            recipe: updatedRecipe
+        // ✅ Build update data object safely
+        const updateData = {
+            imageUrl: imageUrl, // Always include the image URL (either new or existing)
+        };
+
+        // Only update fields that are provided
+        if (req.body.title) {
+            updateData.title = req.body.title;
+            updateData.name = req.body.title; // Keep name in sync with title
+        }
+        if (req.body.category) updateData.category = req.body.category;
+        if (req.body.description) updateData.description = req.body.description;
+        if (parsedIngredients && parsedIngredients.length > 0) updateData.ingredients = parsedIngredients;
+        if (parsedInstructions && parsedInstructions.length > 0) {
+            updateData.instructions = parsedInstructions;
+            updateData.steps = parsedInstructions;
+        }
+        if (req.body.price !== undefined && req.body.price !== '') {
+            updateData.price = parseFloat(req.body.price);
+        }
+        if (req.body.servings !== undefined) updateData.servings = parseInt(req.body.servings);
+        if (req.body.cookingTime !== undefined && req.body.cookingTime !== '') {
+            updateData.cookingTime = parseInt(req.body.cookingTime);
+        }
+        if (req.body.difficulty) updateData.difficulty = req.body.difficulty;
+        if (parsedDietaryTags) updateData.dietaryTags = parsedDietaryTags;
+        if (req.body.cuisine) updateData.cuisine = req.body.cuisine;
+
+        console.log("🔄 Updating recipe with data:", {
+            ...updateData,
+            imageUrl: imageUrl ? 'CLOUDINARY_URL' : 'NO_IMAGE'
+        });
+
+        const updatedRecipe = await Recipe.findByIdAndUpdate(
+            id, 
+            updateData, 
+            { 
+                new: true,
+                runValidators: true 
+            }
+        ).populate('createdBy', 'name email');
+
+        if (!updatedRecipe) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Recipe not found after update" 
+            });
+        }
+
+        console.log("✅ Recipe updated successfully:", updatedRecipe._id);
+        console.log("✅ Updated imageUrl:", updatedRecipe.imageUrl);
+
+        res.status(200).json({ 
+            success: true, 
+            message: "Recipe updated successfully", 
+            recipe: updatedRecipe 
         });
     } catch (error) {
-        console.error('Error updating recipe:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error',
-            error: error.message
+        console.error('❌ Update recipe error:', error);
+        console.error('Error stack:', error.stack);
+        
+        // Clean up temp file on error
+        if (req.file && req.file.path) {
+            fs.unlink(req.file.path, (err) => {
+                if (err) console.error("⚠️ Error removing temp file:", err);
+            });
+        }
+        
+        res.status(500).json({ 
+            success: false, 
+            message: "Server error: " + error.message,
+            error: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 };

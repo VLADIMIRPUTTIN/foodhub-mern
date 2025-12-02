@@ -9,7 +9,10 @@ const recipeSchema = new mongoose.Schema({
     cookingTime: { type: Number },
     servings: { type: Number },
     difficulty: { type: String, enum: ['Easy', 'Medium', 'Hard'], default: 'Easy' },
-    imageUrl: { type: String },
+    imageUrl: {
+        type: String,
+        // ✅ DO NOT add: select: false
+    },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     isPublic: { type: Boolean, default: false },
     isShared: { type: Boolean, default: false },

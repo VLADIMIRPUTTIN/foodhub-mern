@@ -3,6 +3,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import './PendingRecipePage.scss';
 import { useSocket } from '../context/SocketContext';
+import { buildRecipeImageUrl } from '../utils/imageUrls';
 
 const baseURL = import.meta.env.MODE === "development"
     ? "http://localhost:5000"
@@ -22,36 +23,9 @@ const PendingRecipePage = ({ onRecipeModerated }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const { socket } = useSocket();
 
-    // Enhanced getImageUrl function with better error handling
+    // Replace the getImageUrl function (around line 25):
     const getImageUrl = (recipe) => {
-        // ✅ Better validation
-        if (!recipe) {
-            console.warn('getImageUrl: recipe is null/undefined');
-            return '/placeholder-recipe.png';
-        }
-        
-        if (!recipe.imageUrl) {
-            console.warn('getImageUrl: recipe.imageUrl is null/undefined for recipe:', recipe._id);
-            return '/placeholder-recipe.png';
-        }
-
-        // If it's already a full URL (http/https)
-        if (recipe.imageUrl.startsWith('http')) {
-            return recipe.imageUrl;
-        }
-
-        // Handle local images
-        const cleanPath = recipe.imageUrl.startsWith('/') 
-            ? recipe.imageUrl.slice(1) 
-            : recipe.imageUrl;
-
-        // Development mode
-        if (import.meta.env.MODE === "development") {
-            return `http://localhost:5000/${cleanPath}`;
-        }
-
-        // Production mode
-        return `/${cleanPath}`;
+        return buildRecipeImageUrl(recipe?.imageUrl);
     };
 
     // Filter recipes based on search

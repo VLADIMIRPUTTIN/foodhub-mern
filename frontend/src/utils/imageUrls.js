@@ -1,9 +1,8 @@
-export const DEFAULT_PROFILE_IMAGE = "https://via.placeholder.com/150/cccccc/666666?text=User";
+export const DEFAULT_PROFILE_IMAGE = "https://placehold.co/150x150/cccccc/666666?text=User&font=roboto";
+export const DEFAULT_RECIPE_IMAGE = "https://placehold.co/400x300/f5f5f5/999999?text=No+Image&font=roboto";
 
 /**
  * Builds a proper Cloudinary URL for profile images
- * @param {string} imageUrl - The image URL from the database
- * @returns {string} - Full Cloudinary URL or default placeholder
  */
 export const buildProfileImageUrl = (imageUrl) => {
     if (!imageUrl) {
@@ -29,27 +28,23 @@ export const buildProfileImageUrl = (imageUrl) => {
 
 /**
  * Builds a proper Cloudinary URL for recipe images
- * @param {string} imageUrl - The image URL from the database
- * @returns {string} - Full Cloudinary URL or default placeholder
  */
 export const buildRecipeImageUrl = (imageUrl) => {
     if (!imageUrl) {
-        return "https://via.placeholder.com/400x300?text=No+Image";
+        return DEFAULT_RECIPE_IMAGE;
     }
 
-    // If it's already a full URL, return as-is
+    // ✅ If it's already a full HTTPS Cloudinary URL, return as-is
+    if (imageUrl.startsWith('https://res.cloudinary.com/')) {
+        return imageUrl;
+    }
+
+    // If it's any other full URL, return as-is
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
         return imageUrl;
     }
 
-    // If it's a Cloudinary public ID, build the URL
-    const CLOUDINARY_BASE_URL = "https://res.cloudinary.com/duceirdeu/image/upload";
-    
-    // Handle different possible formats
-    if (imageUrl.startsWith('v1') || imageUrl.startsWith('foodhub/')) {
-        return `${CLOUDINARY_BASE_URL}/${imageUrl}`;
-    }
-
-    // Default case - assume it's a public ID
-    return `${CLOUDINARY_BASE_URL}/v1/${imageUrl}`;
+    // ✅ If it's a relative path (old local images), return placeholder
+    console.warn('⚠️ Detected non-Cloudinary image path:', imageUrl);
+    return DEFAULT_RECIPE_IMAGE;
 };

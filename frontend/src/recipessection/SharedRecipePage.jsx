@@ -9,6 +9,7 @@ import axios from "axios"; // ADDED
 import CommentModal from './components/CommentModal'; // ADDED
 import "./SharedRecipePage.scss";
 import api from '../utils/apiClient';
+import { buildRecipeImageUrl } from '../utils/imageUrls';
 
 const SharedRecipePage = () => {
     const [recipes, setRecipes] = useState([]);
@@ -80,17 +81,7 @@ const SharedRecipePage = () => {
     }, [socket]);
 
     const getImageUrl = (recipe) => {
-        if (!recipe.imageUrl) {
-            return 'https://via.placeholder.com/300x200?text=No+Image';
-        }
-        if (recipe.imageUrl.startsWith('http')) {
-            return recipe.imageUrl;
-        }
-        const cleanPath = recipe.imageUrl.startsWith('/') ? recipe.imageUrl.slice(1) : recipe.imageUrl;
-        if (import.meta.env.MODE === "development") {
-            return `http://localhost:5000/${cleanPath}`;
-        }
-        return `/${cleanPath}`;
+        return buildRecipeImageUrl(recipe?.imageUrl);
     };
 
     const isFavorited = (id) => favoriteSet.has(id);

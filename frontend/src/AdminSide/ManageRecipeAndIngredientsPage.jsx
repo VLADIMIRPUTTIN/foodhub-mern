@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EditRecipe from './EditRecipe';
 import EditIngredientModal from './EditIngredientModal';
+import { buildRecipeImageUrl } from '../utils/imageUrls';
 import './ManageRecipeAndIngredientsPage.scss';
 
 const ManageRecipeAndIngredientsPage = ({
@@ -47,15 +48,7 @@ const ManageRecipeAndIngredientsPage = ({
     };
 
     const getImageUrl = (recipe) => {
-        if (!recipe.imageUrl) return 'https://via.placeholder.com/80x80?text=No+Image';
-        
-        if (recipe.imageUrl.startsWith('http')) {
-            return recipe.imageUrl;
-        }
-        
-        const baseURL = import.meta.env.MODE === 'development' ? 'http://localhost:5000' : '';
-        const cleanPath = recipe.imageUrl.startsWith('/') ? recipe.imageUrl.slice(1) : recipe.imageUrl;
-        return `${baseURL}/${cleanPath}`;
+        return buildRecipeImageUrl(recipe?.imageUrl);
     };
 
     return (
