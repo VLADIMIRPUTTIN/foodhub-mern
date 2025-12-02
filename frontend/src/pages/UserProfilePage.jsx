@@ -12,6 +12,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import Swal from 'sweetalert2';
 import { useSocket } from '../context/SocketContext';
 import SharingHistoryTab from '../components/SharingHistoryTab';
+import api from '../utils/apiClient';
 
 const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/WvG991xq/profile-default.png";
 

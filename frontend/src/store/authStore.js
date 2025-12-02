@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import axios from "axios";
+import api from '../utils/apiClient';
 
 // ✅ Fix API URL - use relative path in production
 const API_URL = import.meta.env.MODE === "development" 

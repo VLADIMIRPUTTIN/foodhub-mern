@@ -17,6 +17,7 @@ import RatingModal from '../components/RatingModal';
 import LoginPromptModal from '../components/ui/login-prompt-modal';
 import CommentModal from './components/CommentModal';
 import CameraModal from '../components/CameraModal';
+import api from '../utils/apiClient';
 
 const RecipePage = () => {
     const { user } = useAuthStore();

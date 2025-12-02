@@ -8,6 +8,7 @@ import RatingModal from '../components/RatingModal';
 import axios from "axios"; // ADDED
 import CommentModal from './components/CommentModal'; // ADDED
 import "./SharedRecipePage.scss";
+import api from '../utils/apiClient';
 
 const SharedRecipePage = () => {
     const [recipes, setRecipes] = useState([]);
