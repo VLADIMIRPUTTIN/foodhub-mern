@@ -13,8 +13,7 @@ import Swal from 'sweetalert2';
 import { useSocket } from '../context/SocketContext';
 import SharingHistoryTab from '../components/SharingHistoryTab';
 import api from '../utils/apiClient';
-
-const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/WvG991xq/profile-default.png";
+import { buildProfileImageUrl, buildRecipeImageUrl, DEFAULT_PROFILE_IMAGE } from '../utils/imageUrls';
 
 const UserProfilePage = () => {
     const { user, logout, setUser, checkAuth, isCheckingAuth, isAuthenticated } = useAuthStore();
@@ -322,36 +321,15 @@ const UserProfilePage = () => {
 
     const getProfileImageUrl = () => {
         if (imagePreview) return imagePreview; // local preview while editing
-        const src = user?.profileImage;
-        const DEFAULT = DEFAULT_PROFILE_IMAGE;
-        if (!src) return DEFAULT;
-        if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) return src;
-        const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-        if (cloudName && !src.startsWith('/') && !src.startsWith('uploads')) {
-            return `https://res.cloudinary.com/${cloudName}/image/upload/${src}`;
-        }
-        const path = src.startsWith('/') ? src : `/${src}`;
-        const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
-        return `${baseURL}${path}`;
+        console.log('🖼️ Profile - User profile image:', user?.profileImage);
+        const url = buildProfileImageUrl(user?.profileImage);
+        console.log('🖼️ Profile - Built URL:', url);
+        return url;
     };
 
-    // ✅ SIMPLIFIED: Recipe image URL handler
+    // ✅ Replace raw recipe URL logic with helper
     const getRecipeImageUrl = (imageUrl) => {
-        // If no image, return placeholder
-        if (!imageUrl) {
-            return 'https://via.placeholder.com/400x300?text=No+Image'; // ✅ Added https://
-        }
-        
-        // ✅ If it's already a full URL (from Cloudinary), use it directly
-        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-            return imageUrl;
-        }
-        
-        // ✅ Legacy support: if it's a relative path (old system)
-        const baseURL = import.meta.env.MODE === "development" 
-            ? "http://localhost:5000" 
-            : "";
-        return `${baseURL}${imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl}`;
+        return buildRecipeImageUrl(imageUrl);
     };
 
     const formatDate = (date) => {
@@ -741,7 +719,24 @@ const UserProfilePage = () => {
                         <div className="hero-overlay"></div>
                         <div className="hero-content">
                             <div className="hero-image">
-                                <img src={getProfileImageUrl()} alt="Profile" className="hero-profile-image" />
+                                <img 
+                                    src={getProfileImageUrl()} 
+                                    alt="Profile" 
+                                    className="hero-profile-image" 
+                                    onError={(e) => { 
+                                        console.error('❌ Hero - Image load failed:', e.currentTarget.src);
+                                        e.currentTarget.onerror = null; 
+                                        e.currentTarget.src = DEFAULT_PROFILE_IMAGE; 
+                                    }}
+                                    loading="lazy"
+                                    style={{
+                                        width: '120px',
+                                        height: '120px',
+                                        borderRadius: '50%',
+                                        objectFit: 'cover',
+                                        border: '4px solid white'
+                                    }}
+                                />
                                 <div className="online-indicator"></div>
                             </div>
                             <div className="hero-info">
@@ -807,8 +802,18 @@ const UserProfilePage = () => {
                                             src={getProfileImageUrl()}
                                             alt="Profile"
                                             className="profile-image"
-                                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_PROFILE_IMAGE; }}
+                                            onError={(e) => { 
+                                                console.error('❌ Edit - Image load failed:', e.currentTarget.src);
+                                                e.currentTarget.onerror = null; 
+                                                e.currentTarget.src = DEFAULT_PROFILE_IMAGE; 
+                                            }}
                                             loading="lazy"
+                                            style={{
+                                                width: '150px',
+                                                height: '150px',
+                                                borderRadius: '50%',
+                                                objectFit: 'cover'
+                                            }}
                                         />
                                         <label htmlFor="profile-image-input" className="image-upload-btn">
                                             <i className="bx bx-camera"></i>
@@ -965,7 +970,7 @@ const UserProfilePage = () => {
                                                             alt={recipe.title || recipe.name} 
                                                             onError={(e) => {
                                                                 console.error('Image load error for:', recipe.imageUrl);
-                                                                e.target.src = 'https://via.placeholder.com/400x300?text=Image+Error'; // ✅ Added https://
+                                                                e.target.src = 'https://via.placeholder.com/400x300?text=Image+Error';
                                                             }}
                                                         />
                                                         <div className="recipe-overlay">
@@ -1111,7 +1116,7 @@ const UserProfilePage = () => {
                                                                 src={getRecipeImageUrl(favorite.recipe.imageUrl)} 
                                                                 alt={favorite.recipe.title || favorite.recipe.name || 'Recipe'} 
                                                                 onError={(e) => {
-                                                                    e.target.src = 'https://via.placeholder.com/200/150?text=No+Image'; // ✅ Added https://
+                                                                    e.target.src = 'https://via.placeholder.com/200/150?text=No+Image';
                                                                 }}
                                                             />
                                                             <div className="recipe-overlay">

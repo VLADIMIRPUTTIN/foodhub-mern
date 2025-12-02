@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './NavbarPage';
 import './DashboardPage.scss';
+import api from '../utils/apiClient';
 
 const DashboardPage = () => {
     const { user, logout } = useAuthStore();
@@ -18,8 +19,6 @@ const DashboardPage = () => {
     const trackingFlagKey = 'visit_tracked';
     const sessionKey = 'visit_session_id';
 
-    const API_BASE = import.meta.env.MODE === 'development' ? 'http://localhost:5000' : '';
-
     const ensureSessionId = () => {
         let sessionId = sessionStorage.getItem(sessionKey);
         if (!sessionId) {
@@ -31,12 +30,10 @@ const DashboardPage = () => {
 
     const fetchTotalOnly = async () => {
         try {
-            const resp = await fetch(`${API_BASE}/api/visit/total`, { credentials: 'include' });
-            if (!resp.ok) return;
-            const data = await resp.json();
-            setVisitCount(data.totalVisits || 0);
-        } catch (e) {
-            console.error('Total fetch error', e);
+            const res = await api.get('/api/visit/total'); // ✅ Use api client
+            setVisitCount(res.data.totalVisits || 0);
+        } catch (err) {
+            console.error('Total fetch error', err);
         }
     };
 
@@ -55,24 +52,21 @@ const DashboardPage = () => {
 
         const track = async () => {
             try {
-                const endpoint = user
-                    ? `${API_BASE}/api/visit/track`
-                    : `${API_BASE}/api/visit/track-anonymous`;
-
-                const resp = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ sessionId })
-                });
-
-                if (!resp.ok) {
-                    await fetchTotalOnly();
-                } else {
-                    const data = await resp.json();
-                    setVisitCount(data.totalVisits || 0);
+                let sessionId = sessionStorage.getItem('visitorSessionId');
+                if (!sessionId) {
+                    sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                    sessionStorage.setItem('visitorSessionId', sessionId);
                 }
-            } catch {
+                
+                const payload = { sessionId };
+                console.log('Tracking payload:', payload);
+                
+                await api.post('/api/visit/track-anonymous', payload); // Changed from fetch
+                console.log('Visit tracked successfully');
+                
+                await fetchTotalOnly();
+            } catch (error) {
+                console.error('Track error:', error);
                 await fetchTotalOnly();
             } finally {
                 sessionStorage.setItem(trackingFlagKey, 'true');

@@ -4,25 +4,27 @@ import App from "./App.jsx";
 import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import axios from "axios"; // Add this import
+import axios from "axios";
 
-// Configure axios to send cookies with every request
+// Always send cookies
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || "";
+// Use relative base; Vite proxy handles dev, Express handles prod
+axios.defaults.baseURL = "";
 
-const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID; // set this in .env
+// ✅ Get Google Client ID from environment variable
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+console.log('🔑 Google Client ID loaded:', googleClientId ? 'Yes' : 'No');
+if (!googleClientId) {
+  console.error('❌ VITE_GOOGLE_CLIENT_ID is not set in frontend/.env!');
+}
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-    <React.StrictMode>
-        <GoogleOAuthProvider clientId={googleClientId}>
-            <BrowserRouter
-                future={{
-                    v7_startTransition: true,
-                    v7_relativeSplatPath: true
-                }}
-            >
-                <App />
-            </BrowserRouter>
-        </GoogleOAuthProvider>
-    </React.StrictMode>
+  <React.StrictMode>
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <App />
+      </BrowserRouter>
+    </GoogleOAuthProvider>
+  </React.StrictMode>
 );

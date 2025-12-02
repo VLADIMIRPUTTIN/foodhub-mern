@@ -46,13 +46,8 @@ export const SocketProvider = ({ children }) => {
         let socketInstance = null;
 
         if (isAuthenticated && user) {
-            const baseURL = import.meta.env.MODE === "development"
-                ? "http://localhost:5000"
-                : "";
-                
-            socketInstance = io(baseURL, {
-                withCredentials: true
-            });
+            // Connect to same origin; Vite proxy will forward to backend in dev
+            socketInstance = io('', { withCredentials: true });
 
             socketInstance.on('connect', () => {
                 console.log('Socket connected!');

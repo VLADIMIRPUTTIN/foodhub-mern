@@ -1,30 +1,7 @@
 import { create } from "zustand";
-import axios from "axios";
 import api from '../utils/apiClient';
 
-// ✅ Fix API URL - use relative path in production
-const API_URL = import.meta.env.MODE === "development" 
-    ? "http://localhost:5000/api/auth" 
-    : "/api/auth"; // Changed to relative path
-
-axios.defaults.withCredentials = true;
-
-// Remove the problematic axios interceptor that auto-logs out
-// Add axios interceptor to handle 401 responses more carefully
-axios.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        const status = error.response?.status;
-        const url = error.config?.url || '';
-        // Only act on explicit auth mutations, not passive check-auth
-        if (status === 401 && /\/api\/auth\/(login|signup|reset-password|forgot-password)/.test(url)) {
-            // Clear state without server logout spam
-            const { clearAuthStateSilently } = useAuthStore.getState();
-            clearAuthStateSilently();
-        }
-        return Promise.reject(error);
-    }
-);
+const API_URL = "/api/auth";
 
 export const useAuthStore = create((set, get) => ({
     user: null,
@@ -38,15 +15,18 @@ export const useAuthStore = create((set, get) => ({
     signup: async (email, password, name) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await axios.post(`${API_URL}/signup`, { email, password, name });
+            const response = await api.post(`${API_URL}/signup`, { email, password, name });
             set({ 
                 user: response.data.user, 
                 isAuthenticated: true, 
-                isLoading: false,
-                message: response.data.message 
+                isLoading: false 
             });
+            return response.data;
         } catch (error) {
-            set({ error: error.response.data.message || "Error signing up", isLoading: false });
+            set({ 
+                error: error.response?.data?.message || "Error signing up", 
+                isLoading: false 
+            });
             throw error;
         }
     },
@@ -54,68 +34,47 @@ export const useAuthStore = create((set, get) => ({
     login: async (email, password) => {
         set({ isLoading: true, error: null, accountStatus: null });
         try {
-            const res = await axios.post(`${API_URL}/login`, { email, password }, { withCredentials: true });
-            const user = res.data.user;
+            const response = await api.post(`${API_URL}/login`, { email, password });
             
-            set({
-                user: user,
-                isAuthenticated: true,
-                isLoading: false,
+            if (response.data.statusData) {
+                set({ 
+                    accountStatus: response.data.statusData,
+                    isLoading: false,
+                    error: null,
+                    isAuthenticated: false
+                });
+                return null;
+            }
+
+            set({ 
+                isAuthenticated: true, 
+                user: response.data.user, 
                 error: null,
-                accountStatus: null,
+                isLoading: false,
+                accountStatus: null
             });
             
-            console.log("AuthStore - Login successful, returning user:", user);
-            // Return user data so the component can handle routing
-            return user;
-            
+            return response.data.user;
         } catch (error) {
-            const errorData = error.response?.data;
-            
-            // Check if it's an account status error (suspended/banned)
-            if (error.response?.status === 403 && errorData?.statusData) {
-                set({
-                    error: errorData.message,
-                    isLoading: false,
-                    accountStatus: errorData.statusData,
-                    isAuthenticated: false,
-                    user: null,
-                });
-            } else {
-                set({
-                    error: errorData?.message || "Login failed",
-                    isLoading: false,
-                    accountStatus: null,
-                    isAuthenticated: false,
-                    user: null,
-                });
-            }
+            const errorMessage = error.response?.data?.message || "Error logging in";
+            set({ 
+                error: errorMessage, 
+                isLoading: false,
+                isAuthenticated: false,
+                user: null
+            });
             throw error;
         }
     },
 
-    clearAccountStatus: () => set({ accountStatus: null }),
-
-    clearAuthStateSilently: () => {
-        set({
-            user: null,
-            isAuthenticated: false,
-            error: null,
-            accountStatus: null
-        });
-        // No console spam
-    },
-
     logout: async () => {
-        // Only perform server logout if currently authenticated
         const { isAuthenticated } = get();
         try {
             if (isAuthenticated) {
-                const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
-                await axios.post(`${baseURL}/api/auth/logout`, {}, { withCredentials: true });
+                await api.post(`${API_URL}/logout`);
             }
         } catch (error) {
-            // Suppress noisy errors
+            console.error('Logout error:', error);
         } finally {
             set({
                 user: null,
@@ -131,15 +90,9 @@ export const useAuthStore = create((set, get) => ({
     },
 
     verifyEmail: async (code) => {
-        console.log("🔍 VERIFY EMAIL - Frontend:");
-        console.log(`📋 Code being sent: ${code}`);
-        console.log(`📋 Code length: ${code?.length}`);
-        
         set({ isLoading: true, error: null });
         try {
-            const response = await axios.post(`${API_URL}/verify-email`, { code });
-            console.log("✅ Verification response:", response.data);
-            
+            const response = await api.post(`${API_URL}/verify-email`, { code });
             set({ 
                 user: response.data.user, 
                 isAuthenticated: true, 
@@ -148,10 +101,6 @@ export const useAuthStore = create((set, get) => ({
             });
             return response.data;
         } catch (error) {
-            console.error("❌ Verification error:", error);
-            console.error("❌ Error response:", error.response?.data);
-            console.error("❌ Error status:", error.response?.status);
-            
             const errorMessage = error.response?.data?.message || "Error verifying email";
             set({ 
                 error: errorMessage, 
@@ -162,33 +111,33 @@ export const useAuthStore = create((set, get) => ({
     },
 
     checkAuth: async () => {
+        set({ isCheckingAuth: true, error: null });
         try {
-            const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
-            const response = await axios.get(`${baseURL}/api/auth/check-auth`, { withCredentials: true });
-            if (response.data.success) {
-                set({
-                    user: response.data.user,
-                    isAuthenticated: true,
-                    isCheckingAuth: false
-                });
-            } else {
-                set({ user: null, isAuthenticated: false, isCheckingAuth: false });
-            }
-        } catch {
-            // Passive failure: just clear auth, do NOT logout server
-            set({ user: null, isAuthenticated: false, isCheckingAuth: false });
+            const response = await api.get(`${API_URL}/check-auth`);
+            set({ 
+                user: response.data.user, 
+                isAuthenticated: true, 
+                isCheckingAuth: false 
+            });
+        } catch (error) {
+            set({ 
+                error: null, 
+                isCheckingAuth: false, 
+                isAuthenticated: false,
+                user: null 
+            });
         }
     },
 
     forgotPassword: async (email) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await axios.post(`${API_URL}/forgot-password`, { email });
+            const response = await api.post(`${API_URL}/forgot-password`, { email });
             set({ message: response.data.message, isLoading: false });
         } catch (error) {
             set({
                 isLoading: false,
-                error: error.response.data.message || "Error sending reset password email",
+                error: error.response?.data?.message || "Error sending reset email",
             });
             throw error;
         }
@@ -197,36 +146,31 @@ export const useAuthStore = create((set, get) => ({
     resetPassword: async (token, password) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await axios.post(`${API_URL}/reset-password/${token}`, { password });
+            const response = await api.post(`${API_URL}/reset-password/${token}`, { password });
             set({ message: response.data.message, isLoading: false });
         } catch (error) {
             set({
                 isLoading: false,
-                error: error.response.data.message || "Error resetting password",
+                error: error.response?.data?.message || "Error resetting password",
             });
             throw error;
         }
     },
 
-    // Admin functions
+    clearAccountStatus: () => set({ accountStatus: null }),
+    
+    clearAuthStateSilently: () => {
+        set({
+            user: null,
+            isAuthenticated: false,
+            error: null,
+            accountStatus: null
+        });
+    },
+
     isAdmin: () => {
         const { user } = get();
         return user?.role === 'admin';
-    },
-
-    createAdmin: async () => {
-        set({ isLoading: true, error: null });
-        try {
-            const response = await axios.post(`${API_URL}/create-admin`);
-            set({ message: response.data.message, isLoading: false });
-            return response.data;
-        } catch (error) {
-            set({
-                isLoading: false,
-                error: error.response.data.message || "Error creating admin",
-            });
-            throw error;
-        }
     },
 
     setUser: (user) => set({ user, isAuthenticated: !!user }),

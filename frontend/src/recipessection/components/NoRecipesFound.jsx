@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../utils/apiClient';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import './NoRecipesFound.scss';
 
-const NoRecipesFound = ({ selectedIngredients = [] }) => {
+const NoRecipesFound = ({ onReload, selectedIngredients = [] }) => { // ADD selectedIngredients prop with default
     const [allRecipes, setAllRecipes] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
@@ -13,15 +13,8 @@ const NoRecipesFound = ({ selectedIngredients = [] }) => {
     useEffect(() => {
         const fetchAllRecipes = async () => {
             try {
-                const baseURL = import.meta.env.MODE === "development"
-                    ? "http://localhost:5000"
-                    : "";
-                const response = await axios.get(`${baseURL}/api/recipes`);
-                if (response.data.success && response.data.recipes) {
-                    setAllRecipes(response.data.recipes);
-                } else {
-                    setAllRecipes(response.data.recipes || []);
-                }
+                const response = await api.get('/api/recipes');
+                setAllRecipes(response.data.recipes || []);
             } catch (error) {
                 console.error('Error fetching recipes:', error);
                 setAllRecipes([]);
@@ -73,7 +66,7 @@ const NoRecipesFound = ({ selectedIngredients = [] }) => {
             {/* Display all available recipes below the "no recipes found" message */}
             {!loading && allRecipes.length > 0 && (
                 <div className="all-recipes-section">
-                    <h2 className="all-recipes-title">All Other Recipes({allRecipes.length})</h2>
+                    <h2 className="all-recipes-title">All Other Recipes ({allRecipes.length})</h2>
                     <div className="recipes-grid">
                         {allRecipes.map(recipe => (
                             <div 

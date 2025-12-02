@@ -116,7 +116,8 @@ const RecipeFull = () => {
       origin: window.location.origin
     });
     
-    return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+    // ✅ Use youtube-nocookie.com for privacy
+    return `https://www.youtube-nocookie.com/embed/${videoId}?${params.toString()}`;
   };
 
   const formatDate = (dateString) => {

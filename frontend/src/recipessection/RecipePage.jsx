@@ -18,6 +18,7 @@ import LoginPromptModal from '../components/ui/login-prompt-modal';
 import CommentModal from './components/CommentModal';
 import CameraModal from '../components/CameraModal';
 import api from '../utils/apiClient';
+import { toast } from 'react-hot-toast'; // ADD THIS if missing
 
 const RecipePage = () => {
     const { user } = useAuthStore();
@@ -218,31 +219,26 @@ const RecipePage = () => {
         }
     }, [location.search]);
 
-    // Fetch recipes
+    // Fetch recipes (define it properly)
+    const fetchRecipes = async () => {
+        try {
+            const params = selectedDiets.length 
+              ? { diets: selectedDiets.join(',') } 
+              : undefined;
+            
+            const res = await api.get('/api/recipes', { params });
+            const combined = res.data.success ? res.data.recipes : [];
+            setRecipes(combined);
+        } catch (error) {
+            console.error("Failed to fetch recipes", error);
+            toast.error('Failed to load recipes');
+            setRecipes([]);
+        }
+    };
+
     useEffect(() => {
-        const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
-        const fetchRecipes = async () => {
-            try {
-                const publicRes = await axios.get(`${baseURL}/api/recipes`, {
-                    params: selectedDiets.length ? { diets: selectedDiets.join(',') } : undefined
-                });
-                let combined = publicRes.data.success ? publicRes.data.recipes : [];
-
-                // REMOVE merging user recipes here!
-                // Main Recipe Page should only show public recipes
-
-                setRecipes(combined);
-            } catch (error) {
-                console.error("Failed to fetch recipes", error);
-                toast({
-                    title: "Error",
-                    description: "Failed to load recipes. Please try again.",
-                    variant: "destructive"
-                });
-            }
-        };
         fetchRecipes();
-    }, [toast, user, selectedDiets]);
+    }, [selectedDiets]);
 
     // ✅ NEW: Ensure no auto-selected ingredients after recipe fetch/update
     useEffect(() => {
@@ -455,14 +451,7 @@ const RecipePage = () => {
 
     const fetchFavoriteRecipes = async () => {
         try {
-            const baseURL = import.meta.env.MODE === "development"
-                ? "http://localhost:5000"
-                : "";
-                
-            const response = await axios.get(`${baseURL}/api/favorites`, {
-                withCredentials: true
-            });
-            
+            const response = await api.get('/api/favorites');
             if (response.data.success && response.data.favorites) {
                 setFavoriteRecipes(response.data.favorites.map(fav => fav.recipe));
             }
@@ -471,7 +460,6 @@ const RecipePage = () => {
         }
     };
 
-    // Corrected handleFavoriteToggle function for RecipePage.jsx
     const handleFavoriteToggle = async (recipeId, event) => {
         event.stopPropagation();
         if (!user) {
@@ -479,47 +467,25 @@ const RecipePage = () => {
             return;
         }
         try {
-            const isFavorited = favoriteRecipes.includes(recipeId);
-            const recipe = recipes.find(r => r._id === recipeId);
-            const recipeName = recipe?.title || recipe?.name || 'Recipe';
+            const isFavorited = favoriteRecipes.some(recipe => recipe._id === recipeId);
             
-            const baseURL = import.meta.env.MODE === "development"
-                ? "http://localhost:5000"
-                : "";
-                
             if (isFavorited) {
-                // Use DELETE method for removing favorites
-                await axios.delete(
-                    `${baseURL}/api/favorites/${recipeId}`,
-                    { withCredentials: true }
-                );
-                setFavoriteRecipes(prev => prev.filter(id => id !== recipeId));
-                toast.info(
-                    'Removed from Favorites',
-                    `${recipeName} has been removed from your favorites`
-                );
+                await api.delete(`/api/favorites/${recipeId}`);
+                setFavoriteRecipes(prev => prev.filter(recipe => recipe._id !== recipeId));
+                toast.success('Removed from favorites');
             } else {
-                // Use POST method for adding favorites
-                await axios.post(
-                    `${baseURL}/api/favorites`,
-                    { recipeId },
-                    { withCredentials: true }
-                );
-                setFavoriteRecipes(prev => [...prev, recipeId]);
-                toast.favorite(
-                    'Added to Favorites! ❤️',
-                    `${recipeName} has been saved to your collection`
-                );
-            }
+                const response = await api.post('/api/favorites', { recipeId });
+                if (response.data.success) {
+                  await fetchFavoriteRecipes();
+                  toast.success('Added to favorites!');
+                }
+              }
         } catch (error) {
             console.error('Error toggling favorite:', error);
-            toast.error(
-                'Something went wrong',
-                'Failed to update favorite. Please try again.'
-            );
+            toast.error('Failed to update favorites');
         }
     };
-
+  
     // Handle rating button click
     const handleRateClick = (recipe, e) => {
         e.stopPropagation();
@@ -644,7 +610,7 @@ const RecipePage = () => {
                             <h1>
                                 {user && user.hasCompletedOnboarding ? 
                                     `Perfect ${currentMealType} for You` : 
-                                    `Delicious ${currentMealType} Recipes`
+                                    `Perfect ${currentMealType} Recipes`
                                 }
                             </h1>
                         </div>
@@ -675,7 +641,10 @@ const RecipePage = () => {
                     <div className="recipe-grid-container">
                         
                         {allFilteredRecipes.length === 0 ? (
-                            <NoRecipesFound selectedIngredients={selectedIngredients} />
+                            <NoRecipesFound 
+                                onReload={fetchRecipes} // ✅ NOW DEFINED
+                                selectedIngredients={selectedIngredients}
+                            />
                         ) : (
                             <>
                                 {/* Main Recipe Grid */}
