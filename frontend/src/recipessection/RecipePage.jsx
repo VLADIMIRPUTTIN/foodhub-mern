@@ -368,17 +368,52 @@ const RecipePage = () => {
 
     // Protected setter wrapper
     const safeSetSelectedIngredients = (updater) => {
-        // Only allow if event came from explicit ingredient click
-        // (you can refine using a ref flag; simple version below)
+        // Allow explicit setter; remove previous bulk-assignment guard
         setSelectedIngredients(prev => {
             const next = typeof updater === 'function' ? updater(prev) : updater;
-            // Reject if next suddenly equals a full ingredient list from a recipe
-            if (recipes.some(r => Array.isArray(r.ingredients) && next.length === r.ingredients.length)) {
-                return prev; // ignore suspicious bulk assignment
-            }
             return next;
         });
     };
+
+    // Helper: get ingredient names from recipe item
+    const getIngredientNames = (recipe) => {
+        if (!recipe?.ingredients) return [];
+        return recipe.ingredients.map(ri => {
+            if (typeof ri === 'string') return ri.trim();
+            if (ri?.name) return String(ri.name).trim();
+            return '';
+        }).filter(Boolean);
+    };
+
+    // Auto-populate selected ingredients based on recipe search term
+    useEffect(() => {
+        // Only trigger when user types something meaningful
+        const term = (searchTerm || '').trim().toLowerCase();
+        if (!term) {
+            // Clear when search is empty
+            setSelectedIngredients([]);
+            return;
+        }
+
+        // Find the first recipe matching by title/name
+        const matched = recipes.find(r => {
+            const name = (r.title || r.name || '').toLowerCase();
+            return name.includes(term);
+        });
+
+        if (matched) {
+            const ingNames = getIngredientNames(matched);
+
+            // Deduplicate and set
+            const unique = Array.from(new Set(ingNames.map(i => i.toLowerCase())))
+                .map(lower => ingNames.find(i => i.toLowerCase() === lower));
+
+            setSelectedIngredients(unique);
+        } else {
+            // If no recipe matches, clear to avoid confusion
+            setSelectedIngredients([]);
+        }
+    }, [searchTerm, recipes]);
 
     // Handle open/close with animation
     const handleSheetOpenChange = (open) => {

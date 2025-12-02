@@ -16,8 +16,8 @@ const SelectedIngredients = ({ selectedIngredients, onRemoveIngredient }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Don't render on mobile or if no ingredients selected
-  if (selectedIngredients.length === 0 || isMobile) {
+  // Don't render if no ingredients selected
+  if (selectedIngredients.length === 0) {
     return null;
   }
 
@@ -28,18 +28,18 @@ const SelectedIngredients = ({ selectedIngredients, onRemoveIngredient }) => {
         <span className="selected-label">Selected Ingredients</span>
         <span className="selected-count">({selectedIngredients.length})</span>
       </div>
-      <div className="chips-container">
+      <div className="chips-container two-column-grid">
         {selectedIngredients.map(ing => (
-          <div key={ing} className="selected-chip">
+          <button
+            key={ing}
+            className="selected-chip chip-button"
+            onClick={() => onRemoveIngredient(ing)}
+            aria-label={`Remove ${ing}`}
+            title={`Remove ${ing}`}
+          >
             <span className="chip-text">{ing}</span>
-            <button
-              className="remove-chip"
-              onClick={() => onRemoveIngredient(ing)}
-              aria-label={`Remove ${ing}`}
-            >
-              <i className="bx bx-x"></i>
-            </button>
-          </div>
+            <i className="bx bx-x"></i>
+          </button>
         ))}
       </div>
     </div>

@@ -84,9 +84,23 @@
   .chips-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem; // Reduced gap
+    gap: 0.4rem;
     position: relative;
     z-index: 2;
+  }
+  
+  // Force 2 columns layout
+  .two-column-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+  
+  // Make chip act like a button for clarity
+  .selected-chip.chip-button {
+    width: 100%;
+    justify-content: space-between;
+    cursor: pointer;
   }
   
   .selected-chip {
@@ -198,14 +212,14 @@
 // Hide SelectedIngredients component on mobile (768px and below)
 @media (max-width: 768px) {
   .selected-ingredients-section {
-    display: none !important;
+    display: block !important;
   }
 }
 
 // Also hide on tablet if needed (optional)
 @media (max-width: 900px) {
   .selected-ingredients-section {
-    display: none !important;
+    display: block !important;
   }
 }
 
