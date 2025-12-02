@@ -123,50 +123,81 @@ i[class*=" bx-"] {
 }
 
 // =============================================================================
-// INGREDIENT BUTTONS - Common style used across components
+// INGREDIENT BUTTONS - Improved contrast, 2-per-row layout
 // =============================================================================
 .ingredient-btn {
-  background: rgba(255, 255, 255, 0.95);
-  border: 2px solid rgba(207, 153, 108, 0.3);
-  color: #CF996C;
-  border-radius: 16px;
-  padding: 0.35rem 0.75rem;
-  font-size: 0.8rem;
-  font-weight: 600;
+  background: linear-gradient(135deg, #fffdf8 0%, #fff6e8 100%); // mas maputi para mataas ang contrast
+  border: 2px solid rgba(207, 153, 108, 0.6);
+  color: #8a4f1d; // mas dark text
+  border-radius: 14px;
+  padding: 0.5rem 0.8rem; // mas malaking tap area
+  font-size: 0.9rem;
+  font-weight: 700; // mas bold para readable
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   text-align: center;
   margin: 0;
   position: relative;
   overflow: hidden;
   backdrop-filter: blur(4px);
+  width: 100%; // fill ng grid column
+  min-height: 40px; // mas madaling pindutin sa mobile
 
   &::before {
     content: '';
     position: absolute;
     top: 0; left: -100%;
     width: 100%; height: 100%;
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
-    transition: left 0.5s;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.5) 50%, transparent 100%);
+    transition: left 0.4s;
   }
 
   &:hover {
-    background: rgba(207, 153, 108, 0.1);
+    background: #fffaf1;
     border-color: #CF996C;
-    color: #b86b1b;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(207, 153, 108, 0.2);
-
+    color: #6f3f15;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(207, 153, 108, 0.18);
     &::before { left: 100%; }
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(207, 153, 108, 0.18);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(226, 106, 0, 0.25);
   }
 
   &.selected {
     background: linear-gradient(135deg, #e7b57a 0%, #CF996C 100%);
     color: #fff;
     border: 2px solid #e26a00;
-    box-shadow: 0 4px 15px rgba(207, 153, 108, 0.3), 0 2px 8px rgba(226, 106, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(207, 153, 108, 0.35), 0 2px 8px rgba(226, 106, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
     transform: translateY(-1px);
+  }
+}
+
+// Force 2 columns for ingredient buttons (sidebar + mobile sheet)
+.ingredients-sidebar .ingredients-list,
+.ingredients-sheet-mobile .ingredients-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.ingredients-sidebar .ingredient-btn,
+.ingredients-sheet-mobile .ingredient-btn {
+  width: 100%;
+}
+
+// Mobile: slightly larger tap targets
+@media (max-width: 768px) {
+  .ingredient-btn {
+    min-height: 44px;
+    font-size: 0.95rem;
   }
 }
 
@@ -1150,7 +1181,7 @@ i[class*=" bx-"] {
       padding: 0.3rem 0.6rem !important;
       
       i {
-        font-size: 0.75rem !important;
+        font-size: 0.8rem !important;
       }
     }
   }
