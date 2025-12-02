@@ -18,7 +18,7 @@ import LoginPromptModal from '../components/ui/login-prompt-modal';
 import CommentModal from './components/CommentModal';
 import CameraModal from '../components/CameraModal';
 import api from '../utils/apiClient';
-import { toast } from 'react-hot-toast'; // ADD THIS if missing
+import { toast } from 'react-hot-toast';
 
 const RecipePage = () => {
     const { user } = useAuthStore();
@@ -32,7 +32,10 @@ const RecipePage = () => {
     const [ingredientSearch, setIngredientSearch] = useState('');
     const [filteredIngredients, setFilteredIngredients] = useState([]);
     const [selectedRecipe, setSelectedRecipe] = useState(null);
+    
+    // ✅ Initialize as empty array - NO auto-selection
     const [selectedIngredients, setSelectedIngredients] = useState([]);
+    
     const [categoryFilter, setCategoryFilter] = useState('');
     const [minPrice, setMinPrice] = useState('');
     const [maxPrice, setMaxPrice] = useState('');
@@ -47,9 +50,8 @@ const RecipePage = () => {
     const [cameraOpen, setCameraOpen] = useState(false);
     const [commentModalOpen, setCommentModalOpen] = useState(false);
     const [recipeToComment, setRecipeToComment] = useState(null);
-    
-    // Current meal type based on time of day
     const [currentMealType, setCurrentMealType] = useState('');
+    const [selectedDiets, setSelectedDiets] = useState([]);
     
     // Touch/swipe handling refs and states
     const gridContainerRef = useRef(null);
@@ -60,9 +62,6 @@ const RecipePage = () => {
     
     const sidebarRef = useRef(null);
     const recipeContainerRef = useRef(null);
-
-    // NEW STATE FOR DIET FILTERS
-    const [selectedDiets, setSelectedDiets] = useState([]);
 
     // Function to scroll to top of recipe container
     const scrollToTop = () => {
@@ -81,25 +80,12 @@ const RecipePage = () => {
     const matchesUserPreferences = (recipe) => {
         if (!user || !user.hasCompletedOnboarding) return true;
 
-        console.log('User preferences:', {
-            dietaryPreferences: user.dietaryPreferences,
-            allergies: user.allergies,
-            preferredCuisines: user.preferredCuisines
-        });
-        
-        console.log('Recipe data:', {
-            dietaryTags: recipe.dietaryTags,
-            allergens: recipe.allergens,
-            cuisine: recipe.cuisine
-        });
-
         // Check dietary preferences
         if (user.dietaryPreferences && user.dietaryPreferences.length > 0) {
             const hasMatchingDietary = user.dietaryPreferences.some(pref => 
                 recipe.dietaryTags && recipe.dietaryTags.includes(pref)
             );
             if (!hasMatchingDietary) {
-                console.log('Recipe excluded: no matching dietary preference');
                 return false;
             }
         }
@@ -118,7 +104,6 @@ const RecipePage = () => {
                 })
             );
             if (hasAllergen) {
-                console.log('Recipe excluded: contains allergen');
                 return false;
             }
         }
@@ -126,12 +111,10 @@ const RecipePage = () => {
         // Check preferred cuisines
         if (user.preferredCuisines && user.preferredCuisines.length > 0) {
             if (recipe.cuisine && !user.preferredCuisines.includes(recipe.cuisine)) {
-                console.log('Recipe excluded: cuisine not preferred');
                 return false;
             }
         }
 
-        console.log('Recipe matches user preferences');
         return true;
     };
 
@@ -207,7 +190,7 @@ const RecipePage = () => {
         setTouchEnd(null);
     };
 
-    // Read diet filters from URL: /recipes?diets=Keto,Low-Carb
+    // Read diet filters from URL
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const dietsParam = params.get('diets');
@@ -219,7 +202,7 @@ const RecipePage = () => {
         }
     }, [location.search]);
 
-    // Fetch recipes (define it properly)
+    // Fetch recipes
     const fetchRecipes = async () => {
         try {
             const params = selectedDiets.length 
@@ -239,14 +222,6 @@ const RecipePage = () => {
     useEffect(() => {
         fetchRecipes();
     }, [selectedDiets]);
-
-    // ✅ NEW: Ensure no auto-selected ingredients after recipe fetch/update
-    useEffect(() => {
-        // Only clear if there are any unintended auto values (defensive)
-        if (selectedIngredients.length > 0) {
-            setSelectedIngredients([]);
-        }
-    }, [recipes]); 
 
     // Fetch ingredients
     useEffect(() => {
@@ -272,6 +247,20 @@ const RecipePage = () => {
             )
         );
     }, [ingredientSearch, ingredients]);
+
+    // ✅ Manual ingredient selection/deselection ONLY
+    const handleIngredientClick = (ing) => {
+        setSelectedIngredients(selected =>
+            selected.includes(ing)
+                ? selected.filter(i => i !== ing)
+                : [...selected, ing]
+        );
+    };
+
+    // ✅ Manual ingredient removal ONLY
+    const handleRemoveIngredient = (ingredientToRemove) => {
+        setSelectedIngredients(selectedIngredients.filter(ing => ing !== ingredientToRemove));
+    };
 
     // Apply all filters and sort recipes by priority
     const allFilteredRecipes = recipes
@@ -351,95 +340,6 @@ const RecipePage = () => {
         scrollToTop();
     }, [allFilteredRecipes.length, totalPages]);
 
-    const handleIngredientClick = (ing) => {
-        safeSetSelectedIngredients(selected =>
-            selected.includes(ing)
-                ? selected.filter(i => i !== ing)
-                : [...selected, ing]
-        );
-    };
-
-    const handleRemoveIngredient = (ingredientToRemove) => {
-        setSelectedIngredients(selectedIngredients.filter(ing => ing !== ingredientToRemove));
-    };
-
-    // Protected setter wrapper
-    const safeSetSelectedIngredients = (updater) => {
-        // Allow explicit setter; remove previous bulk-assignment guard
-        setSelectedIngredients(prev => {
-            const next = typeof updater === 'function' ? updater(prev) : updater;
-            return next;
-        });
-    };
-
-    // Helper: get ingredient names from recipe item
-    const getIngredientNames = (recipe) => {
-        if (!recipe?.ingredients) return [];
-        return recipe.ingredients.map(ri => {
-            if (typeof ri === 'string') return ri.trim();
-            if (ri?.name) return String(ri.name).trim();
-            return '';
-        }).filter(Boolean);
-    };
-
-    // Auto-populate selected ingredients based on recipe search term
-    useEffect(() => {
-        // Only trigger when user types something meaningful
-        const term = (searchTerm || '').trim().toLowerCase();
-        if (!term) {
-            // Clear when search is empty
-            setSelectedIngredients([]);
-            return;
-        }
-
-        // Find the first recipe matching by title/name
-        const matched = recipes.find(r => {
-            const name = (r.title || r.name || '').toLowerCase();
-            return name.includes(term);
-        });
-
-        if (matched) {
-            const ingNames = getIngredientNames(matched);
-
-            // Deduplicate and set
-            const unique = Array.from(new Set(ingNames.map(i => i.toLowerCase())))
-                .map(lower => ingNames.find(i => i.toLowerCase() === lower));
-
-            setSelectedIngredients(unique);
-        } else {
-            // If no recipe matches, clear to avoid confusion
-            setSelectedIngredients([]);
-        }
-    }, [searchTerm, recipes]);
-
-    // Handle open/close with animation
-    const handleSheetOpenChange = (open) => {
-        if (!open) {
-            setSheetOut(true);
-            setTimeout(() => {
-                setSheetOut(false);
-                setIsSheetOpen(false);
-                setSheetAnimate(false);
-            }, 300);
-        } else {
-            setIsSheetOpen(true);
-            setTimeout(() => {
-                setSheetAnimate(true);
-            }, 10);
-        }
-    };
-
-    useEffect(() => {
-        if (isSheetOpen) {
-            document.body.style.overflow = "hidden";
-        } else {
-            document.body.style.overflow = "";
-        }
-        return () => {
-            document.body.style.overflow = "";
-        };
-    }, [isSheetOpen]);
-
     // Fetch user's favorite recipes
     useEffect(() => {
         if (user) {
@@ -486,12 +386,10 @@ const RecipePage = () => {
         }
     };
 
-    // ✅ NEW: Helper function to check if recipe is favorited
     const isRecipeFavorited = (recipeId) => {
         return favoriteRecipes.some(recipe => recipe._id === recipeId);
     };
 
-    // Handle rating button click
     const handleRateClick = (recipe, e) => {
         e.stopPropagation();
         if (!user) {
@@ -502,12 +400,10 @@ const RecipePage = () => {
         setRatingModalOpen(true);
     };
 
-    // Handle rating modal close
     const handleRatingModalClose = (updatedRecipe) => {
         setRatingModalOpen(false);
         setRecipeToRate(null);
         
-        // Update the recipe in the list if it was rated
         if (updatedRecipe) {
             setRecipes(recipes.map(r => 
                 r._id === updatedRecipe._id ? updatedRecipe : r
@@ -515,15 +411,12 @@ const RecipePage = () => {
         }
     };
 
-    // Handle comment button click
     const handleCommentClick = (recipe, e) => {
         e.stopPropagation();
         setRecipeToComment(recipe);
         setCommentModalOpen(true);
     };
 
-    // Add this function to handle comment count updates:
-    // Handle comment count updates
     const handleCommentUpdate = (recipeId, action) => {
         setRecipes(prevRecipes => 
             prevRecipes.map(recipe => {
@@ -539,25 +432,20 @@ const RecipePage = () => {
         );
     };
 
-    // Add this useEffect to debug user data:
-    useEffect(() => {
-        console.log('Current user data:', user);
-        if (user) {
-            console.log('User preferences:', {
-                hasCompletedOnboarding: user.hasCompletedOnboarding,
-                dietaryPreferences: user.dietaryPreferences,
-                allergies: user.allergies,
-                preferredCuisines: user.preferredCuisines
-            });
+    const handleSheetOpenChange = (isOpen) => {
+        if (isOpen) {
+            setIsSheetOpen(true);
+            setSheetAnimate(true);
+            setSheetOut(false);
+        } else {
+            setSheetOut(true);
+            setTimeout(() => {
+                setIsSheetOpen(false);
+                setSheetAnimate(false);
+                setSheetOut(false);
+            }, 300);
         }
-    }, [user]);
-
-    // Add this useEffect to debug filtered recipes:
-    useEffect(() => {
-        console.log('Total recipes:', recipes.length);
-        console.log('Filtered recipes:', allFilteredRecipes.length);
-        console.log('User preferences applied:', user?.hasCompletedOnboarding);
-    }, [recipes, allFilteredRecipes, user]);
+    };
 
     // Sync URL with selected diets
     useEffect(() => {
@@ -568,7 +456,7 @@ const RecipePage = () => {
             params.delete('diets');
         }
         navigate({ search: params.toString() }, { replace: true });
-    }, [selectedDiets]);
+    }, [selectedDiets, navigate]);
 
     return (
         <div className="recipe-page">
@@ -637,7 +525,6 @@ const RecipePage = () => {
                         setMinPrice={setMinPrice}
                         maxPrice={maxPrice}
                         setMaxPrice={setMaxPrice}
-                        // NEW
                         selectedDiets={selectedDiets}
                         setSelectedDiets={setSelectedDiets}
                     />
@@ -647,7 +534,7 @@ const RecipePage = () => {
                         
                         {allFilteredRecipes.length === 0 ? (
                             <NoRecipesFound 
-                                onReload={fetchRecipes} // ✅ NOW DEFINED
+                                onReload={fetchRecipes}
                                 selectedIngredients={selectedIngredients}
                             />
                         ) : (
@@ -659,7 +546,7 @@ const RecipePage = () => {
                                     setSelectedRecipe={setSelectedRecipe}
                                     handleFavoriteToggle={handleFavoriteToggle}
                                     favoriteRecipes={favoriteRecipes}
-                                    isRecipeFavorited={isRecipeFavorited} // ✅ Pass the helper
+                                    isRecipeFavorited={isRecipeFavorited}
                                     handleTouchStart={handleTouchStart}
                                     handleTouchMove={handleTouchMove}
                                     handleTouchEnd={handleTouchEnd}
