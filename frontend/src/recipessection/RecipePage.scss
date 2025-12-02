@@ -123,81 +123,154 @@ i[class*=" bx-"] {
 }
 
 // =============================================================================
-// INGREDIENT BUTTONS - Improved contrast, 2-per-row layout
+// INGREDIENT BUTTONS - Colored / Alternating / 2-per-row
 // =============================================================================
-.ingredient-btn {
-  background: linear-gradient(135deg, #fffdf8 0%, #fff6e8 100%); // mas maputi para mataas ang contrast
-  border: 2px solid rgba(207, 153, 108, 0.6);
-  color: #8a4f1d; // mas dark text
-  border-radius: 14px;
-  padding: 0.5rem 0.8rem; // mas malaking tap area
-  font-size: 0.9rem;
-  font-weight: 700; // mas bold para readable
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: center;
-  margin: 0;
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(4px);
-  width: 100%; // fill ng grid column
-  min-height: 40px; // mas madaling pindutin sa mobile
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0; left: -100%;
-    width: 100%; height: 100%;
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.5) 50%, transparent 100%);
-    transition: left 0.4s;
-  }
-
-  &:hover {
-    background: #fffaf1;
-    border-color: #CF996C;
-    color: #6f3f15;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(207, 153, 108, 0.18);
-    &::before { left: 100%; }
-  }
-
-  &:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(207, 153, 108, 0.18);
-  }
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(226, 106, 0, 0.25);
-  }
-
-  &.selected {
-    background: linear-gradient(135deg, #e7b57a 0%, #CF996C 100%);
-    color: #fff;
-    border: 2px solid #e26a00;
-    box-shadow: 0 4px 14px rgba(207, 153, 108, 0.35), 0 2px 8px rgba(226, 106, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    transform: translateY(-1px);
-  }
-}
-
-// Force 2 columns for ingredient buttons (sidebar + mobile sheet)
 .ingredients-sidebar .ingredients-list,
 .ingredients-sheet-mobile .ingredients-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
+  gap: 0.55rem;
 }
 
-.ingredients-sidebar .ingredient-btn,
-.ingredients-sheet-mobile .ingredient-btn {
+.ingredient-btn {
+  background: linear-gradient(135deg, #fff9f2 0%, #ffe9d2 100%);
+  border: 2px solid rgba(207, 153, 108, 0.55);
+  color: #6a3a12;
+  border-radius: 16px;
+  padding: 0.55rem 0.75rem 0.55rem 0.9rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
   width: 100%;
+  min-height: 44px;
+  letter-spacing: .3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 3px 10px rgba(207,153,108,0.18),
+    0 1px 3px rgba(207,153,108,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.8);
+  transition: background .25s ease, transform .2s ease, box-shadow .25s ease, color .25s;
+
+  // Accent bar
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    border-radius: 16px 0 0 16px;
+    background: linear-gradient(180deg,#CF996C,#e7b57a);
+    box-shadow: inset 0 0 4px rgba(0,0,0,0.15);
+  }
+
+  // Shimmer stripe
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -120%;
+    width: 70%; height: 100%;
+    background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.65) 45%, transparent 75%);
+    opacity: 0;
+    transition: left .7s cubic-bezier(.4,0,.2,1), opacity .4s;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, #ffeede 0%, #ffd9b5 100%);
+    transform: translateY(-3px);
+    box-shadow:
+      0 6px 18px rgba(207,153,108,0.28),
+      0 3px 8px rgba(226,106,0,0.25),
+      inset 0 1px 0 rgba(255,255,255,0.85);
+    color: #5a2f0d;
+    &::after {
+      left: 140%;
+      opacity: 1;
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow:
+      0 3px 10px rgba(207,153,108,0.25),
+      inset 0 2px 4px rgba(0,0,0,0.08);
+  }
+
+  &:focus-visible {
+    outline: 0;
+    box-shadow:
+      0 0 0 3px rgba(255,255,255,0.85),
+      0 0 0 6px rgba(226,106,0,0.35),
+      0 6px 18px rgba(226,106,0,0.25);
+  }
+
+  &.selected {
+    background: linear-gradient(135deg,#CF996C 0%, #e26a00 100%);
+    color: #fff;
+    border: 2px solid #e26a00;
+    box-shadow:
+      0 6px 18px rgba(226,106,0,0.35),
+      0 3px 10px rgba(207,153,108,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.4);
+    transform: translateY(-2px);
+    &::before {
+      background: linear-gradient(180deg,#e26a00,#ffb97a);
+    }
+  }
 }
 
-// Mobile: slightly larger tap targets
+// Alternating subtle variants
+.ingredients-sidebar .ingredients-list .ingredient-btn:nth-child(4n+1),
+.ingredients-sheet-mobile .ingredients-list .ingredient-btn:nth-child(4n+1) {
+  background: linear-gradient(135deg,#fffaf4 0%, #ffe5cc 100%);
+}
+
+.ingredients-sidebar .ingredients-list .ingredient-btn:nth-child(4n+2),
+.ingredients-sheet-mobile .ingredients-list .ingredient-btn:nth-child(4n+2) {
+  background: linear-gradient(135deg,#fff9f2 0%, #ffe8d8 100%);
+}
+
+.ingredients-sidebar .ingredients-list .ingredient-btn:nth-child(4n+3),
+.ingredients-sheet-mobile .ingredients-list .ingredient-btn:nth-child(4n+3) {
+  background: linear-gradient(135deg,#fff7ef 0%, #ffe1c4 100%);
+}
+
+.ingredients-sidebar .ingredients-list .ingredient-btn:nth-child(4n+4),
+.ingredients-sheet-mobile .ingredients-list .ingredient-btn:nth-child(4n+4) {
+  background: linear-gradient(135deg,#fff8f0 0%, #ffebd6 100%);
+}
+
+// Dark mode (optional detection)
+@media (prefers-color-scheme: dark) {
+  .ingredient-btn {
+    background: linear-gradient(135deg,#3d291d 0%, #5a3a28 100%);
+    color: #fbe6d3;
+    border: 2px solid rgba(255,200,160,0.35);
+    box-shadow:
+      0 4px 14px rgba(0,0,0,0.55),
+      inset 0 1px 0 rgba(255,255,255,0.08);
+    &::before {
+      background: linear-gradient(180deg,#e26a00,#CF996C);
+    }
+    &:hover {
+      background: linear-gradient(135deg,#4a3123 0%, #6b4430 100%);
+      color: #ffe9d7;
+    }
+    &.selected {
+      background: linear-gradient(135deg,#e26a00 0%, #cf7e34 100%);
+      color: #fff;
+    }
+  }
+}
+
+// Mobile tweaks
 @media (max-width: 768px) {
   .ingredient-btn {
-    min-height: 44px;
-    font-size: 0.95rem;
+    font-size: .95rem;
+    min-height: 48px;
   }
 }
 
