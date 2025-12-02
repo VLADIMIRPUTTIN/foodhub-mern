@@ -123,7 +123,7 @@ i[class*=" bx-"] {
 }
 
 // =============================================================================
-// INGREDIENT BUTTONS - Colored / Alternating / 2-per-row
+// INGREDIENT BUTTONS - Simple, Solid, 2-per-row
 // =============================================================================
 .ingredients-sidebar .ingredients-list,
 .ingredients-sheet-mobile .ingredients-list {
@@ -133,144 +133,76 @@ i[class*=" bx-"] {
 }
 
 .ingredient-btn {
-  background: linear-gradient(135deg, #fff9f2 0%, #ffe9d2 100%);
-  border: 2px solid rgba(207, 153, 108, 0.55);
-  color: #6a3a12;
-  border-radius: 16px;
-  padding: 0.55rem 0.75rem 0.55rem 0.9rem;
+  background: #fff5ec; /* soft solid */
+  border: 2px solid #d9b08a;
+  color: #563617;
+  border-radius: 14px;
+  padding: 0.55rem 0.75rem;
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
-  position: relative;
   width: 100%;
-  min-height: 44px;
-  letter-spacing: .3px;
+  min-height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow:
-    0 3px 10px rgba(207,153,108,0.18),
-    0 1px 3px rgba(207,153,108,0.25),
-    inset 0 1px 0 rgba(255,255,255,0.8);
-  transition: background .25s ease, transform .2s ease, box-shadow .25s ease, color .25s;
-
-  // Accent bar
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 8px;
-    border-radius: 16px 0 0 16px;
-    background: linear-gradient(180deg,#CF996C,#e7b57a);
-    box-shadow: inset 0 0 4px rgba(0,0,0,0.15);
-  }
-
-  // Shimmer stripe
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0; left: -120%;
-    width: 70%; height: 100%;
-    background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.65) 45%, transparent 75%);
-    opacity: 0;
-    transition: left .7s cubic-bezier(.4,0,.2,1), opacity .4s;
-  }
-
-  &:hover {
-    background: linear-gradient(135deg, #ffeede 0%, #ffd9b5 100%);
-    transform: translateY(-3px);
-    box-shadow:
-      0 6px 18px rgba(207,153,108,0.28),
-      0 3px 8px rgba(226,106,0,0.25),
-      inset 0 1px 0 rgba(255,255,255,0.85);
-    color: #5a2f0d;
-    &::after {
-      left: 140%;
-      opacity: 1;
-    }
-  }
-
-  &:active {
-    transform: translateY(0);
-    box-shadow:
-      0 3px 10px rgba(207,153,108,0.25),
-      inset 0 2px 4px rgba(0,0,0,0.08);
-  }
-
-  &:focus-visible {
-    outline: 0;
-    box-shadow:
-      0 0 0 3px rgba(255,255,255,0.85),
-      0 0 0 6px rgba(226,106,0,0.35),
-      0 6px 18px rgba(226,106,0,0.25);
-  }
-
-  &.selected {
-    background: linear-gradient(135deg,#CF996C 0%, #e26a00 100%);
-    color: #fff;
-    border: 2px solid #e26a00;
-    box-shadow:
-      0 6px 18px rgba(226,106,0,0.35),
-      0 3px 10px rgba(207,153,108,0.4),
-      inset 0 1px 0 rgba(255,255,255,0.4);
-    transform: translateY(-2px);
-    &::before {
-      background: linear-gradient(180deg,#e26a00,#ffb97a);
-    }
-  }
+  letter-spacing: .3px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  transition: background .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 
-// Alternating subtle variants
-.ingredients-sidebar .ingredients-list .ingredient-btn:nth-child(4n+1),
-.ingredients-sheet-mobile .ingredients-list .ingredient-btn:nth-child(4n+1) {
-  background: linear-gradient(135deg,#fffaf4 0%, #ffe5cc 100%);
+.ingredient-btn:hover {
+  background: #ffe9d6;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
 }
 
-.ingredients-sidebar .ingredients-list .ingredient-btn:nth-child(4n+2),
-.ingredients-sheet-mobile .ingredients-list .ingredient-btn:nth-child(4n+2) {
-  background: linear-gradient(135deg,#fff9f2 0%, #ffe8d8 100%);
+.ingredient-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
-.ingredients-sidebar .ingredients-list .ingredient-btn:nth-child(4n+3),
-.ingredients-sheet-mobile .ingredients-list .ingredient-btn:nth-child(4n+3) {
-  background: linear-gradient(135deg,#fff7ef 0%, #ffe1c4 100%);
+.ingredient-btn:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(255,225,200,0.9), 0 0 0 6px rgba(207,153,108,0.5);
 }
 
-.ingredients-sidebar .ingredients-list .ingredient-btn:nth-child(4n+4),
-.ingredients-sheet-mobile .ingredients-list .ingredient-btn:nth-child(4n+4) {
-  background: linear-gradient(135deg,#fff8f0 0%, #ffebd6 100%);
+.ingredient-btn.selected {
+  background: #cf996c;
+  color: #fff;
+  border-color: #b67f53;
+  box-shadow: 0 4px 14px rgba(207,153,108,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+  transform: translateY(-2px);
 }
 
-// Dark mode (optional detection)
+.ingredient-btn.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 @media (prefers-color-scheme: dark) {
   .ingredient-btn {
-    background-color: #CF996C;
-    color: #fbe6d3;
-    border: 2px solid rgba(255,200,160,0.35);
-    box-shadow:
-      0 4px 14px rgba(0,0,0,0.55),
-      inset 0 1px 0 rgba(255,255,255,0.08);
-    &::before {
-      background: linear-gradient(180deg,#e26a00,#CF996C);
-    }
-    &:hover {
-      background: linear-gradient(135deg,#4a3123 0%, #6b4430 100%);
-      color: #ffe9d7;
-    }
-    &.selected {
-      background: linear-gradient(135deg,#e26a00 0%, #cf7e34 100%);
-      color: #fff;
-    }
+    background: #3d2a1d;
+    border: 2px solid #5a3c27;
+    color: #ecd9ca;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  }
+  .ingredient-btn:hover {
+    background: #4a3525;
+  }
+  .ingredient-btn.selected {
+    background: #cf996c;
+    color: #fff;
+    border-color: #e2a774;
   }
 }
 
-// Mobile tweaks
 @media (max-width: 768px) {
   .ingredient-btn {
-    font-size: .95rem;
     min-height: 48px;
+    font-size: 0.95rem;
   }
 }
 
