@@ -70,6 +70,13 @@
                 border-radius: 20px;
                 font-size: 0.9rem;
                 font-weight: 800;
+
+                // ✅ NEW: Community badge style
+                &.community-badge {
+                    background: linear-gradient(135deg, #10b981, #059669);
+                    color: white;
+                    animation: pulse 2s infinite;
+                }
             }
 
             &:hover {
@@ -89,6 +96,10 @@
                 .badge {
                     background: #CF996C;
                     color: white;
+                }
+
+                .badge.community-badge {
+                    background: linear-gradient(135deg, #10b981, #059669);
                 }
             }
         }
@@ -580,4 +591,14 @@
 // Boxicons
 i[class^="bx-"], i[class*=" bx-"] {
     font-family: 'boxicons' !important;
+}
+
+// ✅ NEW: Pulse animation for community badge
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+    }
 }

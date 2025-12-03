@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EditRecipe from './EditRecipe';
 import EditIngredientModal from './EditIngredientModal';
+import CommunityRecipesPage from './CommunityRecipesPage'; // ✅ NEW IMPORT
 import { buildRecipeImageUrl } from '../utils/imageUrls';
 import './ManageRecipeAndIngredientsPage.scss';
 
@@ -21,7 +22,7 @@ const ManageRecipeAndIngredientsPage = ({
     const [editingRecipe, setEditingRecipe] = useState(null);
     const [editingIngredient, setEditingIngredient] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('recipes');
+    const [activeTab, setActiveTab] = useState('recipes'); // ✅ UPDATED: recipes, ingredients, community
 
     const handleIngredientUpdated = (updatedIngredient) => {
         setEditingIngredient(null);
@@ -66,7 +67,7 @@ const ManageRecipeAndIngredientsPage = ({
                 <p className="page-subtitle">Organize and manage all recipes and ingredients</p>
             </motion.div>
 
-            {/* Tab Navigation */}
+            {/* Tab Navigation - ✅ UPDATED: Added Community Tab */}
             <div className="tab-navigation">
                 <button
                     className={`tab-btn ${activeTab === 'recipes' ? 'active' : ''}`}
@@ -83,6 +84,15 @@ const ManageRecipeAndIngredientsPage = ({
                     <i className="bx bx-leaf"></i>
                     <span>Ingredients</span>
                     <span className="badge">{filteredIngredients.length}</span>
+                </button>
+                {/* ✅ NEW: Community Tab */}
+                <button
+                    className={`tab-btn ${activeTab === 'community' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('community')}
+                >
+                    <i className="bx bx-group"></i>
+                    <span>Community</span>
+                    <span className="badge community-badge">New</span>
                 </button>
             </div>
 
@@ -262,6 +272,18 @@ const ManageRecipeAndIngredientsPage = ({
                                 ))
                             )}
                         </div>
+                    </motion.div>
+                )}
+
+                {/* ✅ NEW: Community Tab */}
+                {activeTab === 'community' && (
+                    <motion.div
+                        key="community"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                    >
+                        <CommunityRecipesPage />
                     </motion.div>
                 )}
             </AnimatePresence>
