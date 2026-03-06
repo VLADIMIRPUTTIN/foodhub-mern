@@ -1,29 +1,28 @@
-export const DEFAULT_PROFILE_IMAGE = "https://placehold.co/150x150/cccccc/666666?text=User&font=roboto";
+export const DEFAULT_PROFILE_IMAGE = "https://ui-avatars.com/api/?name=User&background=CF996C&color=fff&size=128";
 export const DEFAULT_RECIPE_IMAGE = "https://placehold.co/400x300/f5f5f5/999999?text=No+Image&font=roboto";
 
 /**
  * Builds a proper Cloudinary URL for profile images
  */
-export const buildProfileImageUrl = (imageUrl) => {
-    if (!imageUrl) {
-        return DEFAULT_PROFILE_IMAGE;
-    }
-
-    // If it's already a full URL, return as-is
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-        return imageUrl;
-    }
-
-    // If it's a Cloudinary public ID, build the URL
-    const CLOUDINARY_BASE_URL = "https://res.cloudinary.com/duceirdeu/image/upload";
+export const buildProfileImageUrl = (profileImage) => {
+    if (!profileImage) return DEFAULT_PROFILE_IMAGE;
     
-    // Handle different possible formats
-    if (imageUrl.startsWith('v1') || imageUrl.startsWith('foodhub/')) {
-        return `${CLOUDINARY_BASE_URL}/${imageUrl}`;
+    // ✅ Already a full external URL (Google profile pics, etc.)
+    if (profileImage.startsWith('http://') || profileImage.startsWith('https://')) {
+        return profileImage;
     }
-
-    // Default case - assume it's a public ID
-    return `${CLOUDINARY_BASE_URL}/v1/${imageUrl}`;
+    
+    // ✅ Cloudinary URLs
+    if (profileImage.includes('cloudinary.com')) {
+        return profileImage;
+    }
+    
+    // ✅ Relative paths - add baseURL
+    const baseURL = import.meta.env.MODE === "development" 
+        ? "http://localhost:5000" 
+        : "";
+    
+    return `${baseURL}${profileImage.startsWith('/') ? '' : '/'}${profileImage}`;
 };
 
 /**

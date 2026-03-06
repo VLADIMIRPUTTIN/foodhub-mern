@@ -1,6 +1,7 @@
 import { User } from "../models/user.model.js";
 import multer from "multer";
 import path from "path";
+import cloudinary from '../utils/cloudinary.js';
 
 // Multer config for profile image uploads
 const storage = multer.diskStorage({
@@ -54,18 +55,62 @@ export const deleteUser = async (req, res) => {
 // Update profile (bio and image)
 export const updateProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.userId);
-        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+        const userId = req.userId; // from verifyToken middleware
+        const { bio, profileImage } = req.body;
 
-        if (typeof req.body.bio !== "undefined") user.bio = req.body.bio;
-        if (req.body.profileImage) user.profileImage = req.body.profileImage; // base64 string
+        const updateData = {};
 
-        await user.save();
+        if (bio !== undefined) {
+            updateData.bio = bio;
+        }
 
-        res.json({ success: true, user: { ...user._doc, password: undefined } });
-    } catch (err) {
-        console.error('updateProfile error:', err);
-        res.status(500).json({ success: false, message: err.message });
+        // ✅ Upload to Cloudinary if base64 image is provided
+        if (profileImage && profileImage.startsWith('data:image')) {
+            try {
+                console.log("📸 Uploading profile image to Cloudinary...");
+                
+                const uploadResponse = await cloudinary.uploader.upload(profileImage, {
+                    folder: 'foodhub/profiles',
+                    transformation: [
+                        { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+                        { quality: 'auto', fetch_format: 'auto' }
+                    ],
+                    public_id: `user_${userId}_profile`,
+                    overwrite: true, // ✅ Replace old profile pic
+                });
+
+                console.log("✅ Cloudinary upload success:", uploadResponse.secure_url);
+                updateData.profileImage = uploadResponse.secure_url;
+
+            } catch (uploadError) {
+                console.error("❌ Cloudinary upload error:", uploadError);
+                return res.status(500).json({ 
+                    success: false, 
+                    message: "Failed to upload profile image" 
+                });
+            }
+        }
+
+        // ✅ Update user in DB
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { $set: updateData },
+            { new: true }
+        ).select('-password');
+
+        if (!updatedUser) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Profile updated successfully",
+            user: updatedUser
+        });
+
+    } catch (error) {
+        console.error("Error updating profile:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
 

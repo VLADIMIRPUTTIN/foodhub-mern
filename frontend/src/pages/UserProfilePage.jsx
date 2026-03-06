@@ -279,14 +279,14 @@ const UserProfilePage = () => {
         e.preventDefault();
         try {
             let base64Image = null;
+            
             if (editForm.profileImage) {
-                base64Image = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(editForm.profileImage);
-                });
+                // ✅ Compress image before sending
+                console.log("🗜️ Compressing image...");
+                base64Image = await compressImage(editForm.profileImage, 1, 800);
+                console.log("✅ Image compressed");
             }
+            
             const payload = {
                 bio: editForm.bio,
                 profileImage: base64Image,
@@ -315,7 +315,11 @@ const UserProfilePage = () => {
             }
         } catch (error) {
             console.error('Error updating profile:', error);
-            toast.error('Failed to update profile. Please try again.');
+            if (error.response?.status === 413) {
+                toast.error('Image is too large. Please choose a smaller image.');
+            } else {
+                toast.error('Failed to update profile. Please try again.');
+            }
         }
     };
 
@@ -724,9 +728,8 @@ const UserProfilePage = () => {
                                     alt="Profile" 
                                     className="hero-profile-image" 
                                     onError={(e) => { 
-                                        console.error('❌ Hero - Image load failed:', e.currentTarget.src);
                                         e.currentTarget.onerror = null; 
-                                        e.currentTarget.src = DEFAULT_PROFILE_IMAGE; 
+                                        e.currentTarget.src = getFallbackAvatarUrl(); // ✅ Show initials
                                     }}
                                     loading="lazy"
                                     style={{
@@ -803,9 +806,8 @@ const UserProfilePage = () => {
                                             alt="Profile"
                                             className="profile-image"
                                             onError={(e) => { 
-                                                console.error('❌ Edit - Image load failed:', e.currentTarget.src);
                                                 e.currentTarget.onerror = null; 
-                                                e.currentTarget.src = DEFAULT_PROFILE_IMAGE; 
+                                                e.currentTarget.src = getFallbackAvatarUrl(); // ✅ Show initials
                                             }}
                                             loading="lazy"
                                             style={{
@@ -969,7 +971,6 @@ const UserProfilePage = () => {
                                                             src={getRecipeImageUrl(recipe.imageUrl)} 
                                                             alt={recipe.title || recipe.name} 
                                                             onError={(e) => {
-                                                                console.error('Image load error for:', recipe.imageUrl);
                                                                 e.target.src = 'https://via.placeholder.com/400x300?text=Image+Error';
                                                             }}
                                                         />
@@ -1219,3 +1220,49 @@ const UserProfilePage = () => {
 };
 
 export default UserProfilePage;
+
+// ✅ Add this helper function inside the component
+const getFallbackAvatarUrl = () => {
+    const name = encodeURIComponent(user?.name || 'User');
+    return `https://ui-avatars.com/api/?name=${name}&background=CF996C&color=fff&size=128`;
+};
+
+// ✅ Add image compression helper
+const compressImage = (file, maxSizeMB = 1, maxWidthOrHeight = 800) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                    
+                let { width, height } = img;
+                    
+                // Scale down if too large
+                if (width > maxWidthOrHeight || height > maxWidthOrHeight) {
+                    if (width > height) {
+                        height = Math.round((height * maxWidthOrHeight) / width);
+                        width = maxWidthOrHeight;
+                    } else {
+                        width = Math.round((width * maxWidthOrHeight) / height);
+                        height = maxWidthOrHeight;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // ✅ Convert to JPEG with 0.8 quality (reduces size significantly)
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                resolve(compressedBase64);
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+};

@@ -45,13 +45,12 @@ const userSchema = new mongoose.Schema(
 		resetPasswordExpiresAt: Date,
 		profileImage: {
 			type: String,
-			default: "",
+			default: null,
 		},
 		bio: {
 			type: String,
 			default: "",
 		},
-		// Add these onboarding-related fields
 		hasCompletedOnboarding: {
 			type: Boolean,
 			default: false,
@@ -67,6 +66,15 @@ const userSchema = new mongoose.Schema(
 		preferredCuisines: {
 			type: [String],
 			default: [],
+		},
+		googleId: {
+			type: String,
+			default: null,
+		},
+		authProvider: {
+			type: String,
+			enum: ["local", "google"],
+			default: "local",
 		},
 	},
 	{ timestamps: true }

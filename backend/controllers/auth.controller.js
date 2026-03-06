@@ -439,41 +439,54 @@ export const checkAuth = async (req, res) => {
 // Update the googleLogin function to use verification with Resend
 
 export const googleLogin = async (req, res) => {
-  const { credential } = req.body;
-  try {
-    console.log("Google login attempt received");
-    
-    if (!credential) {
-      return res.status(400).json({ 
-          success: false, 
-          message: "No Google credential provided" 
-      });
-    }
-    
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID
-    });
-    
-    const payload = ticket.getPayload();
-    console.log("Google auth successful for email:", payload.email);
-    
-    const googleProfileImage = payload.picture;
-
-    // Check if user exists
-    let user = await User.findOne({ email: payload.email });
-    console.log("User exists in database:", !!user);
-    
-    if (user) {
-        console.log("Existing user - Role:", user.role, "Verification status:", user.isVerified);
+    try {
+        const { credential } = req.body;
         
-        // Update profile image if not set
-        if (!user.profileImage && googleProfileImage) {
-            user.profileImage = googleProfileImage;
+        const ticket = await client.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        
+        const payload = ticket.getPayload();
+        const { email, name, picture, sub: googleId } = payload;
+        
+        let user = await User.findOne({ email });
+        
+        if (!user) {
+            // ✅ New Google user - save Google profile picture URL directly
+            user = new User({
+                email,
+                name,
+                googleId,
+                isVerified: true,
+                profileImage: picture || null, // Save Google picture URL
+                authProvider: 'google',
+            });
             await user.save();
-            console.log("Updated existing user with Google profile image");
+            
+        } else {
+            let updated = false;
+            
+            // ✅ Update Google picture if user has no profile image yet
+            if (!user.profileImage && picture) {
+                user.profileImage = picture;
+                updated = true;
+            }
+            
+            // ✅ Always sync Google profile picture for Google users
+            if (picture && user.authProvider === 'google' && user.profileImage !== picture) {
+                user.profileImage = picture;
+                updated = true;
+            }
+            
+            if (!user.googleId && googleId) {
+                user.googleId = googleId;
+                updated = true;
+            }
+            
+            if (updated) await user.save();
         }
-        
+
         // Check account status
         if (user.status === "banned") {
             return res.status(403).json({
@@ -554,71 +567,10 @@ export const googleLogin = async (req, res) => {
             // Add flag to indicate if user needs onboarding
             needsOnboarding: !user.hasCompletedOnboarding && user.role !== 'admin'
         });
-    } else {
-        // Create new user with Google data
-        console.log("Creating new user with Google data");
-        
-        // Check if this should be an admin account
-        let role = 'user';
-        let isVerified = false;
-        
-        // If the email is admin@foodhub.com, make it admin
-        if (payload.email === 'admin@foodhub.com') {
-            role = 'admin';
-            isVerified = true;
-        }
-        
-        const verificationToken = !isVerified ? Math.floor(100000 + Math.random() * 900000).toString() : undefined;
-        
-        // Create a random password for Google users
-        const randomPassword = Math.random().toString(36).slice(-8);
-        const hashedPassword = await bcryptjs.hash(randomPassword, 10);
-        
-        user = new User({
-            email: payload.email,
-            password: hashedPassword,
-            name: payload.name,
-            role: role,
-            verificationToken: verificationToken,
-            verificationTokenExpiresAt: !isVerified ? Date.now() + 15 * 60 * 1000 : undefined,
-            isVerified: isVerified,
-            profileImage: googleProfileImage,
-            hasCompletedOnboarding: role === 'admin' // Admin doesn't need onboarding
-        });
-        
-        await user.save();
-        console.log("New Google user created:", user.email, "Role:", user.role);
-        
-        // Send verification email only if not admin
-        if (!isVerified) {
-            await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
-        }
-        
-        // Generate token
-        generateTokenAndSetCookie(res, user._id);
-        
-        const successMessage = role === 'admin' 
-            ? "Admin account created and logged in successfully with Google"
-            : "Account created with Google. Please verify your email to continue.";
-        
-        return res.status(201).json({
-            success: true,
-            message: successMessage,
-            user: {
-                ...user._doc,
-                password: undefined
-            },
-            // New users always need onboarding (except admin)
-            needsOnboarding: role !== 'admin'
-        });
+    } catch (error) {
+        console.error("Google login error:", error);
+        res.status(500).json({ success: false, message: "Google login failed" });
     }
-  } catch (error) {
-    console.error("Google login error:", error);
-    res.status(500).json({ 
-        success: false, 
-        message: "Error logging in with Google: " + error.message 
-    });
-  }
 };
 
 export const resendVerification = async (req, res) => {

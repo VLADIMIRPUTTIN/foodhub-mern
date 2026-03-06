@@ -55,10 +55,14 @@ const Navbar = () => {
     };
 
     const getProfileImageUrl = () => {
-        console.log('🖼️ Navbar - User profile image:', user?.profileImage);
         const url = buildProfileImageUrl(user?.profileImage);
-        console.log('🖼️ Navbar - Built URL:', url);
         return url;
+    };
+
+    // ✅ Generate avatar fallback based on user name
+    const getFallbackUrl = () => {
+        const name = encodeURIComponent(user?.name || 'User');
+        return `https://ui-avatars.com/api/?name=${name}&background=CF996C&color=fff&size=128`;
     };
 
     return (
@@ -105,9 +109,8 @@ const Navbar = () => {
                                         src={getProfileImageUrl()}
                                         alt="User Profile"
                                         onError={(e) => { 
-                                            console.error('❌ Navbar - Image load failed:', e.currentTarget.src);
                                             e.currentTarget.onerror = null; 
-                                            e.currentTarget.src = DEFAULT_PROFILE_IMAGE; 
+                                            e.currentTarget.src = getFallbackUrl(); // ✅ Show initials instead
                                         }}
                                         loading="lazy"
                                         style={{
