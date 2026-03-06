@@ -116,10 +116,10 @@ const RecipePage = () => {
         return recipe.category && recipe.category.toLowerCase() === currentMealType.toLowerCase();
     };
 
-    // Detect mobile device
+    // Detect mobile device — match 992px CSS breakpoint
     useEffect(() => {
         const checkMobile = () => {
-            setIsMobile(window.innerWidth < 768);
+            setIsMobile(window.innerWidth < 993); // ← changed from 768
         };
         
         checkMobile();
@@ -459,29 +459,33 @@ const RecipePage = () => {
             <div className="main-content">
                 {/* Responsive Ingredients Sidebar */}
                 <div className="ingredients-responsive">
-                    {/* Mobile: Sheet Button */}
-                    <MobileIngredientSheet 
-                        isSheetOpen={isSheetOpen}
-                        setIsSheetOpen={setIsSheetOpen}
-                        sheetAnimate={sheetAnimate}
-                        sheetOut={sheetOut}
-                        handleSheetOpenChange={handleSheetOpenChange}
-                        ingredientSearch={ingredientSearch}
-                        setIngredientSearch={setIngredientSearch}
-                        filteredIngredients={filteredIngredients}
-                        selectedIngredients={selectedIngredients}
-                        handleIngredientClick={handleIngredientClick}
-                        isMobile={isMobile}
-                    />
-                    
-                    {/* Desktop: Sidebar */}
-                    <IngredientsSidebar 
-                        ingredientSearch={ingredientSearch}
-                        setIngredientSearch={setIngredientSearch}
-                        filteredIngredients={filteredIngredients}
-                        selectedIngredients={selectedIngredients}
-                        handleIngredientClick={handleIngredientClick}
-                    />
+                    {/* Mobile ONLY: Sheet/FAB Button */}
+                    {isMobile && (
+                        <MobileIngredientSheet 
+                            isSheetOpen={isSheetOpen}
+                            setIsSheetOpen={setIsSheetOpen}
+                            sheetAnimate={sheetAnimate}
+                            sheetOut={sheetOut}
+                            handleSheetOpenChange={handleSheetOpenChange}
+                            ingredientSearch={ingredientSearch}
+                            setIngredientSearch={setIngredientSearch}
+                            filteredIngredients={filteredIngredients}
+                            selectedIngredients={selectedIngredients}
+                            handleIngredientClick={handleIngredientClick}
+                            isMobile={isMobile}
+                        />
+                    )}
+
+                    {/* Desktop ONLY: Sidebar */}
+                    {!isMobile && (
+                        <IngredientsSidebar 
+                            ingredientSearch={ingredientSearch}
+                            setIngredientSearch={setIngredientSearch}
+                            filteredIngredients={filteredIngredients}
+                            selectedIngredients={selectedIngredients}
+                            handleIngredientClick={handleIngredientClick}
+                        />
+                    )}
                 </div>
                 
                 {/* Main Recipe Content */}

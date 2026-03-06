@@ -1,141 +1,69 @@
-// =============================================================================
-// PAGINATION CONTROLS
-// =============================================================================
+$primary:      #CF996C;
+$primary-dark: #BB8860;
+$white:        #ffffff;
+
 .pagination-controls {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1.5rem;
-  margin-top: 3rem;
-  margin-bottom: 2rem;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
 
   .pagination-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #CF996C 0%, #BB8860 100%);
-    color: white;
+    gap: 0.45rem;
+    padding: 0.62rem 1.35rem;
+    background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+    color: $white;
     border: none;
-    border-radius: 25px;
-    font-size: 0.95rem;
-    font-weight: 600;
+    border-radius: 10px;
+    font-size: 0.87rem;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(207, 153, 108, 0.2);
+    transition: all 0.28s ease;
+    box-shadow: 0 4px 12px rgba(207,153,108,0.28);
+    letter-spacing: 0.3px;
+    font-family: inherit;
+
+    i { font-size: 1rem; }
 
     &:hover:not(:disabled) {
-      background: linear-gradient(135deg, #BB8860 0%, #a67a5a 100%);
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(207, 153, 108, 0.3);
+      box-shadow: 0 8px 20px rgba(207,153,108,0.38);
+      background: linear-gradient(135deg, $primary-dark 0%, #a67a5a 100%);
     }
+
+    &:active:not(:disabled) { transform: translateY(0); }
 
     &:disabled {
-      opacity: 0.6;
+      background: rgba(255,255,255,0.32);
+      color: rgba(255,255,255,0.55);
       cursor: not-allowed;
-    }
-
-    i {
-      font-size: 1.1rem;
+      box-shadow: none;
     }
   }
 
   .page-info {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 20px;
-    box-shadow: 0 2px 8px rgba(207, 153, 108, 0.1);
-    backdrop-filter: blur(4px);
+    gap: 0.32rem;
+    padding: 0.52rem 1.15rem;
+    background: rgba(255,255,255,0.92);
+    border-radius: 10px;
+    border: 1.5px solid rgba(207,153,108,0.2);
+    box-shadow: 0 2px 8px rgba(207,153,108,0.1);
+    backdrop-filter: blur(6px);
 
-    .current-page {
-      color: #CF996C;
-      font-size: 1.1rem;
-      font-weight: 700;
-    }
-
-    .page-separator {
-      color: #999;
-      font-size: 0.9rem;
-    }
-
-    .total-pages {
-      color: #666;
-      font-size: 1.1rem;
-      font-weight: 700;
-    }
+    .current-page { color: $primary; font-size: 1rem; font-weight: 800; }
+    .page-separator { color: #bbb; font-size: 0.85rem; }
+    .total-pages { color: #666; font-size: 1rem; font-weight: 700; }
   }
 }
 
-// =============================================================================
-// MOBILE PAGINATION STYLES
-// =============================================================================
-.mobile-pagination-container {
-  display: none; // Hidden by default on desktop
-
-  .mobile-pagination-swipe {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-
-    .swipe-indicator {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: #999;
-      font-size: 0.85rem;
-      font-weight: 500;
-
-      i {
-        font-size: 1rem;
-        color: #CF996C;
-        animation: pulse 1.5s infinite;
-      }
-    }
-
-    .mobile-page-info {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.4rem 1rem;
-      background: rgba(255, 255, 255, 0.8);
-      border-radius: 20px;
-      box-shadow: 0 2px 8px rgba(207, 153, 108, 0.1);
-
-      .current-page {
-        color: #CF996C;
-        font-size: 1.1rem;
-        font-weight: 700;
-      }
-
-      .page-separator {
-        color: #999;
-        font-size: 0.9rem;
-      }
-
-      .total-pages {
-        color: #666;
-        font-size: 1.1rem;
-        font-weight: 700;
-      }
-    }
-  }
-}
-
-// Mobile pagination adjustments
+/* Mobile — hide desktop pagination */
 @media (max-width: 768px) {
-  // Hide desktop pagination controls on mobile
-  .pagination-controls {
-    display: none;
-  }
-
-  // Show mobile pagination container
-  .mobile-pagination-container {
-    display: none; // Keep hidden as requested
-  }
+  .pagination-controls { display: none !important; }
+  .mobile-pagination-container { display: none !important; }
 }

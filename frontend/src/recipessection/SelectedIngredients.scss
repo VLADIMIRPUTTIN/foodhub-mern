@@ -1,320 +1,250 @@
-// =============================================================================
-// SELECTED INGREDIENTS COMPONENT - COMPACT VERSION
-// =============================================================================
+/* =============================================
+   VARIABLES
+   ============================================= */
+$primary:        #CF996C;
+$primary-dark:   #BB8860;
+$primary-light:  #ffe7b2;
+$primary-border: rgba(207,153,108,0.22);
+$primary-bg:     rgba(207,153,108,0.07);
+$text-dark:      #1a1a1a;
+$text-mid:       #4b5563;
+$text-light:     #9ca3af;
+$white:          #ffffff;
+
+/* =============================================
+   KEYFRAMES
+   ============================================= */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes chipPop {
+  0%   { opacity: 0; transform: scale(0.82); }
+  70%  { transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* =============================================
+   MAIN CONTAINER
+   ============================================= */
 .selected-ingredients-section {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 248, 238, 0.93) 100%);
-  border: 1.5px solid rgba(207, 153, 108, 0.25); // Thinner border
-  border-radius: 14px; // Smaller border radius
-  padding: 0.8rem 1rem; // Reduced padding
-  margin: 0.5rem 0 1rem 0; // Reduced margins
-  box-shadow: 
-    0 4px 12px rgba(207, 153, 108, 0.08), // Reduced shadow
-    0 2px 6px rgba(255, 183, 122, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(8px);
+  background: $white;
+  border: 1.5px solid $primary-border;
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  margin: 0.5rem 0 1rem;
+  box-shadow:
+    0 4px 14px rgba(207,153,108,0.08),
+    0 1px 4px rgba(0,0,0,0.03);
   position: relative;
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  // Smaller decorative background elements
+  transition: all 0.3s ease;
+  animation: fadeInUp 0.25s ease both;
+
+  /* Subtle top accent line */
   &::before {
     content: '';
     position: absolute;
-    top: -30px; right: -30px; // Reduced size
-    width: 60px; height: 60px; // Smaller
-    background: radial-gradient(circle, rgba(255, 183, 122, 0.06) 0%, transparent 70%);
-    border-radius: 50%;
-    pointer-events: none;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, $primary, $primary-dark, $primary);
+    background-size: 200% auto;
+    border-radius: 14px 14px 0 0;
   }
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -20px; left: -20px; // Reduced size
-    width: 50px; height: 50px; // Smaller
-    background: radial-gradient(circle, rgba(207, 153, 108, 0.05) 0%, transparent 70%);
-    border-radius: 50%;
-    pointer-events: none;
-  }
-  
+
   &:hover {
-    transform: translateY(-1px); // Reduced hover effect
-    box-shadow: 
-      0 6px 18px rgba(207, 153, 108, 0.12),
-      0 3px 8px rgba(255, 183, 122, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    box-shadow:
+      0 6px 20px rgba(207,153,108,0.12),
+      0 2px 6px rgba(0,0,0,0.04);
+    border-color: rgba(207,153,108,0.32);
   }
-  
+
+  /* ---- HEADER ---- */
   .selected-header {
     display: flex;
     align-items: center;
-    gap: 0.5rem; // Reduced gap
-    margin-bottom: 0.7rem; // Reduced margin
-    position: relative;
-    z-index: 2;
-    
+    gap: 0.45rem;
+    margin-bottom: 0.75rem;
+
     .selected-icon {
-      font-size: 1rem; // Smaller icon
-      filter: drop-shadow(0 1px 2px rgba(207, 153, 108, 0.2));
+      font-size: 0.95rem;
+      line-height: 1;
     }
-    
+
     .selected-label {
-      font-weight: 600; // Reduced font weight
-      color: #b86b1b;
-      font-size: 0.95rem; // Smaller font
-      background: linear-gradient(135deg, #c97a2b 0%, #e26a00 50%, #ff9800 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: $text-dark;
       letter-spacing: 0.2px;
     }
-    
+
     .selected-count {
-      background: linear-gradient(135deg, #e26a00 0%, #ff9800 100%);
-      color: white;
-      font-size: 0.7rem; // Smaller font
-      font-weight: 600;
-      padding: 0.15rem 0.4rem; // Reduced padding
-      border-radius: 10px; // Smaller radius
-      box-shadow: 0 1px 4px rgba(226, 106, 0, 0.2);
+      background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+      color: $white;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
       margin-left: auto;
+      box-shadow: 0 2px 6px rgba(207,153,108,0.22);
+      letter-spacing: 0.2px;
     }
   }
-  
+
+  /* ---- CHIPS CONTAINER ---- */
   .chips-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem; // Reduced gap
-    position: relative;
-    z-index: 2;
+    gap: 0.45rem;
   }
-  
+
+  /* ---- CHIP ---- */
   .selected-chip {
-    background: linear-gradient(135deg, #fff8ee 0%, #fff3e0 100%);
-    color: #c97a2b;
-    border: 1.5px solid rgba(207, 153, 108, 0.3); // Thinner border
-    border-radius: 16px; // Smaller radius
-    padding: 0.35rem 0.7rem; // Reduced padding
-    font-size: 0.8rem; // Smaller font
-    font-weight: 500; // Reduced font weight
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem; // Reduced gap
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    gap: 0.4rem;
+    background: $primary-bg;
+    border: 1.5px solid $primary-border;
+    border-radius: 8px;
+    padding: 0.35rem 0.55rem 0.35rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: $primary-dark;
+    transition: all 0.22s ease;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 2px 6px rgba(207, 153, 108, 0.06); // Reduced shadow
-    backdrop-filter: blur(4px);
-    
-    // Shimmer effect
+    animation: chipPop 0.22s ease both;
+    font-family: inherit;
+
+    /* Shimmer effect */
     &::before {
       content: '';
       position: absolute;
       top: 0; left: -100%;
       width: 100%; height: 100%;
-      background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
-      transition: left 0.5s ease;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,0.45),
+        transparent
+      );
+      transition: left 0.45s ease;
     }
-    
-    &:hover {
-      background: linear-gradient(135deg, #fff3e0 0%, #ffecb3 100%);
-      border-color: #e26a00;
-      color: #d4691b;
-      transform: translateY(-1px); // Reduced hover effect
-      box-shadow: 
-        0 3px 8px rgba(207, 153, 108, 0.12),
-        0 2px 6px rgba(255, 183, 122, 0.08);
-      
-      &::before {
-        left: 100%;
-      }
-    }
-    
+
     .chip-text {
-      font-weight: 500;
+      font-weight: 600;
       letter-spacing: 0.1px;
       line-height: 1.2;
+      white-space: nowrap;
     }
-    
-    .remove-chip {
-      background: linear-gradient(135deg, rgba(226, 106, 0, 0.08) 0%, rgba(255, 152, 0, 0.08) 100%);
-      border: none;
-      color: #e26a00;
-      font-size: 0.9rem; // Smaller font
-      cursor: pointer;
-      font-weight: bold;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      border-radius: 50%;
-      width: 18px; // Smaller size
-      height: 18px; // Smaller size
+
+    /* X icon */
+    i.bx-x {
+      font-size: 0.95rem;
+      color: $text-light;
+      width: 18px;
+      height: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
-      overflow: hidden;
-      
-      &::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: linear-gradient(135deg, #e26a00, #ff9800);
-        border-radius: 50%;
-        opacity: 0;
-        transform: scale(0);
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      
-      i {
-        position: relative;
-        z-index: 1;
-        transition: color 0.25s ease;
-        font-size: 0.8rem; // Smaller icon
-      }
-      
-      &:hover {
-        transform: scale(1.1);
-        
-        &::before {
-          opacity: 1;
-          transform: scale(1);
-        }
-        
-        i {
-          color: white;
-        }
-      }
-      
-      &:active {
-        transform: scale(0.9);
+      border-radius: 50%;
+      background: transparent;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    &:hover {
+      background: rgba(207,153,108,0.13);
+      border-color: $primary;
+      color: $primary-dark;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(207,153,108,0.14);
+
+      &::before { left: 100%; }
+
+      i.bx-x {
+        background: $primary;
+        color: $white;
+        transform: rotate(90deg);
       }
     }
+
+    &:active { transform: translateY(0); }
+
+    /* Staggered animation */
+    @for $i from 1 through 8 {
+      &:nth-child(#{$i}) {
+        animation-delay: #{($i - 1) * 0.03}s;
+      }
+    }
+    &:nth-child(n+9) { animation-delay: 0.24s; }
   }
 }
 
-// =============================================================================
-// MOBILE RESPONSIVE STYLES - HIDE ON MOBILE
-// =============================================================================
-
-// Hide SelectedIngredients component on mobile (768px and below)
-@media (max-width: 768px) {
-  .selected-ingredients-section {
-    display: none !important;
-  }
-}
-
-// Also hide on tablet if needed (optional)
+/* =============================================
+   HIDE ON MOBILE
+   ============================================= */
 @media (max-width: 900px) {
   .selected-ingredients-section {
     display: none !important;
   }
 }
 
-// =============================================================================
-// ANIMATIONS - OPTIMIZED FOR COMPACT SIZE
-// =============================================================================
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes chipSlideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-4px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-}
-
-.selected-ingredients-section {
-  animation: fadeInUp 0.2s ease-out;
-}
-
-.selected-chip {
-  animation: chipSlideIn 0.15s ease-out;
-  
-  &:nth-child(2) { animation-delay: 0.02s; }
-  &:nth-child(3) { animation-delay: 0.04s; }
-  &:nth-child(4) { animation-delay: 0.06s; }
-  &:nth-child(5) { animation-delay: 0.08s; }
-  &:nth-child(n+6) { animation-delay: 0.1s; }
-}
-
-// =============================================================================
-// ACCESSIBILITY & PERFORMANCE
-// =============================================================================
-
-// Reduce motion for users who prefer it
+/* =============================================
+   ACCESSIBILITY
+   ============================================= */
 @media (prefers-reduced-motion: reduce) {
   .selected-ingredients-section,
   .selected-chip {
     animation: none;
     transition: none;
   }
-  
-  .selected-chip::before,
-  .remove-chip::before {
-    transition: none;
-  }
-  
-  .selected-chip:hover,
-  .remove-chip:hover {
+
+  .selected-chip:hover {
     transform: none;
+    &::before { display: none; }
   }
 }
 
-// High contrast mode support
 @media (prefers-contrast: high) {
   .selected-ingredients-section {
-    border: 2px solid #CF996C;
-    background: white;
+    border: 2px solid $primary;
+    background: $white;
     box-shadow: none;
-    
+
     .selected-chip {
-      border: 1.5px solid #CF996C;
-      background: white;
-      color: #CF996C;
-      box-shadow: none;
-      
-      .remove-chip {
-        background: #CF996C;
-        color: white;
-        
-        &::before {
-          display: none;
-        }
-      }
-    }
-    
-    .selected-count {
-      background: #CF996C;
-      color: white;
+      border: 2px solid $primary;
+      background: $white;
+      color: $primary-dark;
+
+      i.bx-x { color: $primary; }
     }
   }
 }
 
-// Touch device optimizations
 @media (hover: none) and (pointer: coarse) {
   .selected-chip {
-    .remove-chip {
-      width: 20px;
-      height: 20px;
-      
-      &:active {
-        transform: scale(0.95);
-        background: linear-gradient(135deg, #e26a00, #ff9800);
-        
-        i {
-          color: white;
-        }
+    padding: 0.45rem 0.6rem 0.45rem 0.85rem;
+
+    i.bx-x {
+      width: 22px;
+      height: 22px;
+    }
+
+    &:active {
+      background: rgba(207,153,108,0.15);
+      border-color: $primary;
+
+      i.bx-x {
+        background: $primary;
+        color: $white;
       }
     }
   }

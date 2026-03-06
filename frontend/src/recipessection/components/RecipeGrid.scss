@@ -1,6 +1,44 @@
-// =============================================================================
-// RECIPES GRID STYLES
-// =============================================================================
+/* =============================================
+   VARIABLES
+   ============================================= */
+$primary:        #CF996C;
+$primary-dark:   #BB8860;
+$primary-light:  #ffe7b2;
+$primary-bg:     rgba(207,153,108,0.08);
+$primary-border: rgba(207,153,108,0.18);
+$text-dark:      #1a1a1a;
+$text-mid:       #4b5563;
+$text-light:     #9ca3af;
+$white:          #ffffff;
+$shadow-card:    0 2px 12px rgba(0,0,0,0.07);
+$shadow-hover:   0 8px 28px rgba(207,153,108,0.18);
+$radius-card:    16px;
+$transition:     all 0.28s cubic-bezier(0.4,0,0.2,1);
+
+/* =============================================
+   KEYFRAMES
+   ============================================= */
+@keyframes heartPulse {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.28); }
+  55%  { transform: scale(1.1); }
+  75%  { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* =============================================
+   GRID WRAPPER
+   ============================================= */
 .recipes-grid-container {
   width: 100%;
   position: relative;
@@ -9,562 +47,518 @@
 .recipes-grid {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(4, 1fr); // 4 per row
-  gap: 1rem; // Reduced gap between cards
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.1rem;
+  margin-bottom: 1.5rem;
   transition: opacity 0.3s;
-  
-  &.swiping {
-    opacity: 0.7;
-  }
+
+  &.swiping { opacity: 0.65; }
 }
 
 .recipe-card-wrapper {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  position: relative;
+  animation: cardFadeIn 0.35s ease both;
+
+  /* stagger each card */
+  @for $i from 1 through 8 {
+    &:nth-child(#{$i}) { animation-delay: #{($i - 1) * 0.05}s; }
+  }
 }
 
+/* =============================================
+   RECIPE CARD — DESKTOP
+   ============================================= */
 .recipe-card {
   width: 100%;
-  background: white;
-  border-radius: 12px;
+  background: $white;
+  border-radius: $radius-card;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+  box-shadow: $shadow-card;
+  border: 1px solid rgba(0,0,0,0.05);
+  transition: $transition;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   position: relative;
-  height: 380px;
-
+  height: 340px; /* compact but not cramped */
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transform: translateY(-5px);
+    box-shadow: $shadow-hover;
+    border-color: $primary-border;
+
+    .recipe-image img { transform: scale(1.06); }
+    .recipe-title      { color: $primary-dark; }
   }
 
+  /* ---- IMAGE ---- */
   .recipe-image {
     position: relative;
-    height: 140px; // Reduced image height to give more space for content
+    height: 160px;
     overflow: hidden;
     flex-shrink: 0;
-    border-radius: 12px 12px 0 0;
+    border-radius: $radius-card $radius-card 0 0;
 
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.3s ease;
+      transition: transform 0.4s ease;
+      display: block;
     }
 
-    &:hover img {
-      transform: scale(1.05);
+    /* gradient scrim */
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 55%;
+      background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.28));
+      pointer-events: none;
     }
   }
 
-  .recipe-content {
-    padding: 0.8rem;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    height: 240px;
-    overflow: hidden;
-    position: relative;
-
-    .recipe-title {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: #333;
-      margin-bottom: 0.4rem;
-      line-height: 1.2;
-      height: 2.4em;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      order: -1;
-    }
-
-    .recipe-category {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.2rem;
-      background: #CF996C;
-      color: white;
-      padding: 0.2rem 0.5rem;
-      border-radius: 10px;
-      font-size: 0.65rem;
-      font-weight: 600;
-      margin-bottom: 0.4rem;
-      width: fit-content;
-      order: 0;
-      height: 22px;
-    }
-    
-    .recipe-desc {
-      color: #666;
-      font-size: 0.75rem;
-      margin-bottom: 0.4rem;
-      line-height: 1.3;
-      height: 2.6em;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      order: 1;
-    }
-    
-    // ✅ Meta container: wrap nutrition pills BELOW price/servings
-    .recipe-meta-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.3rem; // ✅ Smaller gap
-      margin-bottom: 0.4rem;
-      order: 2;
-      min-height: 24px; // ✅ Allow wrap
-      max-height: 50px; // ✅ Allow 2 rows if needed
-      align-items: flex-start; // ✅ Align to top
-      overflow: visible; // ✅ Allow pills to wrap
-    }
-    
-    .recipe-price {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      background: rgba(207, 153, 108, 0.1);
-      padding: 0.2rem 0.4rem;
-      border-radius: 12px;
-      font-size: 0.65rem;
-      font-weight: 600;
-      color: #b86b1b;
-      border: 1px solid rgba(207, 153, 108, 0.2);
-      width: fit-content;
-      height: 24px;
-      flex-shrink: 0; // ✅ Don't shrink
-      
-      i {
-        font-size: 0.75rem;
-        color: #CF996C;
-      }
-    }
-    
-    .recipe-servings {
-      display: flex;
-      align-items: center;
-      gap: 0.2rem;
-      background: rgba(92, 115, 160, 0.1);
-      padding: 0.2rem 0.4rem;
-      border-radius: 12px;
-      font-size: 0.65rem;
-      font-weight: 600;
-      color: #455a8f;
-      border: 1px solid rgba(92, 115, 160, 0.15);
-      width: fit-content;
-      height: 24px;
-      flex-shrink: 0;
-      
-      i {
-        font-size: 0.7rem;
-      }
-    }
-
-    // ✅ Nutrition pills: smaller, wrap if needed
-    .recipe-nutrition {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.15rem;
-      background: rgba(207,153,108,0.08);
-      border: 1px solid rgba(207,153,108,0.2);
-      padding: 0.15rem 0.35rem;
-      border-radius: 10px;
-      font-size: 0.58rem; // ✅ Smaller font
-      font-weight: 600;
-      color: #b86b1b;
-      white-space: nowrap;
-      height: 20px; // ✅ Smaller height
-      flex-shrink: 0;
-      
-      i {
-        font-size: 0.65rem;
-        color: #CF996C;
-      }
-    }
-    
-    .star-rating-display {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.15rem;
-      margin-bottom: 0.4rem;
-      height: 20px;
-      order: 3;
-      
-      i {
-        color: #FF9529;
-        font-size: 0.8rem;
-      }
-      
-      span {
-        font-size: 0.65rem;
-        color: #666;
-        margin-left: 0.2rem;
-      }
-    }
-  }
-
+  /* ---- BADGES (top-left) ---- */
   .recipe-badges {
     position: absolute;
-    top: 8px;
-    left: 8px;
+    top: 10px;
+    left: 10px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
     z-index: 10;
+    max-width: 65%;
   }
 
   .time-badge {
-    background: linear-gradient(135deg, #FF6B6B, #FF8E53);
-    color: white;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 5px;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    gap: 4px;
+    background: linear-gradient(135deg, #f7630c, #FF8E53);
+    color: $white;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(247,99,12,0.3);
+    letter-spacing: 0.2px;
+
+    i { font-size: 0.75rem; }
   }
 
   .preference-badge {
-    background: linear-gradient(135deg, #4CAF50, #45a049);
-    color: white;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 5px;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    gap: 4px;
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: $white;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(76,175,80,0.3);
+    letter-spacing: 0.2px;
+
+    i { font-size: 0.75rem; }
   }
 
+  /* ---- FAVORITE BUTTON ---- */
   .favorite-btn {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 32px;
-    height: 32px;
-    background: rgba(0, 0, 0, 0.6);
+    top: 10px;
+    right: 10px;
+    width: 34px;
+    height: 34px;
+    background: rgba(255,255,255,0.88);
     border: none;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 4px 12px rgba(149, 133, 133, 0.4);
+    transition: $transition;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
     z-index: 20;
 
     i {
-      font-size: 1.1rem;
-      color: #bbb;
-      transition: all 0.3s ease;
+      font-size: 1.05rem;
+      color: $text-light;
+      transition: $transition;
       font-family: 'boxicons' !important;
-      filter: drop-shadow(0 0 6px rgba(255, 107, 107, 0.15));
     }
 
     &:hover {
-      background: rgba(44, 42, 42, 0.85);
-      box-shadow: 0 8px 24px rgba(255, 107, 107, 0.18);
-      i {
-        color: #ededed;
-        filter: drop-shadow(0 0 12px #ff6b6b88);
-        transform: scale(1.1);
-        animation: heartPulse 0.5s;
-      }
+      background: $white;
+      box-shadow: 0 4px 14px rgba(255,107,107,0.22);
+      transform: scale(1.1);
+
+      i { color: #ff6b6b; }
     }
 
-    &:active {
-      transform: scale(0.96);
-    }
+    &:active { transform: scale(0.95); }
 
-    // ✅ FIX: Red background and white heart when favorited
     &.favorited {
-      background: rgba(255, 45, 85, 0.95) !important;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      
+      background: rgba(255,45,85,0.92) !important;
+
       i {
-        color: #ffffff !important;
-        filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.8));
-        animation: heartPulse 0.7s;
-        text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+        color: $white !important;
+        animation: heartPulse 0.6s ease;
       }
 
       &:hover {
-        background: rgba(255, 45, 85, 1) !important;
-        transform: scale(1.15);
-        box-shadow: 0 8px 24px rgba(255, 45, 85, 0.5);
-        
-        i {
-          color: #ffffff !important;
-          filter: drop-shadow(0 0 20px rgba(255, 255, 255, 1));
-          transform: scale(1.2);
-        }
+        background: rgba(255,45,85,1) !important;
+        box-shadow: 0 5px 16px rgba(255,45,85,0.35);
       }
     }
   }
-  
-  &.empty-card {
-    visibility: hidden;
+
+  /* ---- CONTENT ---- */
+  .recipe-content {
+    padding: 0.85rem 0.9rem 0.75rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
   }
+
+  .recipe-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: $text-dark;
+    line-height: 1.25;
+    height: 2.5em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 0.4rem;
+    transition: color 0.2s ease;
+    order: -1;
+  }
+
+  .recipe-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: $primary;
+    color: $white;
+    padding: 0.2rem 0.55rem;
+    border-radius: 8px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    width: fit-content;
+    margin-bottom: 0.4rem;
+    order: 0;
+    letter-spacing: 0.2px;
+
+    i { font-size: 0.7rem; }
+  }
+
+  .recipe-desc {
+    color: $text-mid;
+    font-size: 0.76rem;
+    line-height: 1.35;
+    height: 2.7em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 0.45rem;
+    order: 1;
+  }
+
+  /* ---- META PILLS ROW ---- */
+  .recipe-meta-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: 0.4rem;
+    order: 2;
+    min-height: 22px;
+  }
+
+  .recipe-price {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    background: $primary-bg;
+    border: 1px solid $primary-border;
+    padding: 0.18rem 0.45rem;
+    border-radius: 8px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    color: #b86b1b;
+    white-space: nowrap;
+    height: 22px;
+
+    i { font-size: 0.72rem; color: $primary; }
+  }
+
+  .recipe-servings {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    background: rgba(92,115,160,0.09);
+    border: 1px solid rgba(92,115,160,0.18);
+    padding: 0.18rem 0.45rem;
+    border-radius: 8px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    color: #455a8f;
+    white-space: nowrap;
+    height: 22px;
+
+    i { font-size: 0.7rem; }
+  }
+
+  .recipe-nutrition {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    background: $primary-bg;
+    border: 1px solid $primary-border;
+    padding: 0.15rem 0.38rem;
+    border-radius: 8px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #b86b1b;
+    white-space: nowrap;
+    height: 20px;
+
+    i { font-size: 0.65rem; color: $primary; }
+  }
+
+  /* ---- STAR RATING ---- */
+  .star-rating-display {
+    display: flex;
+    align-items: center;
+    gap: 0.12rem;
+    order: 3;
+    margin-bottom: 0.4rem;
+    height: 18px;
+
+    i {
+      color: #FF9529;
+      font-size: 0.78rem;
+    }
+
+    span {
+      font-size: 0.62rem;
+      color: $text-light;
+      margin-left: 0.18rem;
+    }
+  }
+
+  /* ---- ACTION BUTTONS ---- */
+  .recipe-action-buttons {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: auto;
+    padding-top: 0.35rem;
+    order: 4;
+    height: 28px;
+  }
+
+  &.empty-card { visibility: hidden; }
 }
 
-// Add this for the action buttons container
-.recipe-action-buttons {
-  display: flex;
-  gap: 0.4rem;
-  margin-top: auto;
-  width: 100%;
-  padding-top: 0.4rem;
-  order: 4;
-  height: 30px;
-}
-
-// Style for action buttons - smaller and cleaner
+/* =============================================
+   ACTION BUTTON BASE
+   ============================================= */
 .recipe-action-btn {
   flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.25rem;
   background: transparent;
-  border: 1.5px solid; // Thicker border
-  border-radius: 15px; // More rounded
-  padding: 0.3rem 0; // Smaller padding
-  font-size: 0.65rem; // Smaller font
-  font-weight: 600;
+  border: 1.5px solid;
+  border-radius: 8px;
+  padding: 0 0.4rem;
+  font-size: 0.64rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
-  gap: 0.3rem; // Smaller gap
-  height: 28px; // Smaller height
-  position: relative; // Add this for badge positioning
-  
-  i {
-    font-size: 0.75rem; // Smaller icons
+  transition: $transition;
+  height: 28px;
+  letter-spacing: 0.2px;
+  font-family: inherit;
+  position: relative;
+  overflow: hidden;
+
+  /* shimmer */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.45s ease;
   }
-  
-  &:active {
-    transform: translateY(0);
-  }
-  
-  // Rate button styling
+
+  i { font-size: 0.74rem; }
+
+  &:active { transform: translateY(0) scale(0.97); }
+
+  /* Rate */
   &.rate-btn {
-    border-color: #CF996C;
-    color: #CF996C;
-    
+    border-color: $primary;
+    color: $primary;
+
     &:hover {
-      background: #CF996C;
-      color: white;
+      background: $primary;
+      color: $white;
       transform: translateY(-1px);
-      box-shadow: 0 2px 6px rgba(207, 153, 108, 0.3);
+      box-shadow: 0 3px 10px rgba(207,153,108,0.28);
+      &::before { transform: translateX(100%); }
     }
   }
-  
-  // Comment button styling with badge support
+
+  /* Comment */
   &.comment-btn {
     border-color: #5C73A0;
     color: #5C73A0;
-    
+
     .comment-btn-content {
       display: flex;
       align-items: center;
-      gap: 0.3rem;
+      gap: 0.25rem;
       position: relative;
     }
-    
+
     .comment-count-badge {
       position: absolute;
       top: -13px;
-      right: -25px;
-      background: #FF4444;
-      color: white;
+      right: -22px;
+      background: #ff4444;
+      color: $white;
       border-radius: 50%;
-      width: 16px;
-      height: 16px;
+      width: 15px;
+      height: 15px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.6rem;
+      font-size: 0.56rem;
       font-weight: 700;
-      border: 1px solid white;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      border: 1.5px solid $white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.18);
       z-index: 1;
     }
-    
+
     &:hover {
       background: #5C73A0;
-      color: white;
+      color: $white;
       transform: translateY(-1px);
-      box-shadow: 0 2px 6px rgba(92, 115, 160, 0.3);
-      
-      .comment-count-badge {
-        background: #FF6666;
-        border-color: #5C73A0;
-      }
+      box-shadow: 0 3px 10px rgba(92,115,160,0.28);
+      &::before { transform: translateX(100%); }
+
+      .comment-count-badge { border-color: #5C73A0; }
     }
   }
 }
 
-.recipe-meta-container {
-  // ensure wrap
-  flex-wrap: wrap;
-}
-
-.recipe-nutrition {
-  display: flex;
-  align-items: center;
-  gap: 0.2rem;
-  background: rgba(207,153,108,0.12);
-  border: 1px solid rgba(207,153,108,0.25);
-  padding: 0.2rem 0.45rem;
-  border-radius: 12px;
-  font-size: 0.62rem;
-  font-weight: 600;
-  color: #b86b1b;
-  i {
-    font-size: 0.7rem;
-    color: #CF996C;
-  }
-}
-
-// Mobile adjustments
+/* =============================================
+   MOBILE — 2 COLUMNS
+   ============================================= */
 @media (max-width: 768px) {
   .recipes-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.6rem; // Smaller gap on mobile
+    gap: 0.6rem;
   }
-  
-  .recipe-card {
-    height: 320px;
-    
-    .recipe-image {
-      height: 110px;
-    }
-    
-    .recipe-content {
-      padding: 0.6rem;
-      height: 210px;
-      
-      .recipe-title {
-        font-size: 0.85rem;
-        margin-bottom: 0.3rem;
-        height: 2.2em;
-      }
-      
-      .recipe-category {
-        margin-bottom: 0.3rem;
-        font-size: 0.6rem;
-        height: 20px;
-      }
-      
-      .recipe-desc {
-        font-size: 0.7rem;
-        margin-bottom: 0.3rem;
-        height: 2.4em;
-      }
-      
-      // ✅ Meta container on mobile: allow more wrapping
-      .recipe-meta-container {
-        margin-bottom: 0.3rem;
-        max-height: 60px !important; // ✅ Allow 3 rows if needed
-        gap: 0.25rem !important;
-      }
-      
-      .recipe-price,
-      .recipe-servings {
-        height: 22px;
-        font-size: 0.6rem;
-        padding: 0.15rem 0.3rem;
-      }
 
-      // ✅ Nutrition pills on mobile: even smaller
-      .recipe-nutrition {
-        font-size: 0.55rem !important;
-        padding: 0.12rem 0.3rem !important;
-        height: 18px !important;
-        
-        i {
-          font-size: 0.6rem !important;
-        }
-      }
-      
-      .star-rating-display {
-        margin-bottom: 0.3rem;
-        height: 18px;
-        
-        i {
-          font-size: 0.75rem;
-        }
-        
-        span {
-          font-size: 0.6rem;
-        }
-      }
+  .recipe-card {
+    height: 310px;
+
+    .recipe-image { height: 115px; }
+
+    .recipe-content {
+      padding: 0.65rem 0.7rem 0.6rem;
     }
-    
+
+    .recipe-title {
+      font-size: 0.85rem;
+      height: 2.3em;
+      margin-bottom: 0.3rem;
+    }
+
+    .recipe-category {
+      font-size: 0.6rem;
+      padding: 0.18rem 0.45rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .recipe-desc {
+      font-size: 0.72rem;
+      height: 2.5em;
+      margin-bottom: 0.35rem;
+    }
+
+    .recipe-meta-container {
+      gap: 0.22rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .recipe-price,
+    .recipe-servings {
+      font-size: 0.6rem;
+      height: 20px;
+      padding: 0.15rem 0.35rem;
+    }
+
+    .recipe-nutrition {
+      font-size: 0.56rem;
+      height: 18px;
+      padding: 0.12rem 0.3rem;
+    }
+
+    .star-rating-display {
+      height: 16px;
+      i { font-size: 0.72rem; }
+      span { font-size: 0.58rem; }
+    }
+
+    .recipe-action-buttons {
+      height: 25px;
+      gap: 0.3rem;
+      padding-top: 0.25rem;
+    }
+
     .favorite-btn {
-      top: 6px;
-      right: 6px;
-      width: 28px;
-      height: 28px;
-      
-      i {
-        font-size: 1rem;
-      }
+      width: 30px;
+      height: 30px;
+      top: 8px;
+      right: 8px;
+      i { font-size: 0.95rem; }
+    }
+
+    .recipe-badges {
+      max-width: 60%;
+      gap: 3px;
+    }
+
+    .time-badge,
+    .preference-badge {
+      font-size: 0.62rem;
+      padding: 3px 8px;
     }
   }
-  
-  .recipe-action-buttons {
-    padding-top: 0.3rem;
-    gap: 0.3rem;
-    height: 26px;
-  }
-  
+
   .recipe-action-btn {
     font-size: 0.6rem;
-    height: 24px;
-    border-radius: 12px;
-    
-    i {
-      font-size: 0.7rem;
-    }
-    
-    &.comment-btn {
-      .comment-count-badge {
-        width: 14px;
-        height: 14px;
-        font-size: 0.55rem;
-        top: -6px;
-        right: -6px;
-      }
+    height: 25px;
+    border-radius: 7px;
+
+    i { font-size: 0.68rem; }
+
+    &.comment-btn .comment-count-badge {
+      width: 13px;
+      height: 13px;
+      font-size: 0.52rem;
+      top: -6px;
+      right: -5px;
     }
   }
-}
-
-@keyframes heartPulse {
-  0% { transform: scale(1); }
-  30% { transform: scale(1.25); }
-  50% { transform: scale(1.1); }
-  70% { transform: scale(1.22); }
-  100% { transform: scale(1); }
-}
-
-@keyframes starShine {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
 }

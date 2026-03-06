@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import './MarketList.scss';
 
-const MarketList = ({ recipe, isOpen, onGenerateInstructions }) => {
+const MarketList = ({ recipe, isOpen, onGenerateInstructions, isEmbedded = false }) => {
   const [ingredients, setIngredients] = useState([]);
   const [checkedItems, setCheckedItems] = useState({});
   const [viewMode, setViewMode] = useState('all');
@@ -164,9 +164,9 @@ const MarketList = ({ recipe, isOpen, onGenerateInstructions }) => {
     <>
       <motion.div
         className="market-list-container"
-        initial={{ opacity: 0, x: 20 }}
+        initial={isEmbedded ? { opacity: 1, x: 0 } : { opacity: 0, x: 20 }} // ✅ No animation when embedded
         animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: 20 }}
+        exit={isEmbedded ? { opacity: 1, x: 0 } : { opacity: 0, x: 20 }}
         transition={{ duration: 0.3 }}
       >
         <div className="market-list-header">
@@ -277,61 +277,63 @@ const MarketList = ({ recipe, isOpen, onGenerateInstructions }) => {
         </div>
       </motion.div>
 
-      {/* AI Cooking Instructions Modal */}
-      <AnimatePresence>
-        {showInstructions && cookingInstructions && (
-          <motion.div 
-            className="cooking-instructions-modal"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowInstructions(false)}
-          >
+      {/* AI Cooking Instructions Modal - only show when NOT embedded (desktop) */}
+      {!isEmbedded && (
+        <AnimatePresence>
+          {showInstructions && cookingInstructions && (
             <motion.div 
-              className="cooking-instructions-content"
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
+              className="cooking-instructions-modal"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowInstructions(false)}
             >
-              <div className="instructions-header">
-                <h2>
-                  <i className="bx bx-bulb"></i>
-                  AI Cooking Suggestions
-                </h2>
-                <button 
-                  className="close-btn"
-                  onClick={() => setShowInstructions(false)}
-                >
-                  <i className="bx bx-x"></i>
-                </button>
-              </div>
-              
-              <div className="instructions-body">
-                <div 
-                  className="instructions-text"
-                  dangerouslySetInnerHTML={{ 
-                    __html: cookingInstructions
-                      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                      .replace(/\n/g, '<br>')
-                      .replace(/^(🎯|📋|🥘|📝|👨‍🍳|💡|⚠️)/gm, '<br><span class="emoji-marker">$1</span>')
-                  }}
-                />
-              </div>
-              
-              <div className="instructions-footer">
-                <button 
-                  className="btn-close"
-                  onClick={() => setShowInstructions(false)}
-                >
-                  <i className="bx bx-check"></i>
-                  Got It!
-                </button>
-              </div>
+              <motion.div 
+                className="cooking-instructions-content"
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="instructions-header">
+                  <h2>
+                    <i className="bx bx-bulb"></i>
+                    AI Cooking Suggestions
+                  </h2>
+                  <button 
+                    className="close-btn"
+                    onClick={() => setShowInstructions(false)}
+                  >
+                    <i className="bx bx-x"></i>
+                  </button>
+                </div>
+                
+                <div className="instructions-body">
+                  <div 
+                    className="instructions-text"
+                    dangerouslySetInnerHTML={{ 
+                      __html: cookingInstructions
+                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\n/g, '<br>')
+                        .replace(/^(🎯|📋|🥘|📝|👨‍🍳|💡|⚠️)/gm, '<br><span class="emoji-marker">$1</span>')
+                    }}
+                  />
+                </div>
+                
+                <div className="instructions-footer">
+                  <button 
+                    className="btn-close"
+                    onClick={() => setShowInstructions(false)}
+                  >
+                    <i className="bx bx-check"></i>
+                    Got It!
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      )}
     </>
   );
 };

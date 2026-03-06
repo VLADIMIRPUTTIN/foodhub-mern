@@ -104,21 +104,18 @@ const Navbar = () => {
                                 </Link>
                             </div>
                             <div className="profile-container">
-                                <div className="profile-image" onClick={handleProfileImageClick} style={{ cursor: 'pointer' }}>
+                                <div
+                                    className="profile-image"
+                                    onClick={handleProfileImageClick}
+                                >
                                     <img
                                         src={getProfileImageUrl()}
                                         alt="User Profile"
-                                        onError={(e) => { 
-                                            e.currentTarget.onerror = null; 
-                                            e.currentTarget.src = getFallbackUrl(); // ✅ Show initials instead
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = getFallbackUrl();
                                         }}
                                         loading="lazy"
-                                        style={{
-                                            width: '40px',
-                                            height: '40px',
-                                            borderRadius: '50%',
-                                            objectFit: 'cover'
-                                        }}
                                     />
                                 </div>
                                 <button className="dropdown-toggle" onClick={toggleProfileMenu}>
@@ -126,6 +123,15 @@ const Navbar = () => {
                                 </button>
                                 {isProfileMenuOpen && (
                                     <div className="profile-dropdown">
+
+                                        {/* User info header */}
+                                        {user && (
+                                            <div className="dropdown-user-info">
+                                                <div className="dropdown-user-name">{user.name}</div>
+                                                <div className="dropdown-user-email">{user.email}</div>
+                                            </div>
+                                        )}
+
                                         <button 
                                             className="dropdown-item" 
                                             onClick={handleViewProfile}

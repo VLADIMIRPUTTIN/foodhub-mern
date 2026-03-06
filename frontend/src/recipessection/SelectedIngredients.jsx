@@ -4,31 +4,27 @@ import './SelectedIngredients.scss';
 const SelectedIngredients = ({ selectedIngredients, onRemoveIngredient }) => {
   const [isMobile, setIsMobile] = useState(false);
 
-  // Check if device is mobile
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    
+    const checkMobile = () => setIsMobile(window.innerWidth <= 900);
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Don't render if no ingredients selected
-  if (selectedIngredients.length === 0) {
-    return null;
-  }
+  if (selectedIngredients.length === 0) return null;
 
   return (
     <div className="selected-ingredients-section">
+
+      {/* Header */}
       <div className="selected-header">
         <span className="selected-icon">🍽️</span>
         <span className="selected-label">Selected Ingredients</span>
-        <span className="selected-count">({selectedIngredients.length})</span>
+        <span className="selected-count">{selectedIngredients.length} selected</span>
       </div>
-      <div className="chips-container two-column-grid">
+
+      {/* Chips */}
+      <div className="chips-container">
         {selectedIngredients.map(ing => (
           <button
             key={ing}
@@ -36,12 +32,14 @@ const SelectedIngredients = ({ selectedIngredients, onRemoveIngredient }) => {
             onClick={() => onRemoveIngredient(ing)}
             aria-label={`Remove ${ing}`}
             title={`Remove ${ing}`}
+            type="button"
           >
             <span className="chip-text">{ing}</span>
             <i className="bx bx-x"></i>
           </button>
         ))}
       </div>
+
     </div>
   );
 };

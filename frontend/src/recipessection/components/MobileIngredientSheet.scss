@@ -86,6 +86,13 @@
   }
 }
 
+// Hide FAB on desktop
+@media (min-width: 993px) {
+  .ingredients-fab-btn {
+    display: none !important;
+  }
+}
+
 // =============================================================================
 // SHEET CONTENT STYLES
 // =============================================================================
@@ -324,6 +331,13 @@
     transform: translateY(-50%);
     color: #CF996C;
     font-size: 1.1rem;
+  }
+}
+
+// Sheet content — only usable on mobile/tablet
+.ingredients-sheet-content {
+  @media (min-width: 993px) {
+    display: none !important;
   }
 }
 

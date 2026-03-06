@@ -4,26 +4,28 @@ import "./RecipeModal.scss";
 import { useNavigate } from "react-router-dom";
 import MarketList from "../components/MarketList";
 import axios from "axios";
-import { useAuthStore } from "../store/authStore"; // Add this import
+import { useAuthStore } from "../store/authStore";
 
 const RecipeModal = ({ open, recipe, onClose }) => {
     const navigate = useNavigate();
-    const { user } = useAuthStore(); // Get user from auth store
+    const { user } = useAuthStore();
     const [showModal, setShowModal] = useState(false);
     const [showAIInstructions, setShowAIInstructions] = useState(false);
     const [aiInstructions, setAiInstructions] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [showMarketList, setShowMarketList] = useState(false); // ✅ NEW
     
-    // Control body scroll when modal is open
     useEffect(() => {
         if (open) {
             document.body.style.overflow = "hidden";
             setShowModal(true);
+            setShowMarketList(false); // ✅ Reset to recipe view on open
         } else {
             document.body.style.overflow = "";
             setShowModal(false);
             setShowAIInstructions(false);
             setAiInstructions("");
+            setShowMarketList(false);
         }
         
         return () => {
@@ -31,7 +33,6 @@ const RecipeModal = ({ open, recipe, onClose }) => {
         };
     }, [open]);
 
-    // Handle ESC key press
     useEffect(() => {
         const handleEscape = (e) => {
             if (e.key === "Escape") onClose();
@@ -46,21 +47,17 @@ const RecipeModal = ({ open, recipe, onClose }) => {
         };
     }, [open, onClose]);
 
-    // Function to generate cooking instructions based on available ingredients
     const generateInstructions = async (availableIngredients, missingIngredients) => {
         try {
             setIsLoading(true);
             setShowAIInstructions(true);
             
-            // Add this base URL configuration
             const baseURL = import.meta.env.MODE === "development"
                 ? "http://localhost:5000"
                 : "";
             
-            // Make sure credentials are included
             axios.defaults.withCredentials = true;
             
-            // Update the axios request with the baseURL
             const response = await axios.post(`${baseURL}/api/vision/generate-cooking-instructions`, {
                 recipeName: recipe.name || recipe.title,
                 recipeInstructions: recipe.instructions,
@@ -72,7 +69,6 @@ const RecipeModal = ({ open, recipe, onClose }) => {
         } catch (error) {
             console.error("Error generating instructions:", error);
             
-            // Fallback response if API fails
             if (error.response && error.response.status === 500) {
                 const availableIngsList = availableIngredients.map(ing => ing.name).join(", ");
                 const missingIngsList = missingIngredients.map(ing => ing.name).join(", ");
@@ -112,215 +108,281 @@ const RecipeModal = ({ open, recipe, onClose }) => {
                     onClick={onClose}
                 >
                     <div className="recipe-modal-container" onClick={(e) => e.stopPropagation()}>
-                        <motion.div
-                            className="recipe-modal-content"
-                            initial={{ y: 20, opacity: 0, scale: 0.98 }}
-                            animate={{ y: 0, opacity: 1, scale: 1 }}
-                            exit={{ y: 20, opacity: 0, scale: 0.98 }}
-                            transition={{ 
-                                type: "spring", 
-                                damping: 25, 
-                                stiffness: 300 
-                            }}
-                        >
-                            <motion.button 
-                                className="modal-close" 
-                                onClick={onClose}
-                                whileHover={{ scale: 1.1, rotate: 3 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                </svg>
-                            </motion.button>
-
-                            <div className="modal-header">
-                                <motion.h2 
-                                    className="modal-title"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.2 }}
+                        
+                        {/* ✅ RECIPE MODAL - Hide when market list is shown on mobile */}
+                        <AnimatePresence mode="wait">
+                            {!showMarketList && (
+                                <motion.div
+                                    key="recipe-view"
+                                    className="recipe-modal-content"
+                                    initial={{ opacity: 0, x: -30 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -30 }}
+                                    transition={{ type: "spring", damping: 25, stiffness: 300 }}
                                 >
-                                    {recipe.name || recipe.title}
-                                </motion.h2>
-                                
-                                <motion.div 
-                                    className="modal-category"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.3 }}
-                                >
-                                    <i className="bx bx-restaurant"></i>
-                                    {recipe.category}
-                                </motion.div>
+                                    <motion.button 
+                                        className="modal-close" 
+                                        onClick={onClose}
+                                        whileHover={{ scale: 1.1, rotate: 3 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </motion.button>
 
-                                {recipe.averageRating > 0 && (
-                                    <motion.div 
-                                        className="modal-rating"
+                                    <div className="modal-header">
+                                        <motion.h2 
+                                            className="modal-title"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.2 }}
+                                        >
+                                            {recipe.name || recipe.title}
+                                        </motion.h2>
+                                        
+                                        <motion.div 
+                                            className="modal-category"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.3 }}
+                                        >
+                                            <i className="bx bx-restaurant"></i>
+                                            {recipe.category}
+                                        </motion.div>
+
+                                        {recipe.averageRating > 0 && (
+                                            <motion.div 
+                                                className="modal-rating"
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: 0.4 }}
+                                            >
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <i 
+                                                        key={star}
+                                                        className={`bx ${
+                                                            star <= Math.round(recipe.averageRating) 
+                                                            ? "bxs-star" 
+                                                            : "bx-star"
+                                                        }`}
+                                                    ></i>
+                                                ))}
+                                                <span>
+                                                    {recipe.averageRating.toFixed(1)} 
+                                                    <span className="rating-count">
+                                                        ({recipe.ratings?.length || 0})
+                                                    </span>
+                                                </span>
+                                            </motion.div>
+                                        )}
+                                    </div>
+
+                                    {showAIInstructions ? (
+                                        <motion.div 
+                                            className="modal-ai-instructions"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: 0.2 }}
+                                        >
+                                            <h3 className="ai-instructions-title">
+                                                <i className="bx bx-bulb"></i>
+                                                Cooking Instructions With Available Ingredients
+                                            </h3>
+                                            
+                                            {isLoading ? (
+                                                <div className="ai-loading">
+                                                    <div className="spinner"></div>
+                                                    <p>Generating your personalized cooking instructions...</p>
+                                                </div>
+                                            ) : (
+                                                <div className="ai-instructions-content">
+                                                    {aiInstructions.split('\n').map((line, index) => (
+                                                        <p key={index}>{line}</p>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            
+                                            <button 
+                                                className="back-to-recipe-btn"
+                                                onClick={() => setShowAIInstructions(false)}
+                                            >
+                                                <i className="bx bx-arrow-back"></i>
+                                                Back to Recipe
+                                            </button>
+                                        </motion.div>
+                                    ) : (
+                                        <motion.div 
+                                            className="modal-body"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: 0.3 }}
+                                        >
+                                            <div className="modal-section">
+                                                <h3 className="modal-section-title">
+                                                    <i className="bx bx-detail"></i>
+                                                    Description
+                                                </h3>
+                                                <p className="modal-description">{recipe.description}</p>
+                                            </div>
+
+                                            <div className="modal-section">
+                                                <h3 className="modal-section-title">
+                                                    <i className="bx bx-basket"></i>
+                                                    Ingredients
+                                                </h3>
+                                                <div className="modal-ingredients-list">
+                                                    {recipe.ingredients &&
+                                                        recipe.ingredients.slice(0, 4).map((ing, idx) => (
+                                                            <motion.div 
+                                                                key={idx} 
+                                                                className="modal-ingredient-row"
+                                                                initial={{ opacity: 0, x: -10 }}
+                                                                animate={{ opacity: 1, x: 0 }}
+                                                                transition={{ delay: 0.4 + idx * 0.1 }}
+                                                                whileHover={{ 
+                                                                    x: 8, 
+                                                                    backgroundColor: 'rgba(255, 248, 238, 1)',
+                                                                    boxShadow: '0 3px 10px rgba(0, 0, 0, 0.05)'
+                                                                }}
+                                                            >
+                                                                <span className="ingredient-icon">
+                                                                    <i className="bx bx-food-menu"></i>
+                                                                </span>
+                                                                <span className="ingredient-amount">
+                                                                    {ing.amount && `${ing.amount} `}
+                                                                    {ing.unit && `${ing.unit}`}
+                                                                </span>
+                                                                <span className="ingredient-name">{ing.name}</span>
+                                                            </motion.div>
+                                                        ))
+                                                    }
+                                                    {recipe.ingredients && recipe.ingredients.length > 4 && (
+                                                        <motion.div 
+                                                            className="modal-ingredient-more"
+                                                            initial={{ opacity: 0 }}
+                                                            animate={{ opacity: 1 }}
+                                                            transition={{ delay: 0.8 }}
+                                                            whileHover={{ scale: 1.03 }}
+                                                        >
+                                                            <i className="bx bx-plus-circle"></i>
+                                                            {recipe.ingredients.length - 4} more ingredients
+                                                        </motion.div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            
+                                            {recipe.price && (
+                                                <div className="modal-price-tag">
+                                                    <i className='bx bx-money'></i>
+                                                    <span>
+                                                        Estimated Cost: ₱{typeof recipe.price === 'number' 
+                                                            ? recipe.price.toFixed(2) 
+                                                            : "0.00"}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            {recipe.servings && (
+                                                <div className="modal-servings-tag">
+                                                    <i className='bx bx-group'></i>
+                                                    <span>
+                                                        Serves {recipe.servings} {recipe.servings === 1 ? 'person' : 'people'}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                    )}
+
+                                    {/* ✅ Market List Toggle Button - shows on all screens */}
+                                    <motion.button
+                                        className="modal-market-list-btn"
+                                        onClick={() => setShowMarketList(true)}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.4 }}
+                                        transition={{ delay: 0.45 }}
                                     >
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <i 
-                                                key={star}
-                                                className={`bx ${
-                                                    star <= Math.round(recipe.averageRating) 
-                                                    ? "bxs-star" 
-                                                    : "bx-star"
-                                                }`}
-                                            ></i>
-                                        ))}
-                                        <span>
-                                            {recipe.averageRating.toFixed(1)} 
-                                            <span className="rating-count">
-                                                ({recipe.ratings?.length || 0})
-                                            </span>
-                                        </span>
-                                    </motion.div>
-                                )}
-                            </div>
+                                        <i className="bx bx-shopping-bag"></i>
+                                        Check Market List
+                                    </motion.button>
 
-                            {showAIInstructions ? (
-                                <motion.div 
-                                    className="modal-ai-instructions"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 0.2 }}
-                                >
-                                    <h3 className="ai-instructions-title">
-                                        <i className="bx bx-bulb"></i>
-                                        Cooking Instructions With Available Ingredients
-                                    </h3>
-                                    
-                                    {isLoading ? (
-                                        <div className="ai-loading">
-                                            <div className="spinner"></div>
-                                            <p>Generating your personalized cooking instructions...</p>
-                                        </div>
-                                    ) : (
-                                        <div className="ai-instructions-content">
-                                            {aiInstructions.split('\n').map((line, index) => (
-                                                <p key={index}>{line}</p>
-                                            ))}
-                                        </div>
-                                    )}
-                                    
-                                    <button 
-                                        className="back-to-recipe-btn"
-                                        onClick={() => setShowAIInstructions(false)}
+                                    <motion.button
+                                        className="modal-view-btn"
+                                        onClick={() => navigate(`/recipe/${recipe._id}`)}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.5 }}
                                     >
-                                        <i className="bx bx-arrow-back"></i>
-                                        Back to Recipe
-                                    </button>
-                                </motion.div>
-                            ) : (
-                                <motion.div 
-                                    className="modal-body"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 0.3 }}
-                                >
-                                    <div className="modal-section">
-                                        <h3 className="modal-section-title">
-                                            <i className="bx bx-detail"></i>
-                                            Description
-                                        </h3>
-                                        <p className="modal-description">{recipe.description}</p>
-                                    </div>
-
-                                    <div className="modal-section">
-                                        <h3 className="modal-section-title">
-                                            <i className="bx bx-basket"></i>
-                                            Ingredients
-                                        </h3>
-                                        <div className="modal-ingredients-list">
-                                            {recipe.ingredients &&
-                                                recipe.ingredients.slice(0, 4).map((ing, idx) => (
-                                                    <motion.div 
-                                                        key={idx} 
-                                                        className="modal-ingredient-row"
-                                                        initial={{ opacity: 0, x: -10 }}
-                                                        animate={{ opacity: 1, x: 0 }}
-                                                        transition={{ delay: 0.4 + idx * 0.1 }}
-                                                        whileHover={{ 
-                                                            x: 8, 
-                                                            backgroundColor: 'rgba(255, 248, 238, 1)',
-                                                            boxShadow: '0 3px 10px rgba(0, 0, 0, 0.05)'
-                                                        }}
-                                                    >
-                                                        <span className="ingredient-icon">
-                                                            <i className="bx bx-food-menu"></i>
-                                                        </span>
-                                                        <span className="ingredient-amount">
-                                                            {ing.amount && `${ing.amount} `}
-                                                            {ing.unit && `${ing.unit}`}
-                                                        </span>
-                                                        <span className="ingredient-name">{ing.name}</span>
-                                                    </motion.div>
-                                                ))
-                                            }
-                                            {recipe.ingredients && recipe.ingredients.length > 4 && (
-                                                <motion.div 
-                                                    className="modal-ingredient-more"
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    transition={{ delay: 0.8 }}
-                                                    whileHover={{ scale: 1.03 }}
-                                                >
-                                                    <i className="bx bx-plus-circle"></i>
-                                                    {recipe.ingredients.length - 4} more ingredients
-                                                </motion.div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    
-                                    {recipe.price && (
-                                        <div className="modal-price-tag">
-                                            <i className='bx bx-money'></i>
-                                            <span>
-                                                Estimated Cost: ₱{typeof recipe.price === 'number' 
-                                                    ? recipe.price.toFixed(2) 
-                                                    : "0.00"}
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    {recipe.servings && (
-                                        <div className="modal-servings-tag">
-                                            <i className='bx bx-group'></i>
-                                            <span>
-                                                Serves {recipe.servings} {recipe.servings === 1 ? 'person' : 'people'}
-                                            </span>
-                                        </div>
-                                    )}
+                                        <i className="bx bx-book-open"></i>
+                                        View Full Recipe
+                                    </motion.button>
                                 </motion.div>
                             )}
 
-                            <motion.button
-                                className="modal-view-btn"
-                                onClick={() => navigate(`/recipe/${recipe._id}`)}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.5 }}
-                            >
-                                <i className="bx bx-book-open"></i>
-                                View Full Recipe
-                            </motion.button>
-                        </motion.div>
-                        
-                        <AnimatePresence>
-                            {!showAIInstructions && (
-                                <MarketList 
-                                    recipe={recipe} 
-                                    isOpen={open} 
-                                    onGenerateInstructions={generateInstructions}
-                                />
+                            {/* ✅ MARKET LIST VIEW - Slides in when showMarketList is true */}
+                            {showMarketList && (
+                                <motion.div
+                                    key="market-view"
+                                    className="recipe-modal-content market-list-view"
+                                    initial={{ opacity: 0, x: 30 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 30 }}
+                                    transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                                >
+                                    {/* ✅ Back button header */}
+                                    <div className="market-list-modal-header">
+                                        <motion.button
+                                            className="back-to-recipe-modal-btn"
+                                            onClick={() => setShowMarketList(false)}
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                        >
+                                            <i className="bx bx-arrow-back"></i>
+                                            Back to Recipe
+                                        </motion.button>
+                                        <motion.button 
+                                            className="modal-close" 
+                                            onClick={onClose}
+                                            style={{ position: 'relative', top: 'auto', right: 'auto' }}
+                                            whileHover={{ scale: 1.1 }}
+                                            whileTap={{ scale: 0.95 }}
+                                        >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            </svg>
+                                        </motion.button>
+                                    </div>
+
+                                    {/* ✅ Embedded MarketList */}
+                                    <MarketList 
+                                        recipe={recipe} 
+                                        isOpen={true}
+                                        isEmbedded={true} // ✅ Tell MarketList it's embedded
+                                        onGenerateInstructions={generateInstructions}
+                                    />
+                                </motion.div>
                             )}
                         </AnimatePresence>
+
+                        {/* ✅ Desktop - Show MarketList side by side (hidden on mobile) */}
+                        <div className="desktop-market-list">
+                            <AnimatePresence>
+                                {!showAIInstructions && (
+                                    <MarketList 
+                                        recipe={recipe} 
+                                        isOpen={open} 
+                                        onGenerateInstructions={generateInstructions}
+                                    />
+                                )}
+                            </AnimatePresence>
+                        </div>
+
                     </div>
                 </motion.div>
             )}

@@ -580,3 +580,122 @@
         padding: 0.55rem 0.75rem; // Reduced padding
     }
 }
+
+// ✅ NEW - Market List Toggle Button (visible on all, pero primarily for mobile flow)
+.modal-market-list-btn {
+    display: none; // Hidden on desktop (desktop has side-by-side)
+    align-items: center;
+    justify-content: center;
+    width: calc(100% - 2.6rem);
+    margin: 0.5rem 1.3rem 0 1.3rem;
+    background: linear-gradient(135deg, #4caf50, #388e3c);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 0.65rem 1.2rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 
+        0 8px 20px rgba(76, 175, 80, 0.3),
+        0 2px 5px rgba(76, 175, 80, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: 0.025em;
+    gap: 0.5rem;
+
+    i {
+        font-size: 1.1rem;
+    }
+
+    &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 25px rgba(76, 175, 80, 0.35);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    // ✅ Show on mobile only
+    @media (max-width: 992px) {
+        display: flex;
+    }
+}
+
+// ✅ NEW - Desktop market list wrapper (visible on desktop, hidden on mobile)
+.desktop-market-list {
+    display: flex; // Show on desktop
+
+    @media (max-width: 992px) {
+        display: none; // Hide on mobile (use modal toggle instead)
+    }
+}
+
+// ✅ NEW - Market list embedded inside modal (mobile view)
+.market-list-view {
+    padding: 0 !important;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    .market-list-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        border-radius: 0 0 18px 18px !important;
+        max-height: calc(88vh - 60px) !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+}
+
+// ✅ NEW - Market list modal header with back button
+.market-list-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1.2rem;
+    background: linear-gradient(135deg, #e09f56, #d35400);
+    border-radius: 18px 18px 0 0;
+    flex-shrink: 0;
+
+    .back-to-recipe-modal-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1.5px solid rgba(255, 255, 255, 0.5);
+        color: white;
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: all 0.25s ease;
+        font-family: 'Inter', sans-serif;
+
+        i {
+            font-size: 1rem;
+        }
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(-2px);
+        }
+    }
+
+    .modal-close {
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        background: rgba(255, 255, 255, 0.2) !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.5) !important;
+        color: white !important;
+        border-radius: 8px !important;
+
+        svg {
+            stroke: white;
+        }
+    }
+}

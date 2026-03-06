@@ -280,3 +280,10 @@
     }
   }
 }
+
+// Hide completely on mobile/tablet — handled by RecipePage.scss
+@media (max-width: 992px) {
+  .ingredients-sidebar {
+    display: none !important;
+  }
+}

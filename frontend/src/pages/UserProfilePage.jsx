@@ -592,8 +592,7 @@ const UserProfilePage = () => {
                     style: {
                         borderRadius: "8px",
                         background: "#fff",
-                        color: "#222",
-                        boxShadow: "0 4px 16px rgba(239,68,68,0.15)",
+                        color: "#b91c1c",
                         fontWeight: 600,
                     },
                     iconTheme: {
@@ -678,10 +677,8 @@ const UserProfilePage = () => {
         return (
             <div className="user-profile-page">
                 <Navbar />
-                <div className="loading">
-                    <div className="loading-spinner">
-                        <i className="bx bx-loader-alt bx-spin"></i>
-                    </div>
+                <div className="loading" style={{ minHeight: '60vh', position: 'relative', zIndex: 1 }}>
+                    <div className="loading-spinner"></div>
                     <p>Loading your profile...</p>
                 </div>
             </div>
@@ -952,32 +949,48 @@ const UserProfilePage = () => {
                                     userRecipes.length > 0 ? (
                                         <div className="recipes-grid">
                                             {userRecipes.map((recipe, index) => (
-                                                <motion.div 
-                                                    key={recipe._id} 
-                                                    className="recipe-card" 
+                                                <motion.div
+                                                    key={recipe._id}
+                                                    className="recipe-card"
                                                     onClick={() => navigate(`/recipe/${recipe._id}`)}
                                                     initial={{ opacity: 0, y: 20 }}
                                                     animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                                                    whileHover={{ scale: 1.02 }}
+                                                    transition={{ duration: 0.4, delay: index * 0.08 }}
+                                                    whileHover={{ scale: 1.01 }}
                                                     whileTap={{ scale: 0.98 }}
-                                                    style={{ 
-                                                        position: 'relative',
-                                                        opacity: recipe.shareStatus === 'pending' ? 0.8 : 1 // Dim pending recipes
-                                                    }}
+                                                    style={{ opacity: recipe.shareStatus === 'pending' ? 0.82 : 1 }}
                                                 >
                                                     <div className="recipe-image">
-                                                        <img 
-                                                            src={getRecipeImageUrl(recipe.imageUrl)} 
-                                                            alt={recipe.title || recipe.name} 
-                                                            onError={(e) => {
-                                                                e.target.src = 'https://via.placeholder.com/400x300?text=Image+Error';
-                                                            }}
+                                                        <img
+                                                            src={getRecipeImageUrl(recipe.imageUrl)}
+                                                            alt={recipe.title || recipe.name}
+                                                            onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=No+Image'; }}
                                                         />
                                                         <div className="recipe-overlay">
                                                             <i className="bx bx-right-arrow-alt"></i>
                                                         </div>
+
+                                                        {/* Status badge on image */}
+                                                        {recipe.shareStatus === 'pending' && (
+                                                            <div className="recipe-status pending">
+                                                                <i className="bx bx-time"></i>
+                                                                <span>Pending</span>
+                                                            </div>
+                                                        )}
+                                                        {recipe.shareStatus === 'approved' && recipe.isShared && (
+                                                            <div className="recipe-status approved">
+                                                                <i className="bx bx-check-circle"></i>
+                                                                <span>Shared</span>
+                                                            </div>
+                                                        )}
+                                                        {recipe.shareStatus === 'rejected' && (
+                                                            <div className="recipe-status rejected">
+                                                                <i className="bx bx-x-circle"></i>
+                                                                <span>Declined</span>
+                                                            </div>
+                                                        )}
                                                     </div>
+
                                                     <div className="recipe-info">
                                                         <h3>{recipe.title || recipe.name}</h3>
                                                         <p>{recipe.description}</p>
@@ -997,24 +1010,26 @@ const UserProfilePage = () => {
                                                                 <span>{recipe.cookingTime} mins</span>
                                                             </div>
                                                         )}
-                                                        <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+
+                                                        {/* Action Buttons */}
+                                                        <div className="recipe-actions-row">
+                                                            {/* Edit */}
                                                             <button
                                                                 className="edit-recipe-btn-mini"
                                                                 title="Edit Recipe"
-                                                                onClick={e => {
-                                                                    e.stopPropagation();
-                                                                    handleEditRecipe(recipe);
-                                                                }}
+                                                                onClick={e => { e.stopPropagation(); handleEditRecipe(recipe); }}
+                                                                style={{ background: '#CF996C' }}
                                                             >
                                                                 <i className="bx bx-edit"></i>
                                                             </button>
-                                                            
+
+                                                            {/* Share/Unshare/Pending/Rejected */}
                                                             {recipe.shareStatus === 'approved' && recipe.isShared ? (
                                                                 <button
                                                                     className="edit-recipe-btn-mini"
                                                                     title="Remove from Community"
                                                                     onClick={e => handleUnshareRecipe(recipe, e)}
-                                                                    style={{ background: "#f59e0b" }}
+                                                                    style={{ background: '#f59e0b' }}
                                                                 >
                                                                     <i className="bx bx-share-alt"></i>
                                                                 </button>
@@ -1023,60 +1038,41 @@ const UserProfilePage = () => {
                                                                     className="edit-recipe-btn-mini"
                                                                     title="Pending Review"
                                                                     disabled
-                                                                    style={{ background: "#6b7280", cursor: "not-allowed" }}
+                                                                    style={{ background: '#6b7280' }}
                                                                 >
                                                                     <i className="bx bx-time"></i>
                                                                 </button>
                                                             ) : recipe.shareStatus === 'rejected' ? (
                                                                 <button
                                                                     className="edit-recipe-btn-mini"
-                                                                    title={`Declined: ${recipe.rejectionReason || 'No reason provided'}`}
+                                                                    title={`Declined: ${recipe.rejectionReason || 'No reason'}`}
                                                                     onClick={e => handleShareRecipe(recipe, e)}
-                                                                    style={{ background: "#ef4444" }}
+                                                                    style={{ background: '#ef4444' }}
                                                                 >
                                                                     <i className="bx bx-x"></i>
                                                                 </button>
                                                             ) : (
                                                                 <button
                                                                     className="edit-recipe-btn-mini"
-                                                                    title="Share Recipe"
+                                                                    title="Share to Community"
                                                                     onClick={e => handleShareRecipe(recipe, e)}
-                                                                    style={{ background: "#10b981" }}
+                                                                    style={{ background: '#10b981' }}
                                                                 >
-                                                                    <Share2 size={18} />
+                                                                    <Share2 size={14} />
                                                                 </button>
                                                             )}
-                                                            
+
+                                                            {/* Delete */}
                                                             <button
                                                                 className="edit-recipe-btn-mini"
                                                                 title="Delete Recipe"
                                                                 onClick={e => handleDeleteRecipe(recipe, e)}
-                                                                style={{ background: "#ef4444" }}
+                                                                style={{ background: '#ef4444' }}
                                                             >
-                                                                <Trash2 size={18} />
+                                                                <Trash2 size={14} />
                                                             </button>
                                                         </div>
                                                     </div>
-                                                    {/* Show only this badge on rejected recipes */}
-                                                    {recipe.shareStatus === 'rejected' && (
-                                                        <div className="recipe-status rejected">
-                                                            <i className="bx bx-x-circle"></i>
-                                                            <span>Declined</span>
-                                                        </div>
-                                                    )}
-                                                    {/* ✅ Status badges */}
-                                                    {recipe.shareStatus === 'pending' && (
-                                                        <div className="recipe-status pending">
-                                                            <i className="bx bx-time"></i>
-                                                            <span>Pending Review</span>
-                                                        </div>
-                                                    )}
-                                                    {recipe.shareStatus === 'approved' && recipe.isShared && (
-                                                        <div className="recipe-status approved">
-                                                            <i className="bx bx-check-circle"></i>
-                                                            <span>Shared</span>
-                                                        </div>
-                                                    )}
                                                 </motion.div>
                                             ))}
                                         </div>
@@ -1102,9 +1098,9 @@ const UserProfilePage = () => {
                                             {favoriteRecipes
                                                 .filter(favorite => favorite && favorite.recipe && favorite.recipe._id)
                                                 .map((favorite, index) => (
-                                                    <motion.div 
+                                                    <motion.div
                                                         key={`favorite-${favorite._id}-${favorite.recipe._id}`}
-                                                        className="recipe-card favorite-card" 
+                                                        className="recipe-card favorite-card"
                                                         onClick={() => navigate(`/recipe/${favorite.recipe._id}`)}
                                                         initial={{ opacity: 0, y: 20 }}
                                                         animate={{ opacity: 1, y: 0 }}
@@ -1113,12 +1109,10 @@ const UserProfilePage = () => {
                                                         whileTap={{ scale: 0.98 }}
                                                     >
                                                         <div className="recipe-image">
-                                                            <img 
-                                                                src={getRecipeImageUrl(favorite.recipe.imageUrl)} 
-                                                                alt={favorite.recipe.title || favorite.recipe.name || 'Recipe'} 
-                                                                onError={(e) => {
-                                                                    e.target.src = 'https://via.placeholder.com/200/150?text=No+Image';
-                                                                }}
+                                                            <img
+                                                                src={getRecipeImageUrl(favorite.recipe.imageUrl)}
+                                                                alt={favorite.recipe.title || favorite.recipe.name || 'Recipe'}
+                                                                onError={(e) => { e.target.src = 'https://via.placeholder.com/200/150?text=No+Image'; }}
                                                             />
                                                             <div className="recipe-overlay">
                                                                 <i className="bx bx-right-arrow-alt"></i>
@@ -1171,7 +1165,7 @@ const UserProfilePage = () => {
 
                                 {/* Sharing History Tab */}
                                 {activeTab === 'history' && (
-                                    <SharingHistoryTab 
+                                    <SharingHistoryTab
                                         userRecipes={userRecipes}
                                         onShareRecipe={handleShareRecipe}
                                         onUnshareRecipe={handleUnshareRecipe}
