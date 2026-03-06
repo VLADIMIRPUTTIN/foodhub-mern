@@ -11,6 +11,7 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showSuspendModal, setShowSuspendModal] = useState(false);
     const [showBanModal, setShowBanModal] = useState(false);
+    const [showViewModal, setShowViewModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [suspendMinutes, setSuspendMinutes] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
@@ -132,6 +133,7 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
         setShowDeleteModal(false);
         setShowSuspendModal(false);
         setShowBanModal(false);
+        setShowViewModal(false);
         setSelectedUser(null);
         setSuspendMinutes('');
     };
@@ -302,7 +304,7 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.05 }}
                                 >
-                                    <td>
+                                    <td data-label="User">
                                         <div className="user-cell">
                                             <div className="user-avatar">
                                                 {user.profileImage ? (
@@ -316,65 +318,68 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
                                             <span className="user-name">{user.name}</span>
                                         </div>
                                     </td>
-                                    <td className="email-cell">{user.email}</td>
-                                    <td>
+
+                                    <td className="email-cell" data-label="Email">{user.email}</td>
+
+                                    <td data-label="Role">
                                         <span className={`role-badge role-badge--${user.role}`}>
                                             <i className={`bx ${user.role === 'admin' ? 'bx-shield' : 'bx-user'}`}></i>
                                             {user.role}
                                         </span>
                                     </td>
-                                    <td>
+
+                                    <td data-label="Status">
                                         <span className={`status-badge status-badge--${user.status}`}>
                                             {user.status}
                                         </span>
                                     </td>
-                                    <td className="date-cell">
+
+                                    <td className="date-cell" data-label="Joined">
                                         {new Date(user.createdAt).toLocaleDateString('en-US', {
                                             year: 'numeric',
                                             month: 'short',
                                             day: 'numeric'
                                         })}
                                     </td>
-                                    <td>
+
+                                    <td data-label="Actions">
                                         <div className="action-buttons">
                                             <button
                                                 className="action-btn action-btn--success"
                                                 onClick={() => handleActivate(user._id)}
                                                 disabled={user.status === "active" || actionLoading}
                                                 title="Activate"
+                                                aria-label="Activate user"
                                             >
                                                 <i className="bx bx-check"></i>
                                             </button>
+
                                             <button
                                                 className="action-btn action-btn--warning"
-                                                onClick={() => {
-                                                    setSelectedUser(user);
-                                                    setShowSuspendModal(true);
-                                                }}
+                                                onClick={() => { setSelectedUser(user); setShowSuspendModal(true); }}
                                                 disabled={user.status === "suspended" || actionLoading}
                                                 title="Suspend"
+                                                aria-label="Suspend user"
                                             >
                                                 <i className="bx bx-pause"></i>
                                             </button>
+
                                             <button
                                                 className="action-btn action-btn--danger"
-                                                onClick={() => {
-                                                    setSelectedUser(user);
-                                                    setShowBanModal(true);
-                                                }}
+                                                onClick={() => { setSelectedUser(user); setShowBanModal(true); }}
                                                 disabled={user.status === "banned" || actionLoading}
                                                 title="Ban"
+                                                aria-label="Ban user"
                                             >
                                                 <i className="bx bx-block"></i>
                                             </button>
+
                                             <button
                                                 className="action-btn action-btn--destructive"
-                                                onClick={() => {
-                                                    setSelectedUser(user);
-                                                    setShowDeleteModal(true);
-                                                }}
+                                                onClick={() => { setSelectedUser(user); setShowDeleteModal(true); }}
                                                 disabled={actionLoading}
                                                 title="Delete"
+                                                aria-label="Delete user"
                                             >
                                                 <i className="bx bx-trash"></i>
                                             </button>
@@ -537,6 +542,73 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
                                     disabled={actionLoading}
                                 >
                                     {actionLoading ? 'Deleting...' : 'Yes, Delete Account'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {showViewModal && selectedUser && (
+                    <motion.div
+                        className="modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={closeAllModals}
+                    >
+                        <motion.div
+                            className="modal modal--view"
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="modal-header">
+                                <h3>
+                                    <i className="bx bx-user"></i>
+                                    User Details
+                                </h3>
+                                <button className="modal-close" onClick={closeAllModals}>
+                                    <i className="bx bx-x"></i>
+                                </button>
+                            </div>
+
+                            <div className="modal-body">
+                                <div className="user-details">
+                                    <div className="detail-row">
+                                        <span className="label">Name</span>
+                                        <span className="value">{selectedUser.name || '-'}</span>
+                                    </div>
+                                    <div className="detail-row">
+                                        <span className="label">Email</span>
+                                        <span className="value mono">{selectedUser.email || '-'}</span>
+                                    </div>
+                                    <div className="detail-row">
+                                        <span className="label">Role</span>
+                                        <span className="value">{selectedUser.role || '-'}</span>
+                                    </div>
+                                    <div className="detail-row">
+                                        <span className="label">Status</span>
+                                        <span className="value">{selectedUser.status || '-'}</span>
+                                    </div>
+                                    <div className="detail-row">
+                                        <span className="label">Joined</span>
+                                        <span className="value">
+                                            {selectedUser.createdAt
+                                                ? new Date(selectedUser.createdAt).toLocaleDateString()
+                                                : '-'}
+                                        </span>
+                                    </div>
+                                    <div className="detail-row">
+                                        <span className="label">User ID</span>
+                                        <span className="value mono">{selectedUser._id}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="modal-footer">
+                                <button className="btn btn--secondary" onClick={closeAllModals}>
+                                    Close
                                 </button>
                             </div>
                         </motion.div>

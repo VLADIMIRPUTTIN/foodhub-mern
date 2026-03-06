@@ -20,9 +20,23 @@ const baseURL = import.meta.env.MODE === "development"
 const AdminDashboard = () => {
     const { user, isAdmin, logout } = useAuthStore();
     const { socket } = useSocket();
-    const [activeTab, setActiveTab] = useState('dashboard'); // ✅ Changed default to 'dashboard'
-    const [isMinimized, setIsMinimized] = useState(false); // ✅ New state for sidebar
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // ✅ Mobile menu state
+    const [activeTab, setActiveTab] = useState('dashboard');
+    const [isMinimized, setIsMinimized] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(() =>
+        typeof window !== 'undefined' ? window.innerWidth <= 768 : false
+    );
+
+    useEffect(() => {
+        const onResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
+
+    useEffect(() => {
+        if (!isMobile) setIsMobileMenuOpen(false);
+    }, [isMobile]);
+
     const [users, setUsers] = useState([]);
     const [recipes, setRecipes] = useState([]);
     const [ingredients, setIngredients] = useState([]);
@@ -35,11 +49,9 @@ const AdminDashboard = () => {
     });
     const [loading, setLoading] = useState(true);
 
-    // Search states for manage recipes/ingredients
     const [recipeSearch, setRecipeSearch] = useState('');
     const [ingredientSearch, setIngredientSearch] = useState('');
 
-    // Real-time stats fetcher
     const fetchRealTimeStats = async () => {
         try {
             const [usersRes, recipesRes, pendingRes] = await Promise.all([
@@ -85,7 +97,6 @@ const AdminDashboard = () => {
         }
     };
 
-    // Fetch functions
     const fetchRecipes = async () => {
         try {
             const res = await axios.get(`${baseURL}/api/recipes/admin/all`, {
@@ -139,7 +150,6 @@ const AdminDashboard = () => {
         }
     };
 
-    // Initial data load
     useEffect(() => {
         const fetchInitialData = async () => {
             setLoading(true);
@@ -156,7 +166,6 @@ const AdminDashboard = () => {
         fetchInitialData();
     }, []);
 
-    // Set up real-time updates
     useEffect(() => {
         const interval = setInterval(() => {
             fetchRealTimeStats();
@@ -170,7 +179,6 @@ const AdminDashboard = () => {
         }
     }, [users.length, recipes.length, pendingCount]);
 
-    // Socket.IO event listeners
     useEffect(() => {
         if (!socket) return;
         
@@ -396,13 +404,13 @@ const AdminDashboard = () => {
             {/* Mobile Menu Toggle */}
             <button 
                 className="mobile-menu-toggle"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                onClick={() => setIsMobileMenuOpen(v => !v)}
             >
-                <i className="bx bx-menu"></i>
+                <i className={`bx ${isMobileMenuOpen ? 'bx-x' : 'bx-menu'}`}></i>
             </button>
 
             {/* Sidebar Overlay for Mobile */}
-            {isMobileMenuOpen && (
+            {isMobile && isMobileMenuOpen && (
                 <div 
                     className="sidebar-overlay active"
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -415,11 +423,13 @@ const AdminDashboard = () => {
                     activeTab={activeTab} 
                     setActiveTab={(tab) => {
                         setActiveTab(tab);
-                        setIsMobileMenuOpen(false); // Close mobile menu on tab change
+                        setIsMobileMenuOpen(false);
                     }}
                     pendingCount={stats.pendingRecipes}
                     isMinimized={isMinimized}
                     setIsMinimized={setIsMinimized}
+                    isMobile={isMobile}
+                    isMobileMenuOpen={isMobileMenuOpen}
                 />
             </div>
 

@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import './AdminSidebar.scss';
 
-const AdminSidebar = ({ activeTab, setActiveTab, pendingCount, isMinimized, setIsMinimized }) => {
+const AdminSidebar = ({ activeTab, setActiveTab, pendingCount, isMinimized, setIsMinimized, isMobile, isMobileMenuOpen }) => {
     const menuItems = [
         { 
             key: 'dashboard', 
@@ -42,15 +42,17 @@ const AdminSidebar = ({ activeTab, setActiveTab, pendingCount, isMinimized, setI
         }
     ];
 
+    const sidebarX = isMobile ? (isMobileMenuOpen ? 0 : -400) : 0;
+
     return (
         <motion.div 
             className={`admin-sidebar ${isMinimized ? 'minimized' : ''}`}
-            initial={{ x: -300, opacity: 0 }}
-            animate={{ 
-                x: 0, 
-                opacity: 1,
-                width: isMinimized ? '80px' : '280px'
-            }}
+            initial={{ x: isMobile ? -400 : -300, opacity: 0 }}
+animate={{
+  x: sidebarX,
+  opacity: 1,
+  width: isMinimized ? '80px' : '280px',
+}}
             transition={{ duration: 0.3, ease: "easeOut" }}
         >
             <div className="sidebar-header">
