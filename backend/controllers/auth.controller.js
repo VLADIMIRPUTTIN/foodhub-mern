@@ -266,7 +266,7 @@ export const logout = async (req, res) => {
                 secure: process.env.NODE_ENV === "production",
                 sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
                 path: "/",
-                domain: process.env.NODE_ENV === "production" ? ".foodhubrecipe.shop" : undefined
+                domain: process.env.NODE_ENV === "production" ? ".foodhubrecipe.site" : undefined
             },
             {
                 httpOnly: true,

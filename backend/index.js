@@ -26,7 +26,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
         origin: process.env.NODE_ENV === "production" 
-            ? ["https://www.foodhubrecipe.shop", "https://foodhubrecipe.shop"]
+            ? ["https://www.foodhubrecipe.site", "https://foodhubrecipe.site"]
             : ["http://localhost:3000", "http://localhost:5173"],
         credentials: true
     }
@@ -66,8 +66,8 @@ const allowedOrigins = [
     "http://localhost:5173",
     "http://localhost:3000",
     "https://foodhub-mern-production.up.railway.app",
-    "https://www.foodhubrecipe.shop",
-    "https://foodhubrecipe.shop",
+    "https://www.foodhubrecipe.site",
+    "https://foodhubrecipe.site",
 ];
 
 // Simplified CORS configuration for production
