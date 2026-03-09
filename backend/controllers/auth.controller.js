@@ -457,17 +457,39 @@ export const googleLogin = async (req, res) => {
         let user = await User.findOne({ email });
         
         if (!user) {
-            // ✅ New Google user - save Google profile picture URL directly
+            // New Google user - requires email verification
+            const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+
             user = new User({
                 email,
                 name,
                 googleId,
-                isVerified: true,
-                profileImage: picture || null, // Save Google picture URL
+                isVerified: false,
+                profileImage: picture || null,
                 authProvider: 'google',
+                verificationToken,
+                verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000,
             });
             await user.save();
-            
+
+            // Send verification email
+            try {
+                await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
+            } catch (emailErr) {
+                console.error('Failed to send verification email to new Google user:', emailErr);
+            }
+
+            generateTokenAndSetCookie(res, user._id);
+
+            return res.status(200).json({
+                success: true,
+                message: "Please verify your email to continue. A verification code has been sent.",
+                needsVerification: true,
+                user: {
+                    ...user._doc,
+                    password: undefined
+                }
+            });
         } else {
             let updated = false;
             
