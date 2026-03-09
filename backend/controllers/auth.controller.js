@@ -54,7 +54,7 @@ export const signup = async (req, res) => {
 
         // Send verification email for non-admin users
         if (!isVerified) {
-            await sendVerificationEmail(user.email, verificationToken);
+            await sendVerificationEmail(user.email, verificationToken, user.name);
         }
 
         res.status(201).json({
@@ -640,7 +640,7 @@ export const resendVerification = async (req, res) => {
         await user.save();
 
         // Send verification email
-        await sendVerificationEmail(user.email, user.name, verificationCode, user.profileImage);
+        await sendVerificationEmail(user.email, verificationCode, user.name, user.profileImage);
 
         res.status(200).json({
             success: true,
