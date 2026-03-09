@@ -1,60 +1,61 @@
-import { resend, sender } from './resend.config.js';
+import { resend, sender as resendSender } from './resend.config.js';
 import { 
     VERIFICATION_EMAIL_TEMPLATE, 
     PASSWORD_RESET_REQUEST_TEMPLATE,
     PASSWORD_RESET_SUCCESS_TEMPLATE 
 } from './emailTemplates.js';
 
-// Helper: send via Resend first, fall back to Gmail on ANY error
+// Helper: try Gmail first (no domain verification needed), then fall back to Resend
 const sendEmail = async ({ to, subject, html }) => {
-    // Try Resend first
+    const gmailUser = process.env.GMAIL_USER;
+    const gmailPass = process.env.GMAIL_PASS;
+
+    // ── 1. Gmail (primary) ──────────────────────────────────────────────────
+    if (gmailUser && gmailPass) {
+        try {
+            const nodemailer = (await import('nodemailer')).default;
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: { user: gmailUser, pass: gmailPass },
+            });
+            const gmailResult = await transporter.sendMail({
+                from: `FoodHub <${gmailUser}>`,
+                to,
+                subject,
+                html,
+            });
+            console.log('✅ Email sent via Gmail:', gmailResult.messageId);
+            return gmailResult;
+        } catch (gmailErr) {
+            console.error('❌ Gmail failed:', gmailErr.message);
+        }
+    } else {
+        console.warn('⚠️ GMAIL_USER or GMAIL_PASS not set — skipping Gmail');
+    }
+
+    // ── 2. Resend (fallback) ────────────────────────────────────────────────
     try {
         const result = await resend.emails.send({
-            from: `${sender.name} <${sender.email}>`,
+            from: `${resendSender.name} <${resendSender.email}>`,
             to,
             subject,
             html,
         });
-
-        // Resend SDK returns errors in result.error instead of throwing
         if (result.error) {
-            console.error('Resend returned an error:', result.error);
             throw new Error(`Resend error: ${result.error.message || JSON.stringify(result.error)}`);
         }
-
-        console.log('Email sent via Resend:', result.data?.id);
+        console.log('✅ Email sent via Resend:', result.data?.id);
         return result;
     } catch (resendErr) {
-        console.log('Resend failed, falling back to Gmail:', resendErr.message);
+        console.error('❌ Resend also failed:', resendErr.message);
     }
 
-    // Gmail fallback
-    try {
-        const { transporter, sender: gmailSender } = await import('./gmail.config.js');
-        const gmailResult = await transporter.sendMail({
-            from: `${gmailSender.name} <${gmailSender.email}>`,
-            to,
-            subject,
-            html,
-        });
-        console.log('Email sent via Gmail:', gmailResult.messageId);
-        return gmailResult;
-    } catch (gmailErr) {
-        console.error('Gmail also failed:', gmailErr.message);
-        // In development, swallow the error so the endpoint still returns 200.
-        // The verification code is logged by the caller for testing.
-        if (process.env.NODE_ENV !== 'production') {
-            console.warn('⚠️  DEV MODE: Both email providers failed. Use the code logged above.');
-            return { devFallback: true };
-        }
-        throw gmailErr;
+    // ── 3. Both failed ──────────────────────────────────────────────────────
+    if (process.env.NODE_ENV !== 'production') {
+        console.warn('⚠️  DEV MODE: Both providers failed. Check the code in the logs above.');
+        return { devFallback: true };
     }
-};
-
-// Import Gmail as fallback
-const getGmailTransporter = async () => {
-    const { transporter, sender: gmailSender } = await import('./gmail.config.js');
-    return { transporter, gmailSender };
+    throw new Error('Failed to send email — both Gmail and Resend failed.');
 };
 
 export const sendVerificationEmail = async (email, verificationToken, userName, profileImage = null) => {
