@@ -6,6 +6,7 @@ import PasswordStrengthMeter from "../components/PasswordStrengthMeter";
 import { useAuthStore } from "../store/authStore";
 import { GoogleLogin } from '@react-oauth/google';
 import axios from "axios";
+import toast from "react-hot-toast";
 import TermsAndConditionsModal from "./TermsAndConditionsModal";
 import './SignUpPage.scss'; // Import the SCSS file for styling
 
@@ -42,24 +43,23 @@ const SignUpPage = () => {
             if (response.data.user) {
                 setUser(response.data.user);
                 const user = response.data.user;
-                
+
                 console.log("✅ Google signup successful, user data:", user);
-                
-                // Check if verified
-                if (!user.isVerified) {
+
+                // Redirect to verification if needed
+                if (response.data.needsVerification || !user.isVerified) {
                     console.log("❌ User not verified, redirecting to verification");
                     navigate("/verify-email");
                     return;
                 }
 
-                // ✅ NEW USERS ALWAYS NEED ONBOARDING (unless admin)
+                // NEW USERS ALWAYS NEED ONBOARDING (unless admin)
                 if (!user.hasCompletedOnboarding && user.role !== 'admin') {
                     console.log("⚠️ New user needs onboarding, redirecting...");
                     navigate("/onboarding");
                     return;
                 }
 
-                // Existing users who already completed onboarding
                 if (user.role === 'admin') {
                     navigate("/admin-dashboard");
                 } else {
@@ -68,7 +68,8 @@ const SignUpPage = () => {
             }
         } catch (error) {
             console.error("❌ Google signup failed:", error);
-            toast.error(error.response?.data?.message || "Google signup failed. Please try again.");
+            const msg = error.response?.data?.message || "Google signup failed. Please try again.";
+            toast.error(msg);
         }
     };
 

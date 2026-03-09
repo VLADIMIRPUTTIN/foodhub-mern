@@ -104,6 +104,9 @@ const LoginPage = () => {
             console.error("❌ Google login failed:", error);
             if (error.response?.status === 403 && error.response?.data?.statusData) {
                 setShowStatusModal(true);
+            } else {
+                const msg = error.response?.data?.message || error.response?.data?.detail || "Google login failed. Please try again.";
+                import('react-hot-toast').then(({ default: toast }) => toast.error(msg));
             }
         }
     };
