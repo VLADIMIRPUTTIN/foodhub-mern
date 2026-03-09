@@ -77,8 +77,8 @@ const LoginPage = () => {
                 
                 console.log("✅ Google login successful, user data:", user);
                 
-                // 1. Check verification first
-                if (!user.isVerified) {
+                // 1. Check if server says verification is needed
+                if (response.data.needsVerification || !user.isVerified) {
                     console.log("❌ User not verified, redirecting to verification");
                     navigate('/verify-email');
                     return;

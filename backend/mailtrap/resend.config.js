@@ -9,7 +9,7 @@ export const resend = new Resend(apiKey);
 // Fixed sender configuration to prevent the double noreply@ issue
 export const sender = {
     email: process.env.NODE_ENV === 'production' && process.env.VERIFIED_DOMAIN === 'true'
-        ? `${process.env.EMAIL_DOMAIN}` // Removed the noreply@ prefix - domain should already include it
+        ? `noreply@${process.env.EMAIL_DOMAIN}`
         : 'onboarding@resend.dev',
     name: "FoodHub",
 };

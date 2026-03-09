@@ -534,8 +534,12 @@ export const googleLogin = async (req, res) => {
             user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
             await user.save();
             
-            // Send verification email
-            await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
+            // Send verification email (non-blocking — don't crash login if email fails)
+            try {
+                await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
+            } catch (emailErr) {
+                console.error('Failed to send verification email:', emailErr);
+            }
             
             // Generate token for the session
             generateTokenAndSetCookie(res, user._id);
@@ -543,6 +547,7 @@ export const googleLogin = async (req, res) => {
             return res.status(200).json({
                 success: true,
                 message: "Please verify your email to continue. A verification code has been sent.",
+                needsVerification: true,
                 user: {
                     ...user._doc,
                     password: undefined
@@ -572,8 +577,8 @@ export const googleLogin = async (req, res) => {
             needsOnboarding: !user.hasCompletedOnboarding && user.role !== 'admin'
         });
     } catch (error) {
-        console.error("Google login error:", error);
-        res.status(500).json({ success: false, message: "Google login failed" });
+        console.error("Google login error:", error.message || error);
+        res.status(500).json({ success: false, message: "Google login failed", detail: error.message });
     }
 };
 

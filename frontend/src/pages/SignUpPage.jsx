@@ -93,8 +93,8 @@ const SignUpPage = () => {
                 setUser(response.data.user);
                 const user = response.data.user;
                 
-                // Check verification first
-                if (!user.isVerified) {
+                // Check if server says verification is needed
+                if (response.data.needsVerification || !user.isVerified) {
                     navigate('/verify-email');
                     return;
                 }
