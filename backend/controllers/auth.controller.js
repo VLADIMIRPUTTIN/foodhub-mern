@@ -468,18 +468,17 @@ export const googleLogin = async (req, res) => {
                 profileImage: picture || null,
                 authProvider: 'google',
                 verificationToken,
-                verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000,
+                verificationTokenExpiresAt: Date.now() + 60 * 60 * 1000, // 1 hour
             });
             await user.save();
 
-            // Send verification email
-            try {
-                await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
-            } catch (emailErr) {
-                console.error('Failed to send verification email to new Google user:', emailErr);
-            }
-
+            // Set cookie and respond immediately — send email in background so the
+            // client doesn't have to wait for Resend/Gmail before being redirected.
             generateTokenAndSetCookie(res, user._id);
+
+            // Fire-and-forget: don't await so response is instant
+            sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage)
+                .catch(emailErr => console.error('Failed to send verification email to new Google user:', emailErr));
 
             return res.status(200).json({
                 success: true,
@@ -553,19 +552,16 @@ export const googleLogin = async (req, res) => {
             // Generate new verification code for existing unverified user
             const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
             user.verificationToken = verificationToken;
-            user.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
+            user.verificationTokenExpiresAt = Date.now() + 60 * 60 * 1000; // 1 hour
             await user.save();
-            
-            // Send verification email (non-blocking — don't crash login if email fails)
-            try {
-                await sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage);
-            } catch (emailErr) {
-                console.error('Failed to send verification email:', emailErr);
-            }
-            
-            // Generate token for the session
+
+            // Set cookie and respond immediately — send email in background
             generateTokenAndSetCookie(res, user._id);
-            
+
+            // Fire-and-forget: don't await so response is instant
+            sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage)
+                .catch(emailErr => console.error('Failed to send verification email:', emailErr));
+
             return res.status(200).json({
                 success: true,
                 message: "Please verify your email to continue. A verification code has been sent.",
