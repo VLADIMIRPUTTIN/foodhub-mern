@@ -7,8 +7,6 @@ import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js
 import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendResetSuccessEmail } from "../mailtrap/emails.js";
 import { User } from "../models/user.model.js";
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
 export const signup = async (req, res) => {
     const { email, password, name } = req.body;
 
@@ -266,7 +264,7 @@ export const logout = async (req, res) => {
                 secure: process.env.NODE_ENV === "production",
                 sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
                 path: "/",
-                domain: process.env.NODE_ENV === "production" ? ".foodhubrecipe.site" : undefined
+                domain: process.env.NODE_ENV === "production" ? ".foodhubrecipes.site" : undefined
             },
             {
                 httpOnly: true,
@@ -441,7 +439,13 @@ export const checkAuth = async (req, res) => {
 export const googleLogin = async (req, res) => {
     try {
         const { credential } = req.body;
-        
+
+        if (!process.env.GOOGLE_CLIENT_ID) {
+            console.error('GOOGLE_CLIENT_ID environment variable is not set');
+            return res.status(500).json({ success: false, message: 'Google login is not configured on the server.' });
+        }
+
+        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
         const ticket = await client.verifyIdToken({
             idToken: credential,
             audience: process.env.GOOGLE_CLIENT_ID,
