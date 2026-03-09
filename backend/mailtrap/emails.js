@@ -29,15 +29,26 @@ const sendEmail = async ({ to, subject, html }) => {
     }
 
     // Gmail fallback
-    const { transporter, sender: gmailSender } = await import('./gmail.config.js');
-    const gmailResult = await transporter.sendMail({
-        from: `${gmailSender.name} <${gmailSender.email}>`,
-        to,
-        subject,
-        html,
-    });
-    console.log('Email sent via Gmail:', gmailResult.messageId);
-    return gmailResult;
+    try {
+        const { transporter, sender: gmailSender } = await import('./gmail.config.js');
+        const gmailResult = await transporter.sendMail({
+            from: `${gmailSender.name} <${gmailSender.email}>`,
+            to,
+            subject,
+            html,
+        });
+        console.log('Email sent via Gmail:', gmailResult.messageId);
+        return gmailResult;
+    } catch (gmailErr) {
+        console.error('Gmail also failed:', gmailErr.message);
+        // In development, swallow the error so the endpoint still returns 200.
+        // The verification code is logged by the caller for testing.
+        if (process.env.NODE_ENV !== 'production') {
+            console.warn('⚠️  DEV MODE: Both email providers failed. Use the code logged above.');
+            return { devFallback: true };
+        }
+        throw gmailErr;
+    }
 };
 
 // Import Gmail as fallback
@@ -49,7 +60,9 @@ const getGmailTransporter = async () => {
 export const sendVerificationEmail = async (email, verificationToken, userName, profileImage = null) => {
     if (!email) throw new Error("Email is required");
 
-    console.log(`Sending verification email to: ${email}, code: ${verificationToken}`);
+    // Always log the code so it's visible in server logs (essential for local dev)
+    console.log(`📧 Sending verification email to: ${email}`);
+    console.log(`🔑 VERIFICATION CODE for ${email}: ${verificationToken}`);
 
     const profileImageSection = profileImage
         ? `<img src="${profileImage}" alt="${userName}'s profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none';">`

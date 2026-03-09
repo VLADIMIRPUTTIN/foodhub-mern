@@ -650,7 +650,7 @@ export const resendVerification = async (req, res) => {
         console.error("Error in resendVerification:", error);
         res.status(500).json({ 
             success: false, 
-            message: "Server error" 
+            message: process.env.NODE_ENV !== 'production' ? error.message : "Server error" 
         });
     }
 };
