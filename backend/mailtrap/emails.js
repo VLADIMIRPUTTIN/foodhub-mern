@@ -78,7 +78,6 @@ const sendEmail = async ({ to, subject, html }) => {
     }
     throw new Error('Failed to send email — both Resend and Gmail failed.');
 };
-};
 
 export const sendVerificationEmail = async (email, verificationToken, userName, profileImage = null) => {
     if (!email) throw new Error("Email is required");
