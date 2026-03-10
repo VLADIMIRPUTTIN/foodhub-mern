@@ -544,7 +544,7 @@ router.post("/generate-recipe-suggestion", async (req, res) => {
 });
 
 // Enhanced generate cooking instructions route with AI-powered suggestions
-router.post("/generate-cooking-instructions", verifyToken, async (req, res) => {
+router.post("/generate-cooking-instructions", async (req, res) => {
   try {
     const { recipeName, recipeInstructions, availableIngredients, missingIngredients } = req.body;
     
