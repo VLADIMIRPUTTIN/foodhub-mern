@@ -15,8 +15,12 @@ const sendEmail = async ({ to, subject, html }) => {
         try {
             const nodemailer = (await import('nodemailer')).default;
             const transporter = nodemailer.createTransport({
-                service: 'gmail',
+                host: 'smtp.gmail.com',
+                port: 587,
+                secure: false,       // STARTTLS (not SSL) — port 587 is rarely blocked
+                requireTLS: true,
                 auth: { user: gmailUser, pass: gmailPass },
+                tls: { rejectUnauthorized: false },
             });
             const gmailResult = await transporter.sendMail({
                 from: `FoodHub <${gmailUser}>`,
