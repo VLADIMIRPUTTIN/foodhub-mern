@@ -5,9 +5,11 @@
 // =============================================================================
 .shared-recipes-page {
   min-height: 100vh;
+  min-height: 100dvh;
   background: linear-gradient(135deg, #CF996C 0%, #d4a373 50%, #e9c46a 100%);
   position: relative;
   overflow-x: hidden;
+  padding-bottom: env(safe-area-inset-bottom);
   
   // Decorative background elements
   &::before {
@@ -684,6 +686,35 @@
         .recipe-desc {
           font-size: 0.7rem;
         }
+      }
+    }
+  }
+}
+
+@media (max-width: 375px) {
+  .shared-recipes-page {
+    .community-header {
+      padding: 0.5rem 0.75rem 0.1rem 0.75rem;
+
+      h1 { font-size: clamp(1rem, 4.5vw, 1.4rem); }
+    }
+
+    .recipes-grid {
+      gap: 0.6rem;
+      padding: 0 0.75rem;
+    }
+
+    .recipe-card {
+      height: auto;
+      min-height: 240px;
+      max-width: 100%;
+
+      .recipe-image { height: 110px; }
+
+      .recipe-content {
+        padding: 0.5rem;
+        .recipe-title { font-size: 0.82rem; }
+        .recipe-desc { font-size: 0.65rem; }
       }
     }
   }

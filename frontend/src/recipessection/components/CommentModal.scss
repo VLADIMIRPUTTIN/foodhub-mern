@@ -10,6 +10,7 @@
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(4px);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 .comment-modal {
@@ -18,6 +19,7 @@
   width: 90%;
   max-width: 600px;
   max-height: 80vh;
+  max-height: 80dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -276,6 +278,7 @@
   .comment-modal {
     width: 95%;
     max-height: 90vh;
+    max-height: 90dvh;
     
     .comment-form-container {
       .comment-form {
@@ -284,6 +287,62 @@
           justify-content: center;
         }
       }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .comment-modal-overlay {
+    align-items: flex-end;
+  }
+
+  .comment-modal {
+    width: 100%;
+    max-height: 92vh;
+    max-height: 92dvh;
+    border-radius: 16px 16px 0 0;
+    margin-bottom: env(safe-area-inset-bottom);
+
+    .comment-modal-header {
+      padding: 0.9rem 1rem;
+
+      h3 { font-size: 1rem; }
+    }
+
+    .comment-form-container {
+      padding: 0.75rem;
+
+      .comment-form textarea {
+        min-height: 80px;
+        font-size: 0.9rem;
+      }
+    }
+
+    .comments-list {
+      padding: 0.75rem;
+
+      .comment-item {
+        padding: 0.75rem;
+
+        .comment-header .comment-user {
+          .user-avatar { width: 34px; height: 34px; }
+          .user-info h4 { font-size: 0.9rem; }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 375px) {
+  .comment-modal {
+    .comment-modal-header h3 { font-size: 0.9rem; }
+
+    .comment-form-container .comment-form {
+      textarea { min-height: 70px; font-size: 0.85rem; }
+    }
+
+    .comments-list .comment-item .comment-text {
+      font-size: 0.85rem;
     }
   }
 }

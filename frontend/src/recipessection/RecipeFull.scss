@@ -7,6 +7,7 @@
 .full-recipe-page {
   background: #f7e6d1;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* ===== LOADING ===== */
@@ -49,6 +50,7 @@
   position: relative;
   width: 100%;
   height: 100vh;
+  height: 100dvh;
   min-height: 600px;
   overflow: hidden;
 
@@ -80,6 +82,7 @@
 .banner-top-controls {
   position: absolute;
   top: 1.5rem;
+  top: max(1.5rem, calc(0.5rem + env(safe-area-inset-top)));
   left: 2rem;
   right: 2rem;
   z-index: 10;
@@ -1232,6 +1235,7 @@
   .full-recipe-banner {
     height: auto;
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
 
@@ -1243,7 +1247,7 @@
   }
 
   .banner-top-controls {
-    top: 1rem;
+    top: max(1rem, env(safe-area-inset-top));
     left: 1rem;
     right: 1rem;
   }
@@ -1302,4 +1306,54 @@
   .video-grid { grid-template-columns: 1fr; }
 
   .nutrition-grid-full { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+
+  .banner-top-controls {
+    top: max(0.75rem, env(safe-area-inset-top));
+    left: 0.75rem;
+    right: 0.75rem;
+  }
+
+  .full-recipe-back { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+  .action-btn { width: 36px; height: 36px; }
+
+  .full-recipe-steps-section { padding: 1.5rem 0.8rem; }
+  .youtube-video-section { margin: 1rem 0.5rem; padding: 1rem 0.75rem; }
+}
+
+@media (max-width: 375px) {
+  .full-recipe-banner { min-height: 480px; }
+
+  .banner-top-controls {
+    top: max(0.5rem, env(safe-area-inset-top));
+    left: 0.5rem;
+    right: 0.5rem;
+  }
+
+  .full-recipe-info {
+    padding: 52vh 0.8rem 0;
+
+    h1 { font-size: clamp(1.4rem, 5vw, 2rem); }
+
+    .recipe-meta-stats { gap: 0.4rem; }
+    .meta-stat { padding: 0.35rem 0.5rem; }
+  }
+
+  .full-recipe-ingredients-card {
+    width: calc(100% - 1.6rem);
+    margin: 1rem 0.8rem;
+    padding: 1rem;
+  }
+
+  .full-recipe-steps-section { padding: 1rem 0.75rem; }
+
+  .full-recipe-step {
+    padding: 0.9rem 1rem;
+    gap: 0.75rem;
+
+    .step-check-btn { width: 36px; height: 36px; }
+    .step-content .step-text { font-size: 0.95rem; }
+  }
+
+  .youtube-video-section { margin: 0.75rem 0.25rem; padding: 0.75rem 0.5rem; }
+  .youtube-main-player .video-info { padding: 1rem; h3 { font-size: 1.1rem; } }
 }

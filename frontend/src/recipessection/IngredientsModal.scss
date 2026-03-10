@@ -25,16 +25,19 @@
     box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
     width: 320px; // Fixed width
     height: 100vh;
+    height: 100dvh;
     max-height: 100vh; // Take full height
+    max-height: 100dvh;
     overflow-y: auto;
     position: relative;
     padding: 1.25rem;
+    padding-top: max(2rem, calc(1.25rem + env(safe-area-inset-top)));
+    padding-bottom: max(2rem, calc(1.25rem + env(safe-area-inset-bottom)));
     margin-right: 0; // Align to right edge
     animation: slideIn 0.3s ease-out;
     display: flex;
     flex-direction: column;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
+    -webkit-overflow-scrolling: touch;
     
     @keyframes slideIn {
         from { transform: translateX(100%); }
@@ -357,10 +360,19 @@
 }
 
 @media (max-width: 768px) {
+    .ingredients-modal-overlay {
+        align-items: flex-end;
+    }
+
     .ingredients-modal {
-        width: 90%;
+        width: 100%;
+        border-radius: 16px 16px 0 0;
+        height: auto;
+        max-height: 85vh;
+        max-height: 85dvh;
         padding: 1rem;
-        max-height: 80vh;
+        padding-top: max(1rem, env(safe-area-inset-top));
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
     }
     
     .modal-title {
@@ -383,5 +395,29 @@
         span {
             font-size: 0.75rem;
         }
+    }
+}
+
+@media (max-width: 480px) {
+    .ingredients-modal {
+        max-height: 90vh;
+        max-height: 90dvh;
+        padding: 0.75rem;
+        padding-top: max(0.75rem, env(safe-area-inset-top));
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+
+    .items-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.4rem;
+        max-height: 50vh;
+    }
+
+    .amount-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .amount-button.custom {
+        grid-column: span 3;
     }
 }

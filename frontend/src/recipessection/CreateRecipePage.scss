@@ -1,14 +1,20 @@
 .create-recipe-page {
     min-height: 100vh;
+    min-height: 100dvh;
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     font-family: 'Inter', 'Segoe UI', sans-serif;
+    -webkit-text-size-adjust: 100%;
 }
 
 .create-recipe-container {
     max-width: 500px;
     margin: 0 auto;
     padding: 0.5rem;
-    padding-top: 35px;
+    padding-top: max(35px, calc(0.5rem + env(safe-area-inset-top)));
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: max(0.5rem, env(safe-area-inset-left));
+    padding-right: max(0.5rem, env(safe-area-inset-right));
+    box-sizing: border-box;
 }
 
 .create-recipe-form {
@@ -709,4 +715,84 @@
 .form-section {
   position: relative;
   // Keep existing styles
+}
+
+// ============================================================
+// MOBILE RESPONSIVE — iOS + Android small screens
+// ============================================================
+@media (max-width: 480px) {
+    .create-recipe-page {
+        background: #f8fafc;
+    }
+
+    .create-recipe-container {
+        padding: 0;
+        padding-top: max(12px, env(safe-area-inset-top));
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+        max-width: 100%;
+    }
+
+    .create-recipe-form {
+        border-radius: 0;
+        height: calc(100vh - max(12px, env(safe-area-inset-top)) - env(safe-area-inset-bottom));
+        height: calc(100dvh - max(12px, env(safe-area-inset-top)) - env(safe-area-inset-bottom));
+    }
+
+    .form-header {
+        margin-top: 0;
+        border-radius: 0;
+    }
+
+    .tab-navigation .tab-button {
+        font-size: 0.72rem;
+        padding: 0.45rem 0.4rem;
+        gap: 0.25rem;
+    }
+
+    .tab-content {
+        padding: 0.5rem;
+    }
+
+    .form-section {
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .input-row {
+        grid-template-columns: 1fr;
+        gap: 0.35rem;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        padding: 0.5rem;
+        gap: 0.5rem;
+    }
+
+    .cancel-btn, .submit-btn {
+        justify-content: center;
+        width: 100%;
+    }
+}
+
+@media (max-width: 375px) {
+    .create-recipe-form {
+        height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    }
+
+    .tab-navigation .tab-button {
+        font-size: 0.65rem;
+        padding: 0.4rem 0.3rem;
+    }
+
+    .form-group {
+        label { font-size: 0.7rem; }
+        input, textarea, select { font-size: 0.72rem; }
+    }
+
+    .form-header h1 {
+        font-size: 1rem;
+    }
 }
