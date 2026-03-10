@@ -326,6 +326,41 @@
   }
 }
 
+.user-email-display {
+  display: block;
+  margin-top: 0.5rem;
+  color: #7a5c3a;
+  font-size: 0.9rem;
+
+  strong {
+    color: #CF996C;
+    word-break: break-all;
+  }
+}
+
+.manual-email-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  width: 100%;
+
+  .email-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid rgba(207, 153, 108, 0.3);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+
+    &:focus {
+      border-color: #CF996C;
+    }
+  }
+}
+
 // Loading spinner
 .btn-spinner {
   width: 1.2rem;

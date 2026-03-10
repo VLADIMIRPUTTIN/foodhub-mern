@@ -28,6 +28,9 @@ const sendEmail = async ({ to, subject, html }) => {
             return gmailResult;
         } catch (gmailErr) {
             console.error('❌ Gmail failed:', gmailErr.message);
+            console.error('❌ Gmail error code:', gmailErr.code);
+            console.error('❌ Gmail response:', gmailErr.response);
+            console.error('❌ Gmail responseCode:', gmailErr.responseCode);
         }
     } else {
         console.warn('⚠️ GMAIL_USER or GMAIL_PASS not set — skipping Gmail');

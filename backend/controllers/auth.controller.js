@@ -230,13 +230,37 @@ export const login = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid credentials" });
         }
 
+        // If user is not verified, send a fresh verification code and redirect them
+        if (!user.isVerified && user.role !== 'admin') {
+            const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+            user.verificationToken = verificationToken;
+            user.verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000;
+            await user.save();
+
+            generateTokenAndSetCookie(res, user._id);
+
+            // Fire-and-forget so response is instant
+            sendVerificationEmail(user.email, verificationToken, user.name, user.profileImage)
+                .catch(err => console.error('Failed to send verification email on login:', err));
+
+            return res.status(200).json({
+                success: true,
+                message: "Please verify your email to continue. A verification code has been sent.",
+                needsVerification: true,
+                user: {
+                    ...user._doc,
+                    password: undefined,
+                },
+            });
+        }
+
         generateTokenAndSetCookie(res, user._id);
 
         user.lastLogin = new Date();
         await user.save();
 
-        const loginMessage = user.role === 'admin' 
-            ? "Admin logged in successfully" 
+        const loginMessage = user.role === 'admin'
+            ? "Admin logged in successfully"
             : "Logged in successfully";
 
         res.status(200).json({

@@ -17,7 +17,21 @@ const EmailVerificationPage = () => {
     const inputRefs = useRef([]);
     const navigate = useNavigate();
 
-    const { error, isLoading, verifyEmail, user } = useAuthStore();
+    const { error, isLoading, verifyEmail, user, checkAuth } = useAuthStore();
+    const [userEmail, setUserEmail] = useState("");
+    const [showEmailInput, setShowEmailInput] = useState(false);
+    const checkedAuthRef = useRef(false);
+
+    // Resolve the email once user is available
+    useEffect(() => {
+        if (user?.email) {
+            setUserEmail(user.email);
+        } else if (!checkedAuthRef.current) {
+            // Try once to refresh auth state if user hasn't loaded yet
+            checkedAuthRef.current = true;
+            checkAuth();
+        }
+    }, [user]);
 
     const handlePaste = (e) => {
         e.preventDefault();
@@ -114,18 +128,36 @@ const EmailVerificationPage = () => {
     };
 
     const handleResendCode = async () => {
+        const email = userEmail || useAuthStore.getState().user?.email;
+        if (!email) {
+            setShowEmailInput(true);
+            toast.error("We couldn't find your email. Please enter it below to resend the code.");
+            return;
+        }
         setResendLoading(true);
         try {
-            // Use the email from the user object in authStore
-            const email = useAuthStore.getState().user?.email;
-            if (!email) {
-                toast.error("No email found for resend.");
-                setResendLoading(false);
-                return;
-            }
             await axios.post(`${API_URL}/resend-verification`, { email });
-            toast.success("Verification code resent!");
+            toast.success(`Verification code resent to ${email}!`);
             setResendCooldown(30); // 30 seconds cooldown
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to resend code");
+        } finally {
+            setResendLoading(false);
+        }
+    };
+
+    const handleManualResend = async (e) => {
+        e.preventDefault();
+        if (!userEmail) {
+            toast.error("Please enter your email address");
+            return;
+        }
+        setResendLoading(true);
+        try {
+            await axios.post(`${API_URL}/resend-verification`, { email: userEmail });
+            toast.success(`Verification code sent to ${userEmail}!`);
+            setShowEmailInput(false);
+            setResendCooldown(30);
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to resend code");
         } finally {
@@ -158,6 +190,9 @@ const EmailVerificationPage = () => {
                     <h2 className="email-verification-title">Verify Your Email</h2>
                     <p className="email-verification-desc">
                         Enter the 6-digit code sent to your email address.
+                        {userEmail && (
+                            <span className="user-email-display"> A code was sent to <strong>{userEmail}</strong>.</span>
+                        )}
                         <span className="input-hint">You can paste the code with Ctrl+V</span>
                     </p>
                 </div>
@@ -233,6 +268,22 @@ const EmailVerificationPage = () => {
                             </div>
                         )}
                     </button>
+
+                    {showEmailInput && (
+                        <form onSubmit={handleManualResend} className="manual-email-form">
+                            <input
+                                type="email"
+                                placeholder="Enter your email address"
+                                value={userEmail}
+                                onChange={(e) => setUserEmail(e.target.value)}
+                                required
+                                className="email-input"
+                            />
+                            <button type="submit" className="resend-btn" disabled={resendLoading}>
+                                {resendLoading ? "Sending..." : "Send Code"}
+                            </button>
+                        </form>
+                    )}
                 </div>
             </div>
             <Toaster position="top-center" />
