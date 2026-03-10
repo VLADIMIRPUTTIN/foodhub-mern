@@ -5,64 +5,79 @@ import {
     PASSWORD_RESET_SUCCESS_TEMPLATE 
 } from './emailTemplates.js';
 
-// Helper: try Gmail first (no domain verification needed), then fall back to Resend
-const sendEmail = async ({ to, subject, html }) => {
+// Helper: send via Gmail (SMTP)
+const sendViaGmail = async ({ to, subject, html }) => {
     const gmailUser = process.env.GMAIL_USER;
     const gmailPass = process.env.GMAIL_PASS;
 
-    // ── 1. Gmail (primary) ──────────────────────────────────────────────────
-    if (gmailUser && gmailPass) {
+    if (!gmailUser || !gmailPass) {
+        throw new Error('GMAIL_USER or GMAIL_PASS not set');
+    }
+    const nodemailer = (await import('nodemailer')).default;
+    const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        requireTLS: true,
+        auth: { user: gmailUser, pass: gmailPass },
+        tls: { rejectUnauthorized: false },
+    });
+    const result = await transporter.sendMail({
+        from: `FoodHub <${gmailUser}>`,
+        to,
+        subject,
+        html,
+    });
+    console.log('✅ Email sent via Gmail:', result.messageId);
+    return result;
+};
+
+// Helper: send via Resend (HTTPS — always works on Railway/cloud)
+const sendViaResend = async ({ to, subject, html }) => {
+    const result = await resend.emails.send({
+        from: `${resendSender.name} <${resendSender.email}>`,
+        to,
+        subject,
+        html,
+    });
+    if (result.error) {
+        throw new Error(`Resend error: ${result.error.message || JSON.stringify(result.error)}`);
+    }
+    console.log('✅ Email sent via Resend:', result.data?.id);
+    return result;
+};
+
+// In production: Resend first (HTTPS, no SMTP firewall issues on Railway),
+// Gmail second. In development: Gmail first, Resend second.
+const sendEmail = async ({ to, subject, html }) => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const providers = isProduction
+        ? [
+            { name: 'Resend', fn: sendViaResend },
+            { name: 'Gmail', fn: sendViaGmail },
+          ]
+        : [
+            { name: 'Gmail', fn: sendViaGmail },
+            { name: 'Resend', fn: sendViaResend },
+          ];
+
+    for (const provider of providers) {
         try {
-            const nodemailer = (await import('nodemailer')).default;
-            const transporter = nodemailer.createTransport({
-                host: 'smtp.gmail.com',
-                port: 587,
-                secure: false,       // STARTTLS (not SSL) — port 587 is rarely blocked
-                requireTLS: true,
-                auth: { user: gmailUser, pass: gmailPass },
-                tls: { rejectUnauthorized: false },
-            });
-            const gmailResult = await transporter.sendMail({
-                from: `FoodHub <${gmailUser}>`,
-                to,
-                subject,
-                html,
-            });
-            console.log('✅ Email sent via Gmail:', gmailResult.messageId);
-            return gmailResult;
-        } catch (gmailErr) {
-            console.error('❌ Gmail failed:', gmailErr.message);
-            console.error('❌ Gmail error code:', gmailErr.code);
-            console.error('❌ Gmail response:', gmailErr.response);
-            console.error('❌ Gmail responseCode:', gmailErr.responseCode);
+            return await provider.fn({ to, subject, html });
+        } catch (err) {
+            console.error(`❌ ${provider.name} failed:`, err.message);
+            if (err.code) console.error(`   code: ${err.code}`);
+            if (err.response) console.error(`   response: ${err.response}`);
         }
-    } else {
-        console.warn('⚠️ GMAIL_USER or GMAIL_PASS not set — skipping Gmail');
     }
 
-    // ── 2. Resend (fallback) ────────────────────────────────────────────────
-    try {
-        const result = await resend.emails.send({
-            from: `${resendSender.name} <${resendSender.email}>`,
-            to,
-            subject,
-            html,
-        });
-        if (result.error) {
-            throw new Error(`Resend error: ${result.error.message || JSON.stringify(result.error)}`);
-        }
-        console.log('✅ Email sent via Resend:', result.data?.id);
-        return result;
-    } catch (resendErr) {
-        console.error('❌ Resend also failed:', resendErr.message);
-    }
-
-    // ── 3. Both failed ──────────────────────────────────────────────────────
-    if (process.env.NODE_ENV !== 'production') {
-        console.warn('⚠️  DEV MODE: Both providers failed. Check the code in the logs above.');
+    // Both failed
+    if (!isProduction) {
+        console.warn('⚠️  DEV MODE: Both providers failed. Check logs above.');
         return { devFallback: true };
     }
-    throw new Error('Failed to send email — both Gmail and Resend failed.');
+    throw new Error('Failed to send email — both Resend and Gmail failed.');
+};
 };
 
 export const sendVerificationEmail = async (email, verificationToken, userName, profileImage = null) => {
