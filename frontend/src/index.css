@@ -3,7 +3,44 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Global mobile/iOS resets ── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    /* Prevent iOS font size inflation on orientation change */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Enable smooth momentum scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+}
+
 body {
     overflow-x: hidden;
-    font-family: 'Helvetica Thai Bold', 'Helvetica', Arial, sans-serif ;
+    font-family: 'Helvetica Thai Bold', 'Helvetica', Arial, sans-serif;
+    /* Remove tap highlight flash on Android/iOS */
+    -webkit-tap-highlight-color: transparent;
+    /* Ensure buttons/links feel native on touch */
+    touch-action: manipulation;
+    /* Safe area padding for notched phones (bottom) */
+    padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* Make all images and media fluid by default */
+img,
+video,
+svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Prevent horizontal scroll on any fixed/absolute elements */
+#root {
+    overflow-x: hidden;
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+

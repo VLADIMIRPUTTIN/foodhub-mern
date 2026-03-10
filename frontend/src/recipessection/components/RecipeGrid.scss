@@ -81,7 +81,8 @@ $transition:     all 0.28s cubic-bezier(0.4,0,0.2,1);
   display: flex;
   flex-direction: column;
   position: relative;
-  height: 340px; /* compact but not cramped */
+  height: auto;
+  min-height: 320px;
 
   &:hover {
     transform: translateY(-5px);
@@ -470,7 +471,8 @@ $transition:     all 0.28s cubic-bezier(0.4,0,0.2,1);
   }
 
   .recipe-card {
-    height: 310px;
+    height: auto;
+    min-height: 280px;
 
     .recipe-image { height: 115px; }
 
@@ -560,5 +562,36 @@ $transition:     all 0.28s cubic-bezier(0.4,0,0.2,1);
       top: -6px;
       right: -5px;
     }
+  }
+}
+
+/* =============================================
+   SMALL PHONES — 1 COLUMN
+   ============================================= */
+@media (max-width: 480px) {
+  .recipes-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .recipe-card {
+    min-height: 260px;
+
+    .recipe-image { height: 160px; }
+
+    .recipe-content {
+      padding: 0.8rem;
+    }
+
+    .recipe-title { font-size: 0.9rem; }
+  }
+}
+
+/* =============================================
+   TABLET — 3 COLUMNS
+   ============================================= */
+@media (min-width: 769px) and (max-width: 1100px) {
+  .recipes-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }

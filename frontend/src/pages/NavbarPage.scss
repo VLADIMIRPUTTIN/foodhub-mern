@@ -521,7 +521,9 @@ $transition:    all 0.25s cubic-bezier(0.4,0,0.2,1);
       0 2px 8px rgba(207,153,108,0.1);
     align-items: center;
     justify-content: space-around;
-    padding: 10px 8px 14px;
+    padding: 10px 8px;
+    // Safe area for notched phones (iPhone X+) and Android gesture bars
+    padding-bottom: calc(14px + env(safe-area-inset-bottom));
     z-index: 500;
     gap: 0;
 

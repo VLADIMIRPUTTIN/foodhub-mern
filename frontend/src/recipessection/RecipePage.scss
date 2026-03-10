@@ -51,10 +51,15 @@ i[class*=" bx-"] {
 // =============================================================================
 .recipe-page {
   min-height: 100vh;
+  min-height: 100dvh;
   background: linear-gradient(160deg, #e8d5c4 0%, #CF996C 40%, #bb8855 100%);
-  background-attachment: fixed;
+  background-attachment: scroll; /* fixed breaks on iOS Safari */
   width: 100%;
   overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
 }
 
 .main-content {
@@ -503,11 +508,11 @@ i[class*=" bx-"] {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   cursor: pointer;
-  height: 28rem; // Increased height for larger cards
+  height: auto;
+  min-height: 28rem;
   display: flex;
   flex-direction: column;
-  position: relative; // Add this for heart positioning
-  overflow: visible; // <-- Make sure button is not clipped
+  overflow: visible; // allow badges/buttons to overflow
 
   &:hover {
     transform: translateY(-4px);
@@ -1237,11 +1242,12 @@ i[class*=" bx-"] {
     padding-bottom: 1rem !important;
   }
 
-  // Recipe cards - compact height
+  // Recipe cards - auto height so action buttons never clip
   .recipe-card {
-    height: 320px !important; // ✅ Increased height for action buttons
+    height: auto !important;
+    min-height: 300px !important;
     margin-bottom: 0 !important;
-    
+
     .recipe-image {
       height: 140px !important;
     }
@@ -1469,6 +1475,36 @@ i[class*=" bx-"] {
       font-size: 0.65rem !important;
       padding: 0.2rem 0.4rem !important;
     }
+  }
+}
+
+// Small phones — 1 column
+@media (max-width: 480px) {
+  .recipes-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  .recipe-card {
+    min-height: 260px !important;
+    height: auto !important;
+
+    .recipe-image {
+      height: 160px !important;
+    }
+
+    .recipe-content {
+      padding: 0.85rem !important;
+
+      .recipe-title { font-size: 0.92rem !important; }
+    }
+  }
+}
+
+// Tablet — 3 columns
+@media (min-width: 769px) and (max-width: 1100px) {
+  .recipes-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
   }
 }
 

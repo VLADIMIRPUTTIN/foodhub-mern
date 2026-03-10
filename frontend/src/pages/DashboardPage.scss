@@ -11,17 +11,20 @@ $transition: all 0.3s ease;
     background-color: $background-light;
     font-family: 'Helvetica', sans-serif;
     padding-bottom: 80px; // Space for mobile navbar
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
     
 
     // Hero Section
     .hero-section {
         position: relative;
         height: 85vh;
+        height: 85dvh; // dynamic viewport for iOS Safari
         background-image: url('/Img/background-img.jpg');
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
-        background-attachment: fixed;
+        // background-attachment:fixed is NOT supported on iOS Safari — use scroll
+        background-attachment: scroll;
 
         .overlay {
             position: absolute;
@@ -477,14 +480,16 @@ $transition: all 0.3s ease;
     @media (max-width: 768px) {
         .hero-section {
             height: 100vh;
+            height: 100dvh; // iOS Safari dynamic viewport
             min-height: 100vh;
+            min-height: 100dvh;
             width: 100vw;
             margin: 0;
             padding: 0;
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            background-attachment: scroll;
+            background-attachment: scroll; // fixed not supported on iOS
 
             .overlay {
                 background-color: rgba(0, 0, 0, 0.45);
@@ -603,7 +608,8 @@ $transition: all 0.3s ease;
 
     @media (max-width: 480px) {
         .hero-section {
-            height: 40vh;
+            height: 100vh;
+            height: 100dvh;
             
             .hero-content {
                 .hero-text {
