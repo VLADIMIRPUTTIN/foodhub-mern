@@ -440,10 +440,11 @@
             width: 130%;
             margin-left: -15%;
         }
-        
+
         .form-group,
         .submit-button,
         .social-signup,
+        .error-message,
         .password-strength-container {
             width: 70%;
         }
@@ -454,20 +455,27 @@
             width: 115%;
             margin-left: -7.5%;
         }
-        
+
         .form-group,
         .submit-button,
         .social-signup,
+        .error-message,
         .password-strength-container {
-            width: 75%;
+            width: 78%;
         }
     }
 
+    // Tablet & mobile — fix core scrolling issue:
+    // position:fixed + overflow:hidden on the parent blocks inner scroll,
+    // so we switch to relative + overflow-y:auto on mobile.
     @media (max-width: 768px) {
+        position: relative;
         flex-direction: column;
-        height: 100vh;
+        height: auto;
         min-height: 100vh;
+        min-height: 100dvh; // dynamic viewport height for iOS Safari
         overflow-y: auto;
+        overflow-x: hidden;
 
         .signup-left {
             display: none;
@@ -475,17 +483,25 @@
 
         .signup-right {
             flex: 1;
-            padding: 30px 20px;
-            justify-content: center;
+            width: 100%;
+            padding: 50px 20px 40px;
+            padding-bottom: calc(40px + env(safe-area-inset-bottom));
+            justify-content: flex-start;
             align-items: center;
             text-align: center;
             min-height: 100vh;
-            overflow-y: auto;
+            min-height: 100dvh;
+        }
 
-            .signup-title {
-                font-size: 26px;
-                margin-bottom: 30px;
-            }
+        .signup-form-container {
+            width: 100%;
+            max-width: 420px;
+            padding-top: 10px;
+        }
+
+        .signup-title {
+            font-size: 26px;
+            margin-bottom: 30px;
         }
 
         .input-container {
@@ -498,14 +514,15 @@
         .social-signup,
         .error-message,
         .password-strength-container {
-            width: 90%;
-            max-width: 380px;
+            width: 88%;
+            max-width: 400px;
         }
     }
 
     @media (max-width: 480px) {
         .signup-right {
-            padding: 20px 15px;
+            padding: 40px 15px 30px;
+            padding-bottom: calc(30px + env(safe-area-inset-bottom));
         }
 
         .signup-title {
@@ -518,7 +535,11 @@
         .social-signup,
         .error-message,
         .password-strength-container {
-            width: 95%;
+            width: 94%;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
         }
 
         .form-control {
@@ -530,11 +551,16 @@
             padding: 14px;
             font-size: 15px;
         }
+
+        .login-link {
+            margin-top: 20px;
+        }
     }
 
     @media (max-width: 375px) {
         .signup-right {
-            padding: 15px 10px;
+            padding: 35px 10px 25px;
+            padding-bottom: calc(25px + env(safe-area-inset-bottom));
         }
 
         .form-group,
@@ -542,28 +568,65 @@
         .social-signup,
         .error-message,
         .password-strength-container {
-            width: 100%;
+            width: 98%;
         }
 
         .signup-title {
             font-size: 22px;
         }
+
+        .form-control {
+            padding: 13px 12px;
+            font-size: 14px;
+        }
     }
 
-    // Fix for very small screens and landscape orientation
+    // Landscape orientation on small-screen devices
     @media (max-height: 600px) and (orientation: landscape) {
+        position: relative;
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+
         .signup-right {
-            padding: 15px 20px;
+            padding: 20px 20px;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
             justify-content: flex-start;
-            
-            .signup-title {
-                font-size: 20px;
-                margin-bottom: 15px;
+            min-height: auto;
+        }
+
+        .signup-title {
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-control {
+            padding: 12px 14px;
+        }
+
+        .submit-button {
+            padding: 12px;
+            margin-top: 6px;
+        }
+
+        .password-strength-container {
+            margin-bottom: 8px;
+        }
+
+        .social-signup {
+            margin-top: 8px;
+
+            .or-divider {
+                margin: 8px 0;
             }
-            
-            .form-group {
-                margin-bottom: 15px;
-            }
+        }
+
+        .login-link {
+            margin-top: 12px;
         }
     }
 }

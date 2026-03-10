@@ -408,10 +408,11 @@
             width: 140%;
             margin-left: -20%;
         }
-        
+
         .form-group,
         .submit-button,
-        .social-login {
+        .social-login,
+        .error-message {
             width: 70%;
         }
     }
@@ -421,19 +422,26 @@
             width: 120%;
             margin-left: -10%;
         }
-        
+
         .form-group,
         .submit-button,
-        .social-login {
-            width: 75%;
+        .social-login,
+        .error-message {
+            width: 78%;
         }
     }
 
+    // Tablet & mobile — fix core scrolling issue:
+    // position:fixed + overflow:hidden on the parent blocks inner scroll,
+    // so we switch to relative + overflow-y:auto on mobile.
     @media (max-width: 768px) {
+        position: relative;
         flex-direction: column;
-        height: 100vh;
+        height: auto;
         min-height: 100vh;
+        min-height: 100dvh; // dynamic viewport height for iOS Safari
         overflow-y: auto;
+        overflow-x: hidden;
 
         .login-left {
             display: none;
@@ -441,17 +449,25 @@
 
         .login-right {
             flex: 1;
-            padding: 40px 25px;
-            justify-content: center;
+            width: 100%;
+            padding: 50px 20px 40px;
+            padding-bottom: calc(40px + env(safe-area-inset-bottom));
+            justify-content: flex-start;
             align-items: center;
             text-align: center;
             min-height: 100vh;
-            overflow-y: auto;
+            min-height: 100dvh;
+        }
 
-            .login-title {
-                font-size: 28px;
-                margin-bottom: 35px;
-            }
+        .login-form-container {
+            width: 100%;
+            max-width: 420px;
+            padding-top: 10px;
+        }
+
+        .login-title {
+            font-size: 28px;
+            margin-bottom: 35px;
         }
 
         .input-container {
@@ -463,70 +479,113 @@
         .submit-button,
         .social-login,
         .error-message {
-            width: 90%;
+            width: 88%;
             max-width: 400px;
         }
     }
 
     @media (max-width: 480px) {
         .login-right {
-            padding: 20px 15px;
+            padding: 40px 15px 30px;
+            padding-bottom: calc(30px + env(safe-area-inset-bottom));
         }
 
         .login-title {
             font-size: 24px;
-            margin-bottom: 30px;
+            margin-bottom: 28px;
         }
 
         .form-group,
         .submit-button,
         .social-login,
         .error-message {
-            width: 95%;
+            width: 94%;
+        }
+
+        .form-group {
+            margin-bottom: 22px;
         }
 
         .form-control {
-            padding: 16px 14px;
+            padding: 15px 14px;
             font-size: 15px;
         }
 
         .submit-button {
-            padding: 16px;
+            padding: 15px;
             font-size: 15px;
+        }
+
+        .register-link {
+            margin-top: 25px;
         }
     }
 
     @media (max-width: 375px) {
         .login-right {
-            padding: 20px 10px;
+            padding: 35px 10px 25px;
+            padding-bottom: calc(25px + env(safe-area-inset-bottom));
         }
 
         .form-group,
         .submit-button,
         .social-login,
         .error-message {
-            width: 100%;
+            width: 98%;
         }
 
         .login-title {
             font-size: 22px;
         }
+
+        .form-control {
+            padding: 14px 12px;
+            font-size: 14px;
+        }
     }
 
-    // Fix for very small screens and landscape orientation
+    // Landscape orientation on small-screen devices
     @media (max-height: 600px) and (orientation: landscape) {
+        position: relative;
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+
         .login-right {
-            padding: 20px 25px;
+            padding: 25px 20px;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
             justify-content: flex-start;
-            
-            .login-title {
-                font-size: 22px;
-                margin-bottom: 20px;
+            min-height: auto;
+        }
+
+        .login-title {
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-control {
+            padding: 13px 14px;
+        }
+
+        .submit-button {
+            padding: 13px;
+            margin-top: 8px;
+        }
+
+        .social-login {
+            margin-top: 10px;
+
+            .or-divider {
+                margin: 10px 0;
             }
-            
-            .form-group {
-                margin-bottom: 20px;
-            }
+        }
+
+        .register-link {
+            margin-top: 15px;
         }
     }
 
