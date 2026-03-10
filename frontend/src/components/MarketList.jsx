@@ -170,11 +170,16 @@ const MarketList = ({ recipe, isOpen, onGenerateInstructions, isEmbedded = false
         transition={{ duration: 0.3 }}
       >
         <div className="market-list-header">
-          <h3>
-            <i className="bx bx-shopping-bag"></i>
-            Market List
-          </h3>
-          <p className="market-list-subtitle">Check items you already have</p>
+          <div className="market-list-header-left">
+            <h3>
+              <i className="bx bx-shopping-bag"></i>
+              Market List
+            </h3>
+            <p className="market-list-subtitle">Check items you already have</p>
+          </div>
+          <div className="market-list-header-badge">
+            <i className="bx bx-check-shield"></i>
+          </div>
         </div>
         
         <div className="market-list-tabs">
@@ -233,13 +238,15 @@ const MarketList = ({ recipe, isOpen, onGenerateInstructions, isEmbedded = false
         </div>
         
         <div className="market-list-summary">
-          <div className="summary-row">
-            <span>Available:</span>
+          <div className="summary-card summary-available">
+            <i className="bx bx-check-circle summary-icon"></i>
             <span className="summary-count">{getAvailableIngredients().length}</span>
+            <span className="summary-label">Have</span>
           </div>
-          <div className="summary-row">
-            <span>Need to buy:</span>
+          <div className="summary-card summary-needed">
+            <i className="bx bx-cart summary-icon"></i>
             <span className="summary-count">{getMissingIngredients().length}</span>
+            <span className="summary-label">To Buy</span>
           </div>
         </div>
         
@@ -277,63 +284,72 @@ const MarketList = ({ recipe, isOpen, onGenerateInstructions, isEmbedded = false
         </div>
       </motion.div>
 
-      {/* AI Cooking Instructions Modal - only show when NOT embedded (desktop) */}
-      {!isEmbedded && (
-        <AnimatePresence>
-          {showInstructions && cookingInstructions && (
-            <motion.div 
-              className="cooking-instructions-modal"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowInstructions(false)}
+      {/* ── AI Cooking Suggestions — unified modal for all devices ── */}
+      <AnimatePresence>
+        {showInstructions && cookingInstructions && (
+          <motion.div
+            className="ai-instructions-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            onClick={() => setShowInstructions(false)}
+          >
+            <motion.div
+              className="ai-instructions-panel"
+              initial={{ opacity: 0, y: 60 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 60 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <motion.div 
-                className="cooking-instructions-content"
-                initial={{ scale: 0.9, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 20 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="instructions-header">
-                  <h2>
+              {/* Header */}
+              <div className="ai-panel-header">
+                <div className="ai-panel-title">
+                  <span className="ai-panel-icon">
                     <i className="bx bx-bulb"></i>
-                    AI Cooking Suggestions
-                  </h2>
-                  <button 
-                    className="close-btn"
-                    onClick={() => setShowInstructions(false)}
-                  >
-                    <i className="bx bx-x"></i>
-                  </button>
+                  </span>
+                  <div className="ai-panel-title-text">
+                    <h2>AI Cooking Suggestions</h2>
+                    <p>Based on your available ingredients</p>
+                  </div>
                 </div>
-                
-                <div className="instructions-body">
-                  <div 
-                    className="instructions-text"
-                    dangerouslySetInnerHTML={{ 
-                      __html: cookingInstructions
-                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\n/g, '<br>')
-                        .replace(/^(🎯|📋|🥘|📝|👨‍🍳|💡|⚠️)/gm, '<br><span class="emoji-marker">$1</span>')
-                    }}
-                  />
-                </div>
-                
-                <div className="instructions-footer">
-                  <button 
-                    className="btn-close"
-                    onClick={() => setShowInstructions(false)}
-                  >
-                    <i className="bx bx-check"></i>
-                    Got It!
-                  </button>
-                </div>
-              </motion.div>
+                <button
+                  className="ai-panel-close"
+                  onClick={() => setShowInstructions(false)}
+                  aria-label="Close"
+                >
+                  <i className="bx bx-x"></i>
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="ai-panel-body">
+                <div
+                  className="ai-panel-text"
+                  dangerouslySetInnerHTML={{
+                    __html: cookingInstructions
+                      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/\n/g, '<br>')
+                      .replace(/(🎯|📋|🥘|📝|👨‍🍳|💡|⚠️)/g, '<span class="ai-emoji">$1</span>')
+                  }}
+                />
+              </div>
+
+              {/* Footer */}
+              <div className="ai-panel-footer">
+                <button
+                  className="ai-panel-done"
+                  onClick={() => setShowInstructions(false)}
+                >
+                  <i className="bx bx-check-circle"></i>
+                  Got It, Thanks!
+                </button>
+              </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

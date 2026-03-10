@@ -722,27 +722,26 @@
 // ============================================================
 @media (max-width: 480px) {
     .create-recipe-page {
-        background: #f8fafc;
+        background: white; // Seamless with the form — no visible gap at notch
     }
 
     .create-recipe-container {
-        padding: 0;
-        padding-top: max(12px, env(safe-area-inset-top));
-        padding-bottom: env(safe-area-inset-bottom);
-        padding-left: env(safe-area-inset-left);
-        padding-right: env(safe-area-inset-right);
+        padding: 0;       // No edge padding — form covers full screen
         max-width: 100%;
     }
 
     .create-recipe-form {
         border-radius: 0;
-        height: calc(100vh - max(12px, env(safe-area-inset-top)) - env(safe-area-inset-bottom));
-        height: calc(100dvh - max(12px, env(safe-area-inset-top)) - env(safe-area-inset-bottom));
+        box-shadow: none;
+        height: 100vh;
+        height: 100dvh;   // Full viewport — looks like a native app screen
     }
 
     .form-header {
         margin-top: 0;
         border-radius: 0;
+        // Safe-area padding inside the header so text clears the notch
+        padding-top: max(0.75rem, calc(0.25rem + env(safe-area-inset-top)));
     }
 
     .tab-navigation .tab-button {
@@ -768,6 +767,7 @@
     .form-actions {
         flex-direction: column;
         padding: 0.5rem;
+        padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
         gap: 0.5rem;
     }
 
@@ -779,7 +779,8 @@
 
 @media (max-width: 375px) {
     .create-recipe-form {
-        height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        height: 100vh;
+        height: 100dvh;
     }
 
     .tab-navigation .tab-button {

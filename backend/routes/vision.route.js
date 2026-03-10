@@ -278,7 +278,7 @@ async function handleGeminiFallback(base64Image, res) {
 
     console.log("Using enhanced Gemini Vision API for ingredient detection");
 
-    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // image+text multimodal
     
     const prompt = `
     You are an expert food ingredient detector. Analyze this image very carefully and identify ALL visible food ingredients, cooking items, spices, vegetables, fruits, proteins, grains, and any edible items.
@@ -451,7 +451,7 @@ router.post("/generate-recipe-suggestion", async (req, res) => {
     
     try {
       // Generate content with Gemini
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
@@ -656,7 +656,7 @@ Be conversational, encouraging, and specific. Use metric measurements. Make them
     `;
     
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
@@ -769,7 +769,7 @@ router.post("/suggest-ingredients", async (req, res) => {
     if (genAI) {
       try {
         // Generate content with Gemini using complete recipe context
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         
         // Include matched ingredients in the prompt to guide AI suggestions
         const existingIngredientsText = matchedIngredients.length > 0 
@@ -1090,7 +1090,7 @@ async function generateGenericSteps(recipeName, ingredients, category, descripti
     
     try {
       // Generate content with Gemini
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
