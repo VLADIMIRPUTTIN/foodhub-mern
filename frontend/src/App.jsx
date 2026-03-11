@@ -24,6 +24,7 @@ import NotificationToast from './components/NotificationToast';
 
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
+import { subscribeUserToPush } from "./utils/pushNotifications";
 
 // Global axios interceptor for handling account status errors
 const setupAxiosInterceptors = (setGlobalAccountStatus) => {
@@ -156,7 +157,11 @@ function App() {
         }
         
         console.log("Proceeding with auth check");
-        checkAuth().catch(err => {
+        checkAuth().then(() => {
+            // Subscribe to push notifications once auth is confirmed
+            const { isAuthenticated } = useAuthStore.getState();
+            if (isAuthenticated) subscribeUserToPush();
+        }).catch(err => {
             console.log('Auth check failed:', err);
         });
         

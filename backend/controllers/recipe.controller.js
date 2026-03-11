@@ -5,6 +5,7 @@ import path from "path";
 import fs from "fs";
 import cloudinary from '../utils/cloudinary.js';
 import mongoose from "mongoose"; // ✅ ADD THIS IMPORT
+import { sendPushToUser } from '../utils/webPush.js';
 
 // Update the file upload configuration
 const storage = multer.diskStorage({
@@ -492,7 +493,15 @@ export const moderateRecipe = async (req, res) => {
             recipe.shareStatus = 'approved';
             recipe.isShared = true;
             recipe.rejectionReason = undefined;
-            
+
+            // Push notification to recipe creator
+            sendPushToUser(recipe.createdBy._id || recipe.createdBy, {
+                title: '✅ Recipe Approved!',
+                body: `Your recipe "${recipe.title || recipe.name}" has been approved and is now in the community!`,
+                icon: '/Img/logo.png',
+                url: '/community',
+            }).catch(err => console.error('Push to user failed:', err));
+
             io.emit('recipeApproved', { 
                 recipeId: recipe._id,
                 title: recipe.title || recipe.name,
@@ -514,7 +523,15 @@ export const moderateRecipe = async (req, res) => {
             recipe.shareStatus = 'rejected';
             recipe.isShared = false;
             recipe.rejectionReason = rejectionReason || 'No reason provided';
-            
+
+            // Push notification to recipe creator
+            sendPushToUser(recipe.createdBy._id || recipe.createdBy, {
+                title: '❌ Recipe Not Approved',
+                body: `Your recipe "${recipe.title || recipe.name}" was not approved. ${rejectionReason ? 'Reason: ' + rejectionReason : ''}`,
+                icon: '/Img/logo.png',
+                url: '/profile',
+            }).catch(err => console.error('Push to user failed:', err));
+
             io.emit('recipeRejected', { 
                 recipeId: recipe._id,
                 title: recipe.title || recipe.name,

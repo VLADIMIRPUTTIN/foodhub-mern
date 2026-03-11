@@ -12,8 +12,7 @@ import {
 } from "../controllers/recipe.controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { Recipe } from "../models/recipe.model.js";
-import { User } from "../models/user.model.js";
-import mongoose from "mongoose";
+import { User } from "../models/user.model.js";import { sendPushToAdmins } from '../utils/webPush.js';import mongoose from "mongoose";
 
 const router = express.Router();
 
@@ -138,6 +137,14 @@ router.post("/:id/share", verifyToken, async (req, res) => {
         recipe.shareStatus = 'pending';
         recipe.isShared = false; // Not public yet until approved
         await recipe.save();
+
+        // Notify all admins via push notification
+        sendPushToAdmins({
+            title: '🍽️ New Recipe Pending Review',
+            body: `${recipe.createdBy.name} submitted "${recipe.title}" for community sharing.`,
+            icon: '/Img/logo.png',
+            url: '/admin/pending',
+        }).catch(err => console.error('Push to admins failed:', err));
 
         // ✅ Emit socket event with FULL recipe data including imageUrl
         const io = req.app.get('io');

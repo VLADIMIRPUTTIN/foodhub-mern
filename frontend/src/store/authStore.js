@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import api from '../utils/apiClient';
+import { unsubscribeFromPush } from '../utils/pushNotifications';
 
 const API_URL = "/api/auth";
 
@@ -53,6 +54,9 @@ export const useAuthStore = create((set, get) => ({
                 isLoading: false,
                 accountStatus: null
             });
+
+            // Subscribe to push notifications after successful login
+            subscribeUserToPush().catch(err => console.error('Push subscribe error:', err));
             
             return response.data.user;
         } catch (error) {
@@ -70,6 +74,7 @@ export const useAuthStore = create((set, get) => ({
     logout: async () => {
         const { isAuthenticated } = get();
         try {
+            await unsubscribeFromPush();
             if (isAuthenticated) {
                 await api.post(`${API_URL}/logout`);
             }
