@@ -1056,65 +1056,14 @@ i[class*=" bx-"] {
 }
 
 // =============================================================================
-// MOBILE PAGINATION STYLES
+// MOBILE PAGINATION STYLES — handled by PaginationControls.scss
 // =============================================================================
-.mobile-pagination-container {
-  display: none; // Hidden by default on desktop
-
-  .mobile-pagination-swipe {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-
-    .swipe-indicator {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: #999;
-      font-size: 0.85rem;
-      font-weight: 500;
-
-      i {
-        font-size: 1.2rem;
-        color: #CF996C;
-      }
-    }
-
-    .mobile-page-info {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1rem;
-      background: rgba(255, 255, 255, 0.95);
-      border: 2px solid rgba(207, 153, 108, 0.3);
-      border-radius: 20px;
-      font-weight: 600;
-      color: #666;
-      backdrop-filter: blur(4px);
-      font-size: 0.9rem;
-
-      .current-page {
-        color: #CF996C;
-        font-weight: 700;
-      }
-
-      .page-separator { color: #999; }
-
-      .total-pages {
-        color: #666;
-        font-weight: 700;
-      }
-    }
-  }
-}
+// (styles live in PaginationControls.scss to avoid conflicts)
 
 // Mobile pagination visibility
 @media (max-width: 768px) {
   .pagination-controls { display: none !important; }
-  .mobile-pagination-container { display: none; } // keep hidden as requested
+  // .mobile-pagination-container is shown via PaginationControls.scss
 }
 
 
@@ -1349,9 +1298,7 @@ i[class*=" bx-"] {
     display: none !important;
   }
 
-  .mobile-pagination-container {
-    display: none !important;
-  }
+  // mobile-pagination-container is shown on mobile via PaginationControls.scss
 
   // Selected ingredients component
   .selected-ingredients {

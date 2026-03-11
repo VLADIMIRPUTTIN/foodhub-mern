@@ -29,21 +29,15 @@ const PaginationControls = ({ currentPage, setCurrentPage, totalPages }) => {
                     <i className="bx bx-chevron-right"></i>
                 </button>
             </div>
-            
-            {/* Mobile Swipe Pagination Indicator */}
+
+            {/* Mobile Swipe Hint */}
             <div className="mobile-pagination-container">
-                <div className="mobile-pagination-swipe">
-                    <div className="swipe-indicator">
-                        <i className="bx bx-chevrons-left"></i>
-                        <span>Swipe to navigate</span>
-                        <i className="bx bx-chevrons-right"></i>
-                    </div>
-                    <div className="mobile-page-info">
-                        <span className="current-page">{currentPage}</span>
-                        <span className="page-separator">of</span>
-                        <span className="total-pages">{totalPages}</span>
-                    </div>
+                <i className="bx bx-left-arrow-alt swipe-icon left"></i>
+                <div className="swipe-center">
+                    <span className="swipe-text">Swipe to browse</span>
+                    <span className="swipe-counter">{currentPage} of {totalPages}</span>
                 </div>
+                <i className="bx bx-right-arrow-alt swipe-icon right"></i>
             </div>
         </>
     );

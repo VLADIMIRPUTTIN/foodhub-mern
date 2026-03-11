@@ -2,6 +2,18 @@ $primary:      #CF996C;
 $primary-dark: #BB8860;
 $white:        #ffffff;
 
+/* ── Animations ───────────────────────────────────────────────── */
+@keyframes swipe-left {
+  0%, 100% { transform: translateX(0);    opacity: 0.5; }
+  50%       { transform: translateX(-5px); opacity: 1;   }
+}
+
+@keyframes swipe-right {
+  0%, 100% { transform: translateX(0);   opacity: 0.5; }
+  50%       { transform: translateX(5px); opacity: 1;   }
+}
+
+/* ── Desktop ───────────────────────────────────────────────────── */
 .pagination-controls {
   display: flex;
   justify-content: center;
@@ -62,8 +74,58 @@ $white:        #ffffff;
   }
 }
 
-/* Mobile — hide desktop pagination */
+/* Hide mobile indicator on desktop */
+.mobile-pagination-container { display: none; }
+
+/* ── Mobile ───────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .pagination-controls { display: none !important; }
-  .mobile-pagination-container { display: none !important; }
+
+  .mobile-pagination-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    margin: 1rem auto 0.5rem;
+    padding: 0.65rem 1.4rem;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(10px);
+    border-radius: 50px;
+    border: 1.5px solid rgba(207, 153, 108, 0.22);
+    box-shadow: 0 4px 18px rgba(207, 153, 108, 0.14);
+    width: fit-content;
+
+    /* Animated swipe arrows */
+    .swipe-icon {
+      font-size: 1.4rem;
+      color: $primary;
+      flex-shrink: 0;
+
+      &.left  { animation: swipe-left  1.4s ease-in-out infinite; }
+      &.right { animation: swipe-right 1.4s ease-in-out infinite; }
+    }
+
+    /* Center text block */
+    .swipe-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+
+      .swipe-text {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #888;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+      }
+
+      .swipe-counter {
+        font-size: 0.82rem;
+        font-weight: 800;
+        color: $primary;
+        letter-spacing: 0.4px;
+      }
+    }
+  }
 }
