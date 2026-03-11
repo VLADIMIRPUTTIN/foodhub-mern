@@ -77,35 +77,48 @@ const RecipePage = () => {
     const RECIPES_PER_PAGE = 8;
 
     // Function to check if recipe matches user's dietary preferences and allergies
+    // Returns: false (allergen found - BLOCK), number > 0 (preference score), true (safe but no match)
     const matchesUserPreferences = (recipe) => {
         if (!user || !user.hasCompletedOnboarding) return true;
 
-        let score = 0;
-
-        // ❌ REMOVED: Cuisine preference matching - no longer affects score
-        
-        // ✅ PRIORITY 2: Dietary Tags
-        if (user.dietaryPreferences && user.dietaryPreferences.length > 0) {
-            const recipeTags = recipe.dietaryTags || [];
-            const hasMatch = user.dietaryPreferences.some(pref => 
-                recipeTags.map(tag => tag.toLowerCase()).includes(pref.toLowerCase())
-            );
-            
-            if (hasMatch) {
-                score += 50; // Medium score for dietary match
-            }
+        // ❌ HARD BLOCK: Allergen check — checks both recipe.allergens array and ingredient names
+        if (user.allergies && user.allergies.length > 0) {
+            const hasAllergen = user.allergies.some(allergy => {
+                const allergyLower = allergy.toLowerCase();
+                const inAllergensList = recipe.allergens && recipe.allergens.some(allergen =>
+                    allergen.toLowerCase().includes(allergyLower)
+                );
+                const inIngredients = recipe.ingredients && recipe.ingredients.some(ingredient => {
+                    const ingName = (ingredient.name || ingredient || '').toLowerCase();
+                    return ingName.includes(allergyLower);
+                });
+                return inAllergensList || inIngredients;
+            });
+            if (hasAllergen) return false;
         }
 
-        // ✅ PRIORITY 3: Allergen Check (BLOCKING)
-        if (user.allergies && user.allergies.length > 0) {
-            const hasAllergen = user.allergies.some(allergy =>
-                recipe.ingredients && recipe.ingredients.some(ingredient => 
-                    ingredient.name && 
-                    ingredient.name.toLowerCase().includes(allergy.toLowerCase())
-                )
-            );
-            
-            if (hasAllergen) return false; // Block recipes with allergens
+        let score = 0;
+
+        // ✅ Dietary Tags match — check dietaryTags, dietCategory, and dietCategories
+        if (user.dietaryPreferences && user.dietaryPreferences.length > 0) {
+            const recipeTags = (recipe.dietaryTags || []).map(t => t.toLowerCase());
+            const recipeDietCategory = (recipe.dietCategory || '').toLowerCase();
+            const recipeDietCategories = (recipe.dietCategories || []).map(t => t.toLowerCase());
+
+            const hasMatch = user.dietaryPreferences.some(pref => {
+                const prefLower = pref.toLowerCase();
+                return recipeTags.includes(prefLower) ||
+                       recipeDietCategory === prefLower ||
+                       recipeDietCategories.includes(prefLower);
+            });
+            if (hasMatch) score += 50;
+        }
+
+        // ✅ Cuisine preference match
+        if (user.preferredCuisines && user.preferredCuisines.length > 0) {
+            const recipeCuisine = (recipe.cuisine || '').toLowerCase();
+            const hasMatch = user.preferredCuisines.some(c => c.toLowerCase() === recipeCuisine);
+            if (hasMatch) score += 30;
         }
 
         return score > 0 ? score : true;
@@ -284,34 +297,46 @@ const RecipePage = () => {
                     ))
                 );
 
-            return matchesSearch && matchesIngredients && matchesCategory && matchesPrice && matchesDiet;
+            // ❌ HARD BLOCK: Remove recipes that contain user's allergens
+            const prefResult = matchesUserPreferences(recipe);
+            const isAllergenSafe = prefResult !== false;
+
+            return matchesSearch && matchesIngredients && matchesCategory && matchesPrice && matchesDiet && isAllergenSafe;
         })
         .map(recipe => {
             const matchesTime = matchesTimeOfDay(recipe);
             const prefScore = matchesUserPreferences(recipe);
+            // prefScore: false (blocked — already filtered), number (preference match score), true (no match)
+            const hasPrefScore = prefScore !== false && prefScore !== true && prefScore > 0;
             
             let priority = null;
+            let sortOrder;
             
-            if (matchesTime && prefScore && prefScore !== true) {
+            if (matchesTime && hasPrefScore) {
                 priority = 'time-and-preference';
-                recipe.sortOrder = 1;
+                sortOrder = 1;
             } else if (matchesTime) {
                 priority = 'time-only';
-                recipe.sortOrder = 2;
-            } else if (prefScore && prefScore !== true) {
+                sortOrder = 2;
+            } else if (hasPrefScore) {
                 priority = 'preference-only';
-                recipe.sortOrder = 3;
+                sortOrder = 3;
             } else {
-                recipe.sortOrder = 4;
+                sortOrder = 4;
             }
             
             return {
                 ...recipe,
                 priority,
-                // ❌ REMOVED: isCuisineMatch flag - no longer needed
+                sortOrder,
+                prefScore: hasPrefScore ? prefScore : 0,
             };
         })
-        .sort((a, b) => a.sortOrder - b.sortOrder);
+        .sort((a, b) => {
+            if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+            // Within same tier, higher prefScore (cuisine+dietary) comes first
+            return b.prefScore - a.prefScore;
+        });
 
     const totalPages = Math.ceil(allFilteredRecipes.length / RECIPES_PER_PAGE);
     
@@ -505,6 +530,13 @@ const RecipePage = () => {
                                     `Perfect ${currentMealType} Recipes`
                                 }
                             </h1>
+                            {user && user.hasCompletedOnboarding && (
+                                <p className="header-personalized-note">
+                                    Personalized based on your preferences
+                                    {user.preferredCuisines?.length > 0 && ` · ${user.preferredCuisines.slice(0, 2).join(', ')} cuisine`}
+                                    {user.dietaryPreferences?.length > 0 && ` · ${user.dietaryPreferences.slice(0, 2).join(', ')}`}
+                                </p>
+                            )}
                         </div>
                     </div>
 

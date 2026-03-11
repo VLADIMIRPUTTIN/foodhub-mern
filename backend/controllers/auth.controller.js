@@ -470,12 +470,36 @@ export const googleLogin = async (req, res) => {
         }
 
         const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-        const ticket = await client.verifyIdToken({
-            idToken: credential,
-            audience: process.env.GOOGLE_CLIENT_ID,
-        });
-        
-        const payload = ticket.getPayload();
+
+        let payload;
+        try {
+            const ticket = await client.verifyIdToken({
+                idToken: credential,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
+            payload = ticket.getPayload();
+        } catch (verifyError) {
+            // Handle clock skew: if server clock is behind Google's clock, the nbf check fails.
+            // Fall back to Google's tokeninfo endpoint which doesn't enforce nbf on our server.
+            if (verifyError.message && verifyError.message.includes('Token used too early')) {
+                console.warn('Clock skew detected, falling back to tokeninfo verification:', verifyError.message);
+                const tokenInfoRes = await fetch(
+                    `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`
+                );
+                if (!tokenInfoRes.ok) {
+                    throw new Error('Google token validation failed via tokeninfo endpoint');
+                }
+                const tokenInfo = await tokenInfoRes.json();
+                // Validate audience matches our client id
+                if (tokenInfo.aud !== process.env.GOOGLE_CLIENT_ID) {
+                    throw new Error('Token audience mismatch');
+                }
+                payload = tokenInfo;
+                // tokeninfo returns 'sub' as a string field, same as getPayload()
+            } else {
+                throw verifyError;
+            }
+        }
         const { email, name, picture, sub: googleId } = payload;
         
         let user = await User.findOne({ email });
