@@ -193,7 +193,7 @@ const EmailVerificationPage = () => {
                         {userEmail && (
                             <span className="user-email-display"> A code was sent to <strong>{userEmail}</strong>.</span>
                         )}
-                        <span className="input-hint">You can paste the code with Ctrl+V</span>
+                        <span className="input-hint desktop-only">You can paste the code with Ctrl+V</span>
                     </p>
                 </div>
 

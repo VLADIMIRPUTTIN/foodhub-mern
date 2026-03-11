@@ -130,6 +130,13 @@
     background: rgba(207, 153, 108, 0.1);
     border-radius: 20px;
     border: 1px solid rgba(207, 153, 108, 0.2);
+
+    &.desktop-only {
+      // Hide on touch/mobile devices, show only on desktop (mouse/trackpad)
+      @media (pointer: coarse) {
+        display: none;
+      }
+    }
   }
 }
 
