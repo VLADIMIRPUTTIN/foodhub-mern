@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import './AdminSidebar.scss';
 
-const AdminSidebar = ({ activeTab, setActiveTab, pendingCount, isMinimized, setIsMinimized, isMobile, isMobileMenuOpen }) => {
+const AdminSidebar = ({ activeTab, setActiveTab, pendingCount, isMinimized, setIsMinimized, isMobile, isMobileMenuOpen, setIsMobileMenuOpen }) => {
     const menuItems = [
         { 
             key: 'dashboard', 
@@ -42,53 +42,57 @@ const AdminSidebar = ({ activeTab, setActiveTab, pendingCount, isMinimized, setI
         }
     ];
 
-    const sidebarX = isMobile ? (isMobileMenuOpen ? 0 : -400) : 0;
+    // On mobile: slide in/out via x. On desktop: stay at x=0, width toggles.
+    const sidebarX = isMobile ? (isMobileMenuOpen ? 0 : -320) : 0;
+    const sidebarWidth = (!isMobile && isMinimized) ? '80px' : '280px';
+    const showContent = isMobile ? true : !isMinimized;
+
+    const handleLogoClick = () => {
+        if (isMobile) {
+            setIsMobileMenuOpen?.(false);
+        } else {
+            setIsMinimized(!isMinimized);
+        }
+    };
 
     return (
         <motion.div 
-            className={`admin-sidebar ${isMinimized ? 'minimized' : ''}`}
-            initial={{ x: isMobile ? -400 : -300, opacity: 0 }}
-animate={{
-  x: sidebarX,
-  opacity: 1,
-  width: isMinimized ? '80px' : '280px',
-}}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            className={`admin-sidebar ${!isMobile && isMinimized ? 'minimized' : ''}`}
+            initial={{ x: isMobile ? -320 : 0, opacity: 0 }}
+            animate={{
+                x: sidebarX,
+                width: sidebarWidth,
+                opacity: 1,
+            }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         >
             <div className="sidebar-header">
                 <motion.button 
                     className="sidebar-logo-btn"
-                    onClick={() => setIsMinimized(!isMinimized)}
+                    onClick={handleLogoClick}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    title={isMinimized ? "Expand sidebar" : "Minimize sidebar"}
+                    title={isMobile ? 'Close menu' : (isMinimized ? 'Expand sidebar' : 'Minimize sidebar')}
                 >
-                    {isMinimized ? (
-                        // When minimized, show just the icon
-                        <motion.i 
-                            className="bx bx-food-menu logo-icon"
-                            initial={{ rotate: 0 }}
-                            animate={{ rotate: 0 }}
-                            transition={{ duration: 0.3 }}
+                    <motion.i 
+                        className="bx bx-food-menu logo-icon"
+                    ></motion.i>
+                    {showContent && (
+                        <motion.span
+                            className="logo-text"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            FoodHub Admin
+                        </motion.span>
+                    )}
+                    {isMobile && (
+                        <motion.i
+                            className="bx bx-x mobile-close-icon"
+                            whileHover={{ rotate: 90 }}
+                            transition={{ duration: 0.2 }}
                         ></motion.i>
-                    ) : (
-                        // When expanded, show icon + text
-                        <>
-                            <motion.i 
-                                className="bx bx-food-menu logo-icon"
-                                initial={{ rotate: 0 }}
-                                animate={{ rotate: 0 }}
-                                transition={{ duration: 0.3 }}
-                            ></motion.i>
-                            <motion.span
-                                className="logo-text"
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.3, delay: 0.1 }}
-                            >
-                                FoodHub Admin
-                            </motion.span>
-                        </>
                     )}
                 </motion.button>
             </div>
@@ -102,16 +106,15 @@ animate={{
                         initial={{ x: -50, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
                         transition={{ 
-                            delay: index * 0.1,
-                            duration: 0.4,
+                            delay: index * 0.05,
+                            duration: 0.3,
                             ease: "easeOut"
                         }}
                         whileHover={{ 
-                            x: isMinimized ? 0 : 8,
-                            backgroundColor: "rgba(207, 153, 108, 0.1)"
+                            x: showContent ? 6 : 0,
                         }}
                         whileTap={{ scale: 0.95 }}
-                        title={isMinimized ? item.text : ''}
+                        title={!showContent ? item.text : ''}
                     >
                         <div className="item-icon-wrapper">
                             <motion.i 
@@ -121,12 +124,11 @@ animate={{
                             ></motion.i>
                         </div>
                         
-                        {!isMinimized && (
+                        {showContent && (
                             <motion.div 
                                 className="item-content"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
                                 transition={{ duration: 0.2 }}
                             >
                                 <span className="item-text">{item.text}</span>
@@ -162,15 +164,15 @@ animate={{
                     className="sidebar-stats"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6, duration: 0.5 }}
+                    transition={{ delay: 0.4, duration: 0.4 }}
                 >
                     <i className="bx bx-shield-quarter"></i>
-                    {!isMinimized && (
+                    {showContent && (
                         <motion.div 
                             className="stats-text"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            transition={{ duration: 0.3, delay: 0.1 }}
+                            transition={{ duration: 0.2 }}
                         >
                             <span className="stats-label">Admin Panel</span>
                             <span className="stats-version">v2.0.0</span>

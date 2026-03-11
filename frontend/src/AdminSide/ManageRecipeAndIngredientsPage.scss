@@ -289,7 +289,35 @@
                             font-size: 1rem;
                             color: #94a3b8;
                         }
+
+                        &--cuisine {
+                            color: #0369a1;
+                            i { color: #0369a1; }
+                        }
+
+                        &--diet {
+                            color: #16a34a;
+                            i { color: #16a34a; }
+                        }
                     }
+                }
+
+                .share-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.3rem;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    padding: 0.2rem 0.6rem;
+                    border-radius: 8px;
+                    margin-top: 0.35rem;
+
+                    i { font-size: 0.875rem; }
+
+                    &--approved  { background: #dcfce7; color: #16a34a; }
+                    &--pending   { background: #fef3c7; color: #d97706; }
+                    &--rejected  { background: #fee2e2; color: #dc2626; }
+                    &--not_shared{ background: #f1f5f9; color: #64748b; }
                 }
             }
         }
@@ -301,7 +329,6 @@
         }
     }
 
-    // Ingredient Item - Compact List Style
     .ingredient-item {
         display: flex;
         align-items: center;

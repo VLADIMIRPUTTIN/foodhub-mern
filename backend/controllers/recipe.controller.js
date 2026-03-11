@@ -192,15 +192,15 @@ export const createRecipe = async (req, res) => {
 export const getAllRecipes = async (req, res) => {
     try {
         const { diets } = req.query;
-        const isPublicClause = { $or: [{ isPublic: true }, { isPublic: { $exists: false } }] };
-        let filter = isPublicClause;
+        const adminOnlyClause = { isPublic: true };
+        let filter = adminOnlyClause;
         if (diets) {
             const list = Array.isArray(diets)
                 ? diets
                 : String(diets).split(',').map(s => s.trim()).filter(Boolean);
             filter = {
                 $and: [
-                    isPublicClause,
+                    adminOnlyClause,
                     {
                         $or: [
                             { dietCategories: { $in: list } },              // new multi-select field

@@ -7,6 +7,8 @@ const baseURL = import.meta.env.MODE === "development"
     ? "http://localhost:5000"
     : "";
 
+const USERS_PER_PAGE = 10;
+
 const ManageUsersPage = ({ users, fetchUsers }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showSuspendModal, setShowSuspendModal] = useState(false);
@@ -20,19 +22,55 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
     const [filterRole, setFilterRole] = useState('all');
+    const [sortField, setSortField] = useState('createdAt');
+    const [sortDir, setSortDir] = useState('desc');
+    const [currentPage, setCurrentPage] = useState(1);
 
-    // Enhanced Filter users
-    const filteredUsers = users.filter(user => {
-        const matchesSearch = !searchTerm || 
-            user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user._id?.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        const matchesStatus = filterStatus === 'all' || user.status === filterStatus;
-        const matchesRole = filterRole === 'all' || user.role === filterRole;
-        
-        return matchesSearch && matchesStatus && matchesRole;
-    });
+    // Enhanced Filter + Sort users
+    const filteredUsers = users
+        .filter(user => {
+            const matchesSearch = !searchTerm || 
+                user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                user._id?.toLowerCase().includes(searchTerm.toLowerCase());
+            
+            const matchesStatus = filterStatus === 'all' || user.status === filterStatus;
+            const matchesRole = filterRole === 'all' || user.role === filterRole;
+            
+            return matchesSearch && matchesStatus && matchesRole;
+        })
+        .sort((a, b) => {
+            let aVal = a[sortField] ?? '';
+            let bVal = b[sortField] ?? '';
+            if (sortField === 'name' || sortField === 'email') {
+                aVal = aVal.toLowerCase();
+                bVal = bVal.toLowerCase();
+            }
+            if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+            if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+    const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
+    const paginatedUsers = filteredUsers.slice(
+        (currentPage - 1) * USERS_PER_PAGE,
+        currentPage * USERS_PER_PAGE
+    );
+
+    const handleSort = (field) => {
+        if (sortField === field) {
+            setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortDir('asc');
+        }
+        setCurrentPage(1);
+    };
+
+    const SortIcon = ({ field }) => {
+        if (sortField !== field) return <i className="bx bx-sort sort-icon sort-icon--inactive"></i>;
+        return <i className={`bx bx-sort-${sortDir === 'asc' ? 'up' : 'down'} sort-icon sort-icon--active`}></i>;
+    };
 
     // Clear messages after 3 seconds
     const clearMessage = (type) => {
@@ -229,42 +267,42 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
                 transition={{ delay: 0.1 }}
             >
                 <div className="search-box">
-                    <i className="bx bx-search"></i>
-                    <input
-                        type="text"
-                        placeholder="Search by name, email, or ID..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    {searchTerm && (
-                        <button className="clear-btn" onClick={() => setSearchTerm('')}>
-                            <i className="bx bx-x"></i>
-                        </button>
-                    )}
-                </div>
+                                    <i className="bx bx-search"></i>
+                                    <input
+                                        type="text"
+                                        placeholder="Search by name, email, or ID..."
+                                        value={searchTerm}
+                                        onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                                    />
+                                    {searchTerm && (
+                                        <button className="clear-btn" onClick={() => { setSearchTerm(''); setCurrentPage(1); }}>
+                                            <i className="bx bx-x"></i>
+                                        </button>
+                                    )}
+                                </div>
 
-                <div className="filter-group">
-                    <select 
-                        value={filterStatus} 
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="filter-select"
-                    >
-                        <option value="all">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="suspended">Suspended</option>
-                        <option value="banned">Banned</option>
-                    </select>
+                                <div className="filter-group">
+                                    <select 
+                                        value={filterStatus} 
+                                        onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+                                        className="filter-select"
+                                    >
+                                        <option value="all">All Status</option>
+                                        <option value="active">Active</option>
+                                        <option value="suspended">Suspended</option>
+                                        <option value="banned">Banned</option>
+                                    </select>
 
-                    <select 
-                        value={filterRole} 
-                        onChange={(e) => setFilterRole(e.target.value)}
-                        className="filter-select"
-                    >
-                        <option value="all">All Roles</option>
-                        <option value="admin">Admin</option>
-                        <option value="user">User</option>
-                    </select>
-                </div>
+                                    <select 
+                                        value={filterRole} 
+                                        onChange={(e) => { setFilterRole(e.target.value); setCurrentPage(1); }}
+                                        className="filter-select"
+                                    >
+                                        <option value="all">All Roles</option>
+                                        <option value="admin">Admin</option>
+                                        <option value="user">User</option>
+                                    </select>
+                                </div>
             </motion.div>
 
             {/* Users Table */}
@@ -285,24 +323,36 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
                         </p>
                     </div>
                 ) : (
+                    <>
+                    <div className="table-meta">
+                        <span className="table-count">
+                            Showing <strong>{(currentPage - 1) * USERS_PER_PAGE + 1}–{Math.min(currentPage * USERS_PER_PAGE, filteredUsers.length)}</strong> of <strong>{filteredUsers.length}</strong> users
+                        </span>
+                    </div>
                     <table className="users-table">
                         <thead>
                             <tr>
-                                <th>User</th>
-                                <th>Email</th>
+                                <th className="sortable" onClick={() => handleSort('name')}>
+                                    User <SortIcon field="name" />
+                                </th>
+                                <th className="sortable" onClick={() => handleSort('email')}>
+                                    Email <SortIcon field="email" />
+                                </th>
                                 <th>Role</th>
                                 <th>Status</th>
-                                <th>Joined</th>
+                                <th className="sortable" onClick={() => handleSort('createdAt')}>
+                                    Joined <SortIcon field="createdAt" />
+                                </th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredUsers.map((user, index) => (
+                            {paginatedUsers.map((user, index) => (
                                 <motion.tr
                                     key={user._id}
-                                    initial={{ opacity: 0, y: 20 }}
+                                    initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.05 }}
+                                    transition={{ delay: index * 0.03 }}
                                 >
                                     <td data-label="User">
                                         <div className="user-cell">
@@ -330,6 +380,7 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
 
                                     <td data-label="Status">
                                         <span className={`status-badge status-badge--${user.status}`}>
+                                            <i className={`bx ${user.status === 'active' ? 'bx-check-circle' : user.status === 'suspended' ? 'bx-pause-circle' : 'bx-block'}`}></i>
                                             {user.status}
                                         </span>
                                     </td>
@@ -344,6 +395,15 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
 
                                     <td data-label="Actions">
                                         <div className="action-buttons">
+                                            <button
+                                                className="action-btn action-btn--info"
+                                                onClick={() => { setSelectedUser(user); setShowViewModal(true); }}
+                                                title="View Details"
+                                                aria-label="View user details"
+                                            >
+                                                <i className="bx bx-show"></i>
+                                            </button>
+
                                             <button
                                                 className="action-btn action-btn--success"
                                                 onClick={() => handleActivate(user._id)}
@@ -389,6 +449,68 @@ const ManageUsersPage = ({ users, fetchUsers }) => {
                             ))}
                         </tbody>
                     </table>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="pagination">
+                            <button
+                                className="page-btn"
+                                onClick={() => setCurrentPage(1)}
+                                disabled={currentPage === 1}
+                                title="First page"
+                            >
+                                <i className="bx bx-chevrons-left"></i>
+                            </button>
+                            <button
+                                className="page-btn"
+                                onClick={() => setCurrentPage(p => p - 1)}
+                                disabled={currentPage === 1}
+                                title="Previous page"
+                            >
+                                <i className="bx bx-chevron-left"></i>
+                            </button>
+
+                            {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                                .reduce((acc, p, idx, arr) => {
+                                    if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+                                    acc.push(p);
+                                    return acc;
+                                }, [])
+                                .map((item, idx) =>
+                                    item === '...' ? (
+                                        <span key={`ellipsis-${idx}`} className="page-ellipsis">…</span>
+                                    ) : (
+                                        <button
+                                            key={item}
+                                            className={`page-btn ${currentPage === item ? 'page-btn--active' : ''}`}
+                                            onClick={() => setCurrentPage(item)}
+                                        >
+                                            {item}
+                                        </button>
+                                    )
+                                )
+                            }
+
+                            <button
+                                className="page-btn"
+                                onClick={() => setCurrentPage(p => p + 1)}
+                                disabled={currentPage === totalPages}
+                                title="Next page"
+                            >
+                                <i className="bx bx-chevron-right"></i>
+                            </button>
+                            <button
+                                className="page-btn"
+                                onClick={() => setCurrentPage(totalPages)}
+                                disabled={currentPage === totalPages}
+                                title="Last page"
+                            >
+                                <i className="bx bx-chevrons-right"></i>
+                            </button>
+                        </div>
+                    )}
+                    </>
                 )}
             </motion.div>
 

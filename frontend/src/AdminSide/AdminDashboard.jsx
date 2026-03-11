@@ -388,6 +388,16 @@ const AdminDashboard = () => {
         i.name?.toLowerCase().includes(ingredientSearch.toLowerCase())
     );
 
+    const tabMeta = {
+        dashboard:          { icon: 'bx-grid-alt',    title: 'Dashboard',          subtitle: 'Overview & real-time analytics' },
+        users:              { icon: 'bx-group',        title: 'User Management',    subtitle: 'Manage accounts, roles & status' },
+        recipes:            { icon: 'bx-food-menu',   title: 'Manage Content',     subtitle: 'Recipes, ingredients & community' },
+        pending:            { icon: 'bx-time-five',   title: 'Pending Recipes',    subtitle: 'Review & moderate submissions' },
+        create:             { icon: 'bx-plus-circle', title: 'Create Recipe',      subtitle: 'Add a new recipe to the system' },
+        'create-ingredient':{ icon: 'bx-leaf',        title: 'Add Ingredient',     subtitle: 'Add a new ingredient to the database' },
+    };
+    const currentTab = tabMeta[activeTab] || tabMeta.dashboard;
+
     if (!isAdmin()) {
         return (
             <div className="admin-dashboard">
@@ -412,26 +422,25 @@ const AdminDashboard = () => {
             {/* Sidebar Overlay for Mobile */}
             {isMobile && isMobileMenuOpen && (
                 <div 
-                    className="sidebar-overlay active"
+                    className="sidebar-overlay"
                     onClick={() => setIsMobileMenuOpen(false)}
                 />
             )}
 
             {/* Sidebar Navigation */}
-            <div className={`sidebar-wrapper ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-                <AdminSidebar 
-                    activeTab={activeTab} 
-                    setActiveTab={(tab) => {
-                        setActiveTab(tab);
-                        setIsMobileMenuOpen(false);
-                    }}
-                    pendingCount={stats.pendingRecipes}
-                    isMinimized={isMinimized}
-                    setIsMinimized={setIsMinimized}
-                    isMobile={isMobile}
-                    isMobileMenuOpen={isMobileMenuOpen}
-                />
-            </div>
+            <AdminSidebar 
+                activeTab={activeTab} 
+                setActiveTab={(tab) => {
+                    setActiveTab(tab);
+                    setIsMobileMenuOpen(false);
+                }}
+                pendingCount={stats.pendingRecipes}
+                isMinimized={isMinimized}
+                setIsMinimized={setIsMinimized}
+                isMobile={isMobile}
+                isMobileMenuOpen={isMobileMenuOpen}
+                setIsMobileMenuOpen={setIsMobileMenuOpen}
+            />
 
             {/* Main Content Area */}
             <div className={`admin-main-content ${isMinimized ? 'sidebar-minimized' : ''}`}>
@@ -440,57 +449,40 @@ const AdminDashboard = () => {
                     className="admin-header"
                     initial={{ opacity: 0, y: -50 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
                 >
                     <div className="header-content">
                         <motion.div 
                             className="header-info"
-                            initial={{ opacity: 0, x: -30 }}
+                            key={activeTab}
+                            initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.3, duration: 0.6 }}
+                            transition={{ duration: 0.35 }}
                         >
                             <h1>
-                                <motion.i 
-                                    className="bx bx-user-check"
-                                    animate={{ 
-                                        rotate: [0, 10, -10, 0],
-                                        scale: [1, 1.1, 1]
-                                    }}
-                                    transition={{ 
-                                        duration: 2,
-                                        repeat: Infinity,
-                                        repeatDelay: 3
-                                    }}
-                                ></motion.i>
-                                Admin Dashboard
+                                <i className={`bx ${currentTab.icon}`}></i>
+                                {currentTab.title}
+                                {activeTab === 'pending' && stats.pendingRecipes > 0 && (
+                                    <span className="header-badge">{stats.pendingRecipes}</span>
+                                )}
                             </h1>
-                            <motion.p
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.5, duration: 0.5 }}
-                            >
-                                Welcome back, {user?.name}!
-                            </motion.p>
+                            <p>{currentTab.subtitle}</p>
                         </motion.div>
-                        <motion.button 
-                            className="logout-btn" 
-                            onClick={logout}
-                            initial={{ opacity: 0, x: 30 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.4, duration: 0.6 }}
-                            whileHover={{ 
-                                scale: 1.05,
-                                boxShadow: "0 10px 30px rgba(0,0,0,0.3)"
-                            }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            <motion.i 
-                                className="bx bx-log-out"
-                                whileHover={{ rotate: -10 }}
-                                transition={{ duration: 0.2 }}
-                            ></motion.i>
-                            Logout
-                        </motion.button>
+                        <div className="header-actions">
+                            <div className="header-user-info">
+                                <i className="bx bx-user-circle"></i>
+                                <span>{user?.name}</span>
+                            </div>
+                            <motion.button 
+                                className="logout-btn" 
+                                onClick={logout}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                <i className="bx bx-log-out"></i>
+                                <span className="logout-text">Logout</span>
+                            </motion.button>
+                        </div>
                     </div>
                 </motion.div>
 

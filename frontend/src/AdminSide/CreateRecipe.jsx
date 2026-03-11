@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
+import IngredientsModal from "../recipessection/IngredientsModal";
 import "./CreateRecipe.scss";
 
 // Categories and options arrays
@@ -52,14 +53,22 @@ const CreateRecipe = ({ onRecipeSaved }) => {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
-  const [ingredients, setIngredients] = useState([
-    { amount: "", unit: "", name: "" },
-  ]);
-  const [steps, setSteps] = useState([{ instruction: "", details: "" }]);
+  const [ingredients, setIngredients] = useState([]);
+  const [steps, setSteps] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingRecipe, setPendingRecipe] = useState(null);
   const [allIngredients, setAllIngredients] = useState([]);
   const [activeTab, setActiveTab] = useState("basic");
+
+  // Add-one-by-one ingredient/step UI states
+  const [newIngredient, setNewIngredient] = useState({ amount: "", unit: "", name: "" });
+  const [newStep, setNewStep] = useState({ instruction: "", details: "" });
+  const [isIngredientsModalOpen, setIsIngredientsModalOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const inputRef = useRef(null);
+  const suggestionTimeoutRef = useRef(null);
 
   // Nutrition states
   const [nutritionalInfo, setNutritionalInfo] = useState({
@@ -137,33 +146,73 @@ const CreateRecipe = ({ onRecipeSaved }) => {
     }
   };
 
-  const handleIngredientChange = (idx, field, value) => {
-    const newIngredients = [...ingredients];
-    newIngredients[idx][field] = value;
-    setIngredients(newIngredients);
+  // Search ingredients for autocomplete
+  const searchIngredients = async (query) => {
+    if (!query || query.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
+      const response = await axios.get(
+        `${baseURL}/api/ingredients/search?query=${encodeURIComponent(query)}`,
+        { withCredentials: true }
+      );
+      if (response.data.success) {
+        setSuggestions(response.data.ingredients);
+        setShowSuggestions(true);
+      }
+    } catch {
+      setSuggestions([]);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
-  const addIngredient = () =>
-    setIngredients([...ingredients, { amount: "", unit: "", name: "" }]);
+  const handleIngredientNameChange = (value) => {
+    setNewIngredient((prev) => ({ ...prev, name: value }));
+    if (suggestionTimeoutRef.current) clearTimeout(suggestionTimeoutRef.current);
+    suggestionTimeoutRef.current = setTimeout(() => searchIngredients(value), 300);
+  };
+
+  const handleSuggestionSelect = (ingredientName) => {
+    setNewIngredient((prev) => ({ ...prev, name: ingredientName }));
+    setShowSuggestions(false);
+    setSuggestions([]);
+    inputRef.current?.focus();
+  };
+
+  const addIngredient = () => {
+    if (newIngredient.name && newIngredient.amount) {
+      setIngredients((prev) => [...prev, { ...newIngredient }]);
+      setNewIngredient({ amount: "", unit: "", name: "" });
+      setShowSuggestions(false);
+      setSuggestions([]);
+    }
+  };
+
   const removeIngredient = (idx) =>
     setIngredients(ingredients.filter((_, i) => i !== idx));
 
-  const handleStepChange = (idx, field, value) => {
-    const newSteps = [...steps];
-    newSteps[idx][field] = value;
-    setSteps(newSteps);
+  const addStep = () => {
+    if (newStep.instruction.trim()) {
+      setSteps((prev) => [...prev, { ...newStep }]);
+      setNewStep({ instruction: "", details: "" });
+    }
   };
 
-  const addStep = () =>
-    setSteps([...steps, { instruction: "", details: "" }]);
   const removeStep = (idx) => setSteps(steps.filter((_, i) => i !== idx));
 
   const resetForm = () => {
     setName("");
     setCategory("");
     setDescription("");
-    setIngredients([{ amount: "", unit: "", name: "" }]);
-    setSteps([{ instruction: "", details: "" }]);
+    setIngredients([]);
+    setSteps([]);
+    setNewIngredient({ amount: "", unit: "", name: "" });
+    setNewStep({ instruction: "", details: "" });
     setImage(null);
     setImagePreview(null);
     setActiveTab("basic");
@@ -182,6 +231,20 @@ const CreateRecipe = ({ onRecipeSaved }) => {
     });
     setDietCategories([]);
   };
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (inputRef.current && !inputRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      if (suggestionTimeoutRef.current) clearTimeout(suggestionTimeoutRef.current);
+    };
+  }, []);
 
   // Submit with confirmation, make sure nutrition is numeric where applicable
   const handleSubmit = async (e) => {
@@ -206,7 +269,7 @@ const CreateRecipe = ({ onRecipeSaved }) => {
       formData.append("servingSize", servingSize);
       if (image) formData.append("image", image);
 
-      // ✅ Add baseURL prefix
+      // âœ… Add baseURL prefix
       const baseURL = import.meta.env.MODE === "development" 
         ? "http://localhost:5000" 
         : "";
@@ -485,413 +548,308 @@ const CreateRecipe = ({ onRecipeSaved }) => {
     switch (activeTab) {
       case "basic":
         return (
-          <motion.div
-            className="tab-content-wrapper"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="form-card">
-              <h2 className="card-title">
+          <div className="tab-pane active">
+            {/* Details section */}
+            <div className="form-section">
+              <div className="section-header">
                 <i className="bx bx-info-circle"></i>
-                Basic Recipe Information
-              </h2>
-              <div className="form-content">
+                <h3>Recipe Details</h3>
+              </div>
+              <div className="form-grid">
                 <div className="form-group">
-                  <label className="form-label" htmlFor="recipeName">
-                    <i className="bx bx-food-menu"></i>
-                    Recipe Name
-                  </label>
+                  <label>Recipe Name *</label>
                   <input
                     type="text"
-                    id="recipeName"
-                    className="form-input"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter recipe name"
                     required
                   />
                 </div>
-
                 <div className="form-group">
-                  <label className="form-label" htmlFor="category">
-                    <i className="bx bx-category"></i>
-                    Category
-                  </label>
-                  <select
-                    id="category"
-                    className="form-select"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    required
-                  >
-                    <option value="" disabled>
-                      Select a category
-                    </option>
+                  <label>Category</label>
+                  <select value={category} onChange={(e) => setCategory(e.target.value)}>
+                    <option value="">Select category</option>
                     {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
+                      <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>
                 </div>
-
+              </div>
+              <div className="form-group">
+                <label>Description *</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Describe your recipe"
+                  rows={3}
+                  required
+                />
+              </div>
+              <div className="form-grid">
                 <div className="form-group">
-                  <label className="form-label" htmlFor="description">
-                    <i className="bx bx-message-alt-detail"></i>
-                    Description
-                  </label>
-                  <textarea
-                    id="description"
-                    className="form-textarea"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe your recipe"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">
-                    <i className="bx bx-money-withdraw"></i>
-                    Cost (₱)
-                  </label>
+                  <label>Cost (â‚±)</label>
                   <input
                     type="number"
-                    className="form-input"
-                    placeholder="Enter estimated cost"
+                    placeholder="Estimated cost"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     min="0"
                     step="0.01"
                   />
-                  <p className="form-description">
-                    <i className="bx bx-info-circle"></i>
-                    Enter the estimated cost for this recipe
-                  </p>
                 </div>
-
                 <div className="form-group">
-                  <label className="form-label">
-                    <i className="bx bx-group"></i>
-                    Total Servings
-                  </label>
+                  <label>Servings</label>
                   <input
                     type="number"
-                    className="form-input"
                     placeholder="Number of servings"
                     value={servings}
                     onChange={(e) => setServings(e.target.value)}
                     min="1"
                   />
-                  <p className="form-description">
-                    <i className="bx bx-info-circle"></i>
-                    Ilang portions ang buong recipe
-                  </p>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">
-                    <i className="bx bx-image"></i>
-                    Recipe Image
-                  </label>
-                  <div className="image-upload-container">
-                    <input
-                      type="file"
-                      id="recipeImage"
-                      className="form-input-file"
-                      onChange={handleImageChange}
-                      accept="image/*"
-                    />
-                    <label
-                      htmlFor="recipeImage"
-                      className="image-upload-label"
-                    >
-                      <i className="bx bx-upload"></i>
-                      <span>Click to upload image</span>
-                    </label>
-                    {imagePreview && (
-                      <div className="image-preview-container">
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="image-preview"
-                        />
-                        <button
-                          type="button"
-                          className="remove-image"
-                          onClick={() => {
-                            setImage(null);
-                            setImagePreview(null);
-                          }}
-                        >
-                          <i className="bx bx-x"></i>
-                        </button>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
             </div>
-          </motion.div>
+            {/* Image section */}
+            <div className="form-section image-section">
+              <div className="section-header">
+                <i className="bx bx-image"></i>
+                <h3>Recipe Image</h3>
+              </div>
+              <div className="image-upload-compact">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  id="image-upload-admin"
+                />
+                <label htmlFor="image-upload-admin" className="upload-label">
+                  {imagePreview ? (
+                    <div className="preview-wrap">
+                      <img src={imagePreview} alt="Preview" />
+                      <button
+                        type="button"
+                        className="remove-preview-btn"
+                        onClick={(e) => { e.preventDefault(); setImage(null); setImagePreview(null); }}
+                      >
+                        <i className="bx bx-x"></i>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="upload-placeholder">
+                      <i className="bx bx-cloud-upload"></i>
+                      <span>Choose Image</span>
+                    </div>
+                  )}
+                </label>
+              </div>
+            </div>
+          </div>
         );
 
+      // ---- INGREDIENTS -------------------------------------------------------
       case "ingredients":
         return (
-          <motion.div
-            className="tab-content-wrapper"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="form-card">
-              <div className="ingredients-header">
-                <h2 className="card-title">
-                  <i className="bx bx-leaf"></i>
-                  Ingredients
-                </h2>
+          <div className="tab-pane active">
+            <div className="form-section">
+              <div className="section-header">
+                <i className="bx bx-list-ul"></i>
+                <h3>Ingredients ({ingredients.length})</h3>
                 <button
                   type="button"
-                  className="btn btn--ai ingredients-ai-button"
+                  className="ai-suggest-btn"
                   onClick={generateIngredientSuggestions}
                   disabled={isGeneratingIngredients || !name.trim()}
                 >
                   {isGeneratingIngredients ? (
-                    <span className="btn__loading">
-                      <span className="spinner"></span>
-                      Generating...
-                    </span>
+                    <><span className="spinner-xs"></span> Generating...</>
                   ) : (
-                    <>
-                      <i className="bx bx-bulb"></i>
-                      Suggest Ingredients
-                    </>
+                    <><i className="bx bx-bulb"></i> AI Suggest</>
                   )}
                 </button>
               </div>
 
               {suggestionSuccess && (
-                <div className="ingredients-success">
+                <div className="suggest-success">
                   <i className="bx bx-check-circle"></i> {suggestionSuccess}
                 </div>
               )}
 
-              <div className="ingredients-list">
-                {ingredients.map((ingredient, idx) => (
-                  <div key={idx} className="ingredient-row">
-                    <div className="ingredient-fields">
-                      <input
-                        type="text"
-                        className="form-input ingredient-amount"
-                        value={ingredient.amount}
-                        onChange={(e) =>
-                          handleIngredientChange(idx, "amount", e.target.value)
-                        }
-                        placeholder="Amount"
-                      />
-                      <select
-                        className="form-select ingredient-unit"
-                        value={ingredient.unit || ""}
-                        onChange={(e) =>
-                          handleIngredientChange(idx, "unit", e.target.value)
-                        }
-                      >
-                        <option value="">Select Unit</option>
-                        {units.map((unit) => (
-                          <option key={unit} value={unit}>
-                            {unit}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        type="text"
-                        className="form-input ingredient-name"
-                        value={ingredient.name}
-                        onChange={(e) =>
-                          handleIngredientChange(idx, "name", e.target.value)
-                        }
-                        placeholder="Ingredient name"
-                        list="ingredient-options"
-                      />
+              <div className="input-row">
+                <div className="ingredient-input-container" ref={inputRef}>
+                  <input
+                    type="text"
+                    placeholder="Ingredient name"
+                    value={newIngredient.name}
+                    onChange={(e) => handleIngredientNameChange(e.target.value)}
+                    onClick={() => setIsIngredientsModalOpen(true)}
+                  />
+                  <button
+                    type="button"
+                    className="ingredient-suggest-btn"
+                    onClick={() => setIsIngredientsModalOpen(true)}
+                    title="Browse ingredients"
+                  >
+                    <i className="bx bx-search"></i>
+                  </button>
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="suggestions-dropdown">
+                      {isSearching && (
+                        <div className="suggestion-item loading">
+                          <i className="bx bx-loader-alt bx-spin"></i> Searching...
+                        </div>
+                      )}
+                      {suggestions.map((ing, i) => (
+                        <div
+                          key={ing._id || i}
+                          className="suggestion-item"
+                          onClick={() => handleSuggestionSelect(ing.name)}
+                        >
+                          <i className="bx bx-leaf"></i>
+                          {ing.name}
+                        </div>
+                      ))}
                     </div>
-                    <button
-                      type="button"
-                      className="btn btn--destructive btn--icon"
-                      onClick={() => removeIngredient(idx)}
-                      disabled={ingredients.length === 1}
-                    >
-                      <i className="bx bx-trash"></i>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  placeholder="Amount"
+                  value={newIngredient.amount}
+                  onChange={(e) => setNewIngredient((p) => ({ ...p, amount: e.target.value }))}
+                  className="amount-input"
+                />
+                <select
+                  value={newIngredient.unit}
+                  onChange={(e) => setNewIngredient((p) => ({ ...p, unit: e.target.value }))}
+                  className="unit-select"
+                >
+                  <option value="">Unit</option>
+                  {units.map((u) => (
+                    <option key={u} value={u}>{u}</option>
+                  ))}
+                </select>
+                <button type="button" onClick={addIngredient} className="add-btn">
+                  <i className="bx bx-plus"></i><span>Add</span>
+                </button>
+              </div>
+
+              <div className="items-list">
+                {ingredients.map((ingredient, index) => (
+                  <div key={index} className="list-item">
+                    <span className="amount">{ingredient.amount} {ingredient.unit}</span>
+                    <span className="name">{ingredient.name}</span>
+                    <button type="button" onClick={() => removeIngredient(index)} className="remove-btn">
+                      <i className="bx bx-x"></i>
                     </button>
                   </div>
                 ))}
-
-                <datalist id="ingredient-options">
-                  {allIngredients.map((ing) => (
-                    <option key={ing._id} value={ing.name} />
-                  ))}
-                </datalist>
+                {ingredients.length === 0 && (
+                  <p className="empty-hint">No ingredients yet. Add some above or use AI Suggest.</p>
+                )}
               </div>
-
-              <button
-                type="button"
-                className="btn btn--add"
-                onClick={addIngredient}
-              >
-                <i className="bx bx-plus"></i>
-                Add Ingredient
-              </button>
             </div>
-          </motion.div>
+          </div>
         );
 
+      // ---- STEPS -------------------------------------------------------------
       case "steps":
         return (
-          <motion.div
-            className="tab-content-wrapper"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="form-card">
-              <div className="ingredients-header">
-                <h2 className="card-title">
-                  <i className="bx bx-list-ol"></i>
-                  Preparation Steps
-                </h2>
+          <div className="tab-pane active">
+            <div className="form-section">
+              <div className="section-header">
+                <i className="bx bx-detail"></i>
+                <h3>Steps ({steps.length})</h3>
                 <button
                   type="button"
-                  className="btn btn--ai ingredients-ai-button"
+                  className="ai-suggest-btn"
                   onClick={generateStepSuggestions}
-                  disabled={
-                    isGeneratingSteps || !name.trim() || ingredients.length < 2
-                  }
+                  disabled={isGeneratingSteps || !name.trim() || ingredients.length < 2}
                 >
                   {isGeneratingSteps ? (
-                    <span className="btn__loading">
-                      <span className="spinner"></span>
-                      Generating...
-                    </span>
+                    <><span className="spinner-xs"></span> Generating...</>
                   ) : (
-                    <>
-                      <i className="bx bx-bulb"></i>
-                      Suggest Steps
-                    </>
+                    <><i className="bx bx-bulb"></i> AI Suggest</>
                   )}
                 </button>
               </div>
 
               {stepSuggestionSuccess && (
-                <div className="ingredients-success">
+                <div className="suggest-success">
                   <i className="bx bx-check-circle"></i> {stepSuggestionSuccess}
                 </div>
               )}
 
-              <div className="steps-list">
-                {steps.map((step, idx) => (
-                  <div key={idx} className="step-row">
-                    <div className="step-number">{idx + 1}</div>
-                    <div className="step-content">
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={step.instruction}
-                        onChange={(e) =>
-                          handleStepChange(idx, "instruction", e.target.value)
-                        }
-                        placeholder="Step title"
-                      />
-                      <textarea
-                        className="form-textarea"
-                        value={step.details}
-                        onChange={(e) =>
-                          handleStepChange(idx, "details", e.target.value)
-                        }
-                        placeholder="Step details"
-                      />
+              <div className="step-input-group">
+                <input
+                  type="text"
+                  placeholder="Step title (e.g. Prepare ingredients)"
+                  value={newStep.instruction}
+                  onChange={(e) => setNewStep((p) => ({ ...p, instruction: e.target.value }))}
+                />
+                <textarea
+                  placeholder="Step details (optional)"
+                  value={newStep.details}
+                  onChange={(e) => setNewStep((p) => ({ ...p, details: e.target.value }))}
+                  rows={2}
+                />
+                <button type="button" onClick={addStep} className="add-btn">
+                  <i className="bx bx-plus"></i><span>Add Step</span>
+                </button>
+              </div>
+
+              <div className="items-list">
+                {steps.map((step, index) => (
+                  <div key={index} className="list-item instruction-item">
+                    <span className="step-number">{index + 1}</span>
+                    <div className="step-text-wrap">
+                      <span className="step-title">{step.instruction}</span>
+                      {step.details && <span className="step-details">{step.details}</span>}
                     </div>
-                    <button
-                      type="button"
-                      className="btn btn--destructive btn--icon"
-                      onClick={() => removeStep(idx)}
-                      disabled={steps.length === 1}
-                    >
-                      <i className="bx bx-trash"></i>
+                    <button type="button" onClick={() => removeStep(index)} className="remove-btn">
+                      <i className="bx bx-x"></i>
                     </button>
                   </div>
                 ))}
+                {steps.length === 0 && (
+                  <p className="empty-hint">No steps yet. Add some above or use AI Suggest.</p>
+                )}
               </div>
-
-              <button type="button" className="btn btn--add" onClick={addStep}>
-                <i className="bx bx-plus"></i>
-                Add Step
-              </button>
             </div>
-          </motion.div>
+          </div>
         );
 
+      // ---- PREFERENCES -------------------------------------------------------
       case "preferences":
         return (
-          <motion.div
-            className="tab-content-wrapper"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="form-card">
-              <h2 className="card-title">
-                <i className="bx bx-food-menu"></i>
-                Recipe Details
-              </h2>
-              <div className="form-content">
+          <div className="tab-pane active">
+            <div className="form-section">
+              <div className="section-header">
+                <i className="bx bx-cog"></i>
+                <h3>Recipe Preferences</h3>
+              </div>
+              <div className="form-grid">
                 <div className="form-group">
-                  <label className="form-label" htmlFor="cuisine">
-                    <i className="bx bx-world"></i>
-                    Cuisine
-                  </label>
-                  <select
-                    id="cuisine"
-                    name="cuisine"
-                    className="form-select"
-                    value={cuisine}
-                    onChange={(e) => setCuisine(e.target.value)}
-                  >
+                  <label>Cuisine</label>
+                  <select value={cuisine} onChange={(e) => setCuisine(e.target.value)}>
                     {cuisineOptions.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
+                      <option key={c} value={c}>{c}</option>
                     ))}
                   </select>
                 </div>
-
                 <div className="form-group">
-                  <label className="form-label" htmlFor="cookingTime">
-                    <i className="bx bx-time"></i>
-                    Cooking Time (minutes)
-                  </label>
+                  <label>Cooking Time (min)</label>
                   <input
-                    id="cookingTime"
-                    name="cookingTime"
                     type="number"
-                    className="form-input"
                     value={cookingTime}
                     onChange={(e) => setCookingTime(e.target.value)}
-                    min="0"
                     placeholder="e.g. 30"
+                    min="0"
                   />
                 </div>
-
                 <div className="form-group">
-                  <label className="form-label" htmlFor="difficulty">
-                    <i className="bx bx-trending-up"></i>
-                    Difficulty Level
-                  </label>
-                  <select
-                    id="difficulty"
-                    name="difficulty"
-                    className="form-select"
-                    value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value)}
-                  >
+                  <label>Difficulty</label>
+                  <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
                     <option value="Easy">Easy</option>
                     <option value="Medium">Medium</option>
                     <option value="Hard">Hard</option>
@@ -899,82 +857,73 @@ const CreateRecipe = ({ onRecipeSaved }) => {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         );
 
+      // ---- NUTRITION ---------------------------------------------------------
       case "nutrition":
         return (
-          <motion.div className="tab-content-wrapper" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-            <div className="form-card">
-              <h2 className="card-title">
+          <div className="tab-pane active">
+            <div className="form-section">
+              <div className="section-header">
                 <i className="bx bx-line-chart"></i>
-                Nutrition
-              </h2>
-              <div className="form-content">
-                <div className="form-group">
-                  <label className="form-label">
-                    <i className="bx bx-purchase-tag"></i>
-                    Dietary Categories (multi-select)
-                  </label>
-                  <div className="dietary-tags-container">
-                    {dietMultiChoices.map(tag => {
-                      const active = dietCategories.includes(tag);
-                      return (
-                        <button
-                          type="button"
-                          key={tag}
-                          className={`dietary-tag ${active ? "active" : ""}`}
-                          onClick={() =>
-                            setDietCategories(prev =>
-                              prev.includes(tag)
-                                ? prev.filter(t => t !== tag)
-                                : [...prev, tag]
-                            )
-                          }
-                          aria-pressed={active}
-                        >
-                          <i className={`bx ${active ? "bx-check" : "bx-plus"}`} />
-                          {tag}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="nutrition-grid">
-                  {[
-                    { key: "calories", label: "Calories (kcal)" },
-                    { key: "protein", label: "Protein (g)" },
-                    { key: "fat", label: "Fat (g)" },
-                    { key: "carbs", label: "Carbs (g)" },
-                    { key: "fiber", label: "Fiber (g)" },
-                    { key: "sugar", label: "Sugar (g)" },
-                  ].map((item) => (
-                    <div key={item.key} className="form-group">
-                      <label className="form-label">
-                        <i className="bx bx-dots-horizontal-rounded"></i>
-                        {item.label}
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.1"
-                        className="form-input"
-                        value={nutritionalInfo[item.key]}
-                        onChange={(e) =>
-                          setNutritionalInfo((prev) => ({
-                            ...prev,
-                            [item.key]: e.target.value,
-                          }))
+                <h3>Nutrition Info</h3>
+              </div>
+              <div className="form-group">
+                <label>Dietary Tags</label>
+                <div className="dietary-tags-container">
+                  {dietMultiChoices.map((tag) => {
+                    const active = dietCategories.includes(tag);
+                    return (
+                      <button
+                        type="button"
+                        key={tag}
+                        className={`dietary-tag ${active ? "active" : ""}`}
+                        onClick={() =>
+                          setDietCategories((prev) =>
+                            prev.includes(tag)
+                              ? prev.filter((t) => t !== tag)
+                              : [...prev, tag]
+                          )
                         }
-                        placeholder="0"
-                      />
-                    </div>
-                  ))}
+                        aria-pressed={active}
+                      >
+                        <i className={`bx ${active ? "bx-check" : "bx-plus"}`} />
+                        {tag}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+              <div className="form-grid three-col">
+                {[
+                  { key: "calories", label: "Calories (kcal)" },
+                  { key: "protein", label: "Protein (g)" },
+                  { key: "fat", label: "Fat (g)" },
+                  { key: "carbs", label: "Carbs (g)" },
+                  { key: "fiber", label: "Fiber (g)" },
+                  { key: "sugar", label: "Sugar (g)" },
+                ].map((item) => (
+                  <div key={item.key} className="form-group">
+                    <label>{item.label}</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={nutritionalInfo[item.key]}
+                      onChange={(e) =>
+                        setNutritionalInfo((prev) => ({
+                          ...prev,
+                          [item.key]: e.target.value,
+                        }))
+                      }
+                      placeholder="0"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          </motion.div>
+          </div>
         );
 
       default:
@@ -982,135 +931,121 @@ const CreateRecipe = ({ onRecipeSaved }) => {
     }
   };
 
+  // ---- RENDER ---------------------------------------------------------------
   return (
-    <div className="create-recipe">
-      <div className="create-recipe__container">
-        <div className="create-recipe__tabs">
-          <button
-            type="button"
-            className={`tab-button ${activeTab === "basic" ? "active" : ""}`}
-            onClick={() => setActiveTab("basic")}
-          >
-            <i className="bx bx-info-circle"></i>
-            Basic Info
-          </button>
-          <button
-            type="button"
-            className={`tab-button ${
-              activeTab === "ingredients" ? "active" : ""
-            }`}
-            onClick={() => setActiveTab("ingredients")}
-          >
-            <i className="bx bx-leaf"></i>
-            Ingredients
-          </button>
-          <button
-            type="button"
-            className={`tab-button ${activeTab === "steps" ? "active" : ""}`}
-            onClick={() => setActiveTab("steps")}
-          >
-            <i className="bx bx-list-ol"></i>
-            Steps
-          </button>
-          <button
-            type="button"
-            className={`tab-button ${
-              activeTab === "preferences" ? "active" : ""
-            }`}
-            onClick={() => setActiveTab("preferences")}
-          >
-            <i className="bx bx-food-menu"></i>
-            Preferences
-          </button>
-          <button
-            type="button"
-            className={`tab-button ${
-              activeTab === "nutrition" ? "active" : ""
-            }`}
-            onClick={() => setActiveTab("nutrition")}
-          >
-            <i className="bx bx-line-chart"></i>
-            Nutrition
-          </button>
+    <div className="create-recipe-admin">
+      {/* Header */}
+      <div className="form-header">
+        <h1>
+          <i className="bx bx-food-menu"></i>
+          Create Recipe
+        </h1>
+      </div>
+
+      {/* Tabs */}
+      <div className="tab-navigation">
+        <button
+          className={`tab-button ${activeTab === "basic" ? "active" : ""}`}
+          onClick={() => setActiveTab("basic")}
+        >
+          <i className="bx bx-info-circle"></i>
+          <span>Basic Info</span>
+        </button>
+        <button
+          className={`tab-button ${activeTab === "ingredients" ? "active" : ""}`}
+          onClick={() => setActiveTab("ingredients")}
+        >
+          <i className="bx bx-leaf"></i>
+          <span>Ingredients</span>
+          {ingredients.length > 0 && <span className="tab-count">{ingredients.length}</span>}
+        </button>
+        <button
+          className={`tab-button ${activeTab === "steps" ? "active" : ""}`}
+          onClick={() => setActiveTab("steps")}
+        >
+          <i className="bx bx-detail"></i>
+          <span>Steps</span>
+          {steps.length > 0 && <span className="tab-count">{steps.length}</span>}
+        </button>
+        <button
+          className={`tab-button ${activeTab === "preferences" ? "active" : ""}`}
+          onClick={() => setActiveTab("preferences")}
+        >
+          <i className="bx bx-cog"></i>
+          <span>Prefs</span>
+        </button>
+        <button
+          className={`tab-button ${activeTab === "nutrition" ? "active" : ""}`}
+          onClick={() => setActiveTab("nutrition")}
+        >
+          <i className="bx bx-line-chart"></i>
+          <span>Nutrition</span>
+        </button>
+      </div>
+
+      {/* Form */}
+      <form onSubmit={handleSubmit}>
+        <div className="tab-content">
+          {renderTabContent()}
         </div>
 
-        <form onSubmit={handleSubmit} className="create-recipe__form">
-          <div className="create-recipe__content">{renderTabContent()}</div>
-
-          {/* Fixed bottom actions */}
-          <div className="form-actions form-actions--fixed">
-            <AnimatePresence>
-              {error && (
-                <motion.div
-                  className="alert alert--error"
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <i className="bx bx-error-circle alert__icon"></i>
-                  {error}
-                  <button
-                    type="button"
-                    onClick={() => setError("")}
-                    className="alert__close"
-                  >
-                    <i className="bx bx-x"></i>
-                  </button>
-                </motion.div>
-              )}
-
-              {success && (
-                <motion.div
-                  className="alert alert--success"
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <i className="bx bx-check-circle alert__icon"></i>
-                  {success}
-                  <button
-                    type="button"
-                    onClick={() => setSuccess("")}
-                    className="alert__close"
-                  >
-                    <i className="bx bx-x"></i>
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <motion.button
-              type="submit"
-              className="btn btn--primary btn--lg create-recipe-btn"
-              disabled={
-                isLoading || !name.trim() || !category || !description.trim()
-              }
-              whileHover={!isLoading ? { scale: 1.02 } : {}}
-              whileTap={!isLoading ? { scale: 0.98 } : {}}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+        {/* Alerts */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              className="form-alert form-alert--error"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
             >
-              {isLoading ? (
-                <span className="btn__loading">
-                  <span className="spinner"></span>
-                  Creating Recipe...
-                </span>
-              ) : (
-                <>
-                  <i className="bx bx-check"></i>
-                  Create Recipe
-                </>
-              )}
-            </motion.button>
-          </div>
-        </form>
-      </div>
+              <i className="bx bx-error-circle"></i>
+              <span>{error}</span>
+              <button type="button" onClick={() => setError("")} className="alert-close">
+                <i className="bx bx-x"></i>
+              </button>
+            </motion.div>
+          )}
+          {success && (
+            <motion.div
+              className="form-alert form-alert--success"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <i className="bx bx-check-circle"></i>
+              <span>{success}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Submit */}
+        <div className="form-actions">
+          <button
+            type="submit"
+            className="submit-btn"
+            disabled={isLoading || !name.trim() || !category || !description.trim()}
+          >
+            {isLoading ? (
+              <><span className="spinner-sm"></span> Creating...</>
+            ) : (
+              <><i className="bx bx-check"></i> Create Recipe</>
+            )}
+          </button>
+        </div>
+      </form>
+
+      {/* Ingredients Modal */}
+      <IngredientsModal
+        isOpen={isIngredientsModalOpen}
+        onClose={() => setIsIngredientsModalOpen(false)}
+        onIngredientSelect={(ing) => setIngredients((prev) => [...prev, ing])}
+        allIngredients={allIngredients}
+        units={units}
+      />
     </div>
   );
 };
+
 
 export default CreateRecipe;
 

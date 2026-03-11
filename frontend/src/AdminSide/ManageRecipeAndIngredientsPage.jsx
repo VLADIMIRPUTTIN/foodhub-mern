@@ -137,7 +137,7 @@ const ManageRecipeAndIngredientsPage = ({
                                     </p>
                                 </div>
                             ) : (
-                                filteredRecipes.map((recipe, index) => (
+                        filteredRecipes.map((recipe, index) => (
                                     <motion.div
                                         key={recipe._id}
                                         className="recipe-item"
@@ -160,6 +160,12 @@ const ManageRecipeAndIngredientsPage = ({
                                                 <h3 className="recipe-title">{recipe.title || recipe.name}</h3>
                                                 <div className="recipe-meta">
                                                     <span className="category-badge">{recipe.category}</span>
+                                                    {recipe.cuisine && (
+                                                        <span className="meta-item meta-item--cuisine">
+                                                            <i className="bx bx-globe"></i>
+                                                            {recipe.cuisine}
+                                                        </span>
+                                                    )}
                                                     <span className="meta-item">
                                                         <i className="bx bx-user"></i>
                                                         {recipe.createdBy?.name || 'Unknown'}
@@ -170,7 +176,20 @@ const ManageRecipeAndIngredientsPage = ({
                                                             {recipe.cookingTime} min
                                                         </span>
                                                     )}
+                                                    {recipe.dietaryTags?.length > 0 && (
+                                                        <span className="meta-item meta-item--diet">
+                                                            <i className="bx bx-leaf"></i>
+                                                            {recipe.dietaryTags.slice(0, 2).join(', ')}
+                                                            {recipe.dietaryTags.length > 2 ? ` +${recipe.dietaryTags.length - 2}` : ''}
+                                                        </span>
+                                                    )}
                                                 </div>
+                                                {recipe.shareStatus && (
+                                                    <span className={`share-badge share-badge--${recipe.shareStatus}`}>
+                                                        <i className={`bx ${recipe.shareStatus === 'approved' ? 'bx-check-circle' : recipe.shareStatus === 'pending' ? 'bx-time-five' : recipe.shareStatus === 'rejected' ? 'bx-x-circle' : 'bx-lock'}`}></i>
+                                                        {recipe.shareStatus}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
 
