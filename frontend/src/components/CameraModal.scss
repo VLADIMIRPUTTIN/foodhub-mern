@@ -13,14 +13,14 @@
   width: 96vw;
   max-width: 540px;
   background: linear-gradient(135deg, #fff8ee 0%, #fff1e0 100%);
-  border-radius: 16px;
-  padding: 18px 12px 18px 12px;
+  border-radius: 18px;
+  padding: 18px 14px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   align-items: center;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1), 
-              0 4px 12px rgba(207, 153, 108, 0.15);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.16),
+              0 6px 18px rgba(207, 153, 108, 0.18);
   max-height: 96vh;
   overflow-y: auto;
   border: 1px solid rgba(201, 122, 43, 0.1);
@@ -50,9 +50,9 @@
 .camera-modal-preview-img {
   width: 100%;
   max-width: 100vw;
-  height: min(65vw, 340px);
+  height: min(65vw, 330px);
   max-height: 340px;
-  border-radius: 12px;
+  border-radius: 14px;
   object-fit: cover;
   background: #222;
   margin-bottom: 10px;
@@ -97,27 +97,29 @@
 }
 
 .camera-modal-btn-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   width: 100%;
-  justify-content: center;
   margin-bottom: 6px;
-  flex-wrap: wrap;
 }
 
 .camera-modal-btn {
-  padding: 10px 16px;
+  padding: 10px 12px;
   background: #CF996C;
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  letter-spacing: 0.1px;
   
   &:disabled {
     background: #b7b7b7;
@@ -142,7 +144,7 @@
   }
   
   &.upload {
-    background: #9C27B0;
+    background: #596275;
   }
   
   &.close {
@@ -156,12 +158,19 @@
     font-size: 1rem;
     width: 100%;
     box-shadow: 0 8px 15px rgba(226, 106, 0, 0.2);
+    min-height: 48px;
   }
   
   &.add {
     background: #4CAF50;
-    padding: 8px 12px;
+    padding: 9px 12px;
     font-size: 0.85rem;
+    min-width: 96px;
+  }
+
+  span {
+    line-height: 1;
+    white-space: nowrap;
   }
 }
 
@@ -169,11 +178,17 @@
   width: 100%;
   text-align: left;
   margin-top: 8px;
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(201, 122, 43, 0.14);
+  border-radius: 12px;
+  padding: 12px;
   
   strong {
     font-size: 1.1rem;
     color: #e26a00;
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     margin-bottom: 8px;
   }
   
@@ -186,8 +201,21 @@
   li {
     margin-bottom: 8px;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
+  }
+
+  .ingredient-input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ingredient-translation {
+    font-size: 0.78rem;
+    color: #7a5a36;
+    padding-left: 2px;
   }
   
   input[type="text"] {
@@ -219,6 +247,7 @@
     cursor: pointer;
     font-size: 14px;
     transition: background 0.2s ease;
+    margin-top: 6px;
     
     &:hover {
       background: #d32f2f;
@@ -231,6 +260,7 @@
   gap: 8px;
   margin-bottom: 12px;
   width: 100%;
+  align-items: center;
   
   .add-ingredient-input {
     flex: 1;
@@ -252,7 +282,8 @@
 @media (max-width: 600px) {
   .camera-modal-main {
     max-width: 99vw;
-    padding: 12px 8px;
+    padding: 14px 10px;
+    border-radius: 14px;
   }
   
   .camera-modal-webcam,
@@ -263,16 +294,44 @@
   }
   
   .camera-modal-btn {
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     padding: 8px 12px;
+    min-height: 40px;
   }
   
   .camera-modal-btn-row {
     gap: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .camera-modal-btn.proceed {
+    grid-column: span 2;
+  }
+
+  .camera-modal-ingredients-edit {
+    padding: 10px;
+  }
+
+  .camera-modal-ingredients-edit strong {
+    font-size: 1rem;
   }
   
   .add-ingredient-section {
     flex-direction: column;
     gap: 6px;
+
+    .camera-modal-btn.add {
+      width: 100%;
+    }
+  }
+}
+
+@media (max-width: 420px) {
+  .camera-modal-btn-row {
+    grid-template-columns: 1fr;
+  }
+
+  .camera-modal-btn.proceed {
+    grid-column: span 1;
   }
 }

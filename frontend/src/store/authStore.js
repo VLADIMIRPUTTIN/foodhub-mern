@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import api from '../utils/apiClient';
-import { unsubscribeFromPush } from '../utils/pushNotifications';
+import { subscribeUserToPush, unsubscribeFromPush } from '../utils/pushNotifications';
 
 const API_URL = "/api/auth";
 

@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import './IngredientsSidebar.scss';
 
 const IngredientsSidebar = ({ 
@@ -8,49 +8,26 @@ const IngredientsSidebar = ({
     selectedIngredients, 
     handleIngredientClick 
 }) => {
-    const sidebarRef = useRef(null);
-    const searchRef = useRef(null);
+    const [isAnimatedIn, setIsAnimatedIn] = useState(false);
 
     useEffect(() => {
-        // Add animation class after mount
-        if (sidebarRef.current) {
-            setTimeout(() => {
-                sidebarRef.current.classList.add('sidebar-animate-in');
-            }, 80); // slight delay for effect
-        }
+        const timerId = window.setTimeout(() => {
+            setIsAnimatedIn(true);
+        }, 80);
 
-        // Add search icon programmatically
-        if (searchRef.current) {
-            const addSearchIcon = () => {
-                const searchInput = searchRef.current;
-                if (!searchInput.parentNode.querySelector('.search-icon')) {
-                    const searchIcon = document.createElement('i');
-                    searchIcon.className = 'bx bx-search search-icon';
-                    searchIcon.style.position = 'absolute';
-                    searchIcon.style.left = '14px';
-                    searchIcon.style.top = '50%';
-                    searchIcon.style.transform = 'translateY(-50%)';
-                    searchIcon.style.color = '#CF996C';
-                    searchIcon.style.fontSize = '1.1rem';
-                    searchIcon.style.pointerEvents = 'none';
-                    searchInput.parentNode.style.position = 'relative';
-                    searchInput.parentNode.insertBefore(searchIcon, searchInput);
-                }
-            };
-
-            setTimeout(addSearchIcon, 100);
-        }
+        return () => {
+            window.clearTimeout(timerId);
+        };
     }, []);
 
     return (
-        <aside className="ingredients-sidebar" ref={sidebarRef}>
+        <aside className={`ingredients-sidebar${isAnimatedIn ? ' sidebar-animate-in' : ''}`}>
             <div className="sidebar-header">
                 <span className="sidebar-title">Select <span className="highlight">Ingredients</span></span>
                 <div className="sidebar-underline"></div>
             </div>
             <div className="search-container">
                 <input
-                    ref={searchRef}
                     type="text"
                     className="ingredient-search"
                     placeholder="Search ingredients..."

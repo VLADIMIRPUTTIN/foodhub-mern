@@ -57,7 +57,7 @@ i[class*=" bx-"] {
   width: 100%;
   overflow-x: hidden;
 
-  @media (max-width: 768px) {
+  @media (max-width: 992px) {
     padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
 }

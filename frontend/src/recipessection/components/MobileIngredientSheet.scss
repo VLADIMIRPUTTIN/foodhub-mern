@@ -2,7 +2,7 @@
 // MOBILE SHEET BUTTON STYLES (FAB)
 // =============================================================================
 .ingredients-fab-btn {
-  position: absolute;
+  position: fixed;
   background: linear-gradient(135deg, #CF996C 30%, #e26a00 100%);
   border: none;
   border-radius: 50%;
@@ -13,8 +13,8 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  margin-top: 0.5rem;
-  margin-right: -0.2rem;
+  top: calc(24px + env(safe-area-inset-top));
+  right: 1rem;
   transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1.0);
   z-index: 99;
 
@@ -60,11 +60,11 @@
 }
 
 // For mobile, adjust size and position
-@media (max-width: 768px) {
+@media (max-width: 992px) {
   .ingredients-fab-btn {
-    z-index: 10;
-    top: 0.8rem;
-    right: 1.5rem;
+    z-index: 950;
+    top: calc(14px + env(safe-area-inset-top));
+    right: 1rem;
     width: 44px;
     height: 44px;
     font-size: 1.2rem;
@@ -247,7 +247,7 @@
   }
   
   // Mobile animation from bottom
-  @media (max-width: 768px) {
+  @media (max-width: 992px) {
     bottom: 0 !important;
     top: auto !important;
     width: 100vw !important;
@@ -286,7 +286,7 @@
 }
 
 // Mobile sheet content adjustments
-@media (max-width: 768px) {
+@media (max-width: 992px) {
   .ingredients-sheet-content {
     padding: 1.5rem;
     
@@ -319,21 +319,20 @@
       }
     }
   }
-  
-  // Add search icon
-  .ingredient-search {
-    position: relative;
-  }
-  
-  .ingredient-search::before {
-    content: "\ee3a"; // Boxicons search icon
-    font-family: 'boxicons' !important;
+}
+
+.search-wrapper {
+  position: relative;
+
+  .search-icon {
     position: absolute;
     left: 14px;
-    top: 50%;
+    top: 40%;
     transform: translateY(-50%);
     color: #CF996C;
     font-size: 1.1rem;
+    pointer-events: none;
+    z-index: 1;
   }
 }
 

@@ -1,7 +1,7 @@
-.bottom-navbar {
+.camera-bottom-navbar {
   display: none; // hide by default on desktop
 
-  @media (max-width: 768px) {
+  @media (max-width: 992px) {
     display: flex;
     position: fixed;
     left: 0;
@@ -24,7 +24,7 @@
   }
 }
 
-.camera-btn {
+.camera-bottom-navbar-btn {
   background: #CF996C;
   border: none;
   border-radius: 50%;
@@ -45,7 +45,7 @@
   }
 }
 
-.icon {
+.camera-bottom-navbar-icon {
   color: #fff;
   width: 28px;
   height: 28px;

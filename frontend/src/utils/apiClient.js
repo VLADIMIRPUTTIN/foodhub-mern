@@ -41,14 +41,20 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    const status = error.response?.status;
+    const requestUrl = error.config?.url || '';
+    const isAuthProbe = requestUrl.includes('/api/auth/check-auth');
+
     if (import.meta.env.MODE === 'development') {
-      console.error('❌ API Error:', {
-        url: error.config?.url,
-        message: error.message,
-        response: error.response?.data
-      });
+      if (!(status === 401 && isAuthProbe)) {
+        console.error('❌ API Error:', {
+          url: requestUrl,
+          message: error.message,
+          response: error.response?.data
+        });
+      }
     }
-    if (error.response?.status === 401) {
+    if (status === 401 && !isAuthProbe) {
       console.log('Unauthorized request, clearing auth');
     }
     return Promise.reject(error);

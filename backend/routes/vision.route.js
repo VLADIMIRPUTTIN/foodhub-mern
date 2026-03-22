@@ -7,6 +7,8 @@ import FormData from "form-data";
 dotenv.config();
 
 const router = express.Router();
+const MIN_ROBOFLOW_CONFIDENCE = Number(process.env.ROBOFLOW_MIN_CONFIDENCE || 0.7);
+const GEMINI_VERIFY_THRESHOLD = Number(process.env.GEMINI_VERIFY_THRESHOLD || 0.75);
 
 // Setup Google Gemini API with better error handling
 let genAI = null;
@@ -27,6 +29,245 @@ function stripDataUrl(dataUrl) {
   if (!dataUrl || typeof dataUrl !== "string") return null;
   const match = dataUrl.match(/^data:[^;]+;base64,(.+)$/);
   return match ? match[1] : dataUrl;
+}
+
+function normalizeIngredientLabel(label) {
+  if (!label) return "ingredient";
+
+  return String(label)
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function canonicalizeIngredientLabel(label) {
+  const normalized = normalizeIngredientLabel(label);
+
+  if (/eggplant|aubergine|brinjal|talong/.test(normalized)) return "eggplant";
+  if (/chili|chilli|pepper|sili/.test(normalized)) return "chili pepper";
+  if (/tomato|kamatis/.test(normalized)) return "tomato";
+  if (/onion|sibuyas/.test(normalized)) return "onion";
+  if (/garlic|bawang/.test(normalized)) return "garlic";
+  if (/potato|patatas/.test(normalized)) return "potato";
+  if (/carrot|karot/.test(normalized)) return "carrot";
+
+  return normalized;
+}
+
+function toDisplayIngredientLabel(label) {
+  return canonicalizeIngredientLabel(label);
+}
+
+function labelsLikelyMatch(labelA, labelB) {
+  const a = canonicalizeIngredientLabel(labelA);
+  const b = canonicalizeIngredientLabel(labelB);
+
+  if (!a || !b) return false;
+  if (a === b) return true;
+
+  const tokensA = new Set(a.split(" ").filter(Boolean));
+  const tokensB = new Set(b.split(" ").filter(Boolean));
+  const overlap = [...tokensA].filter(token => tokensB.has(token)).length;
+
+  return overlap > 0;
+}
+
+function shouldGeminiVerify(topDetection) {
+  if (!topDetection) return false;
+
+  const label = normalizeIngredientLabel(topDetection.label);
+  const confidence = Number(topDetection.probability || 0);
+
+  if (confidence < 0.9) return true;
+  if (/unknown|ingredient|khursani/.test(label)) return true;
+
+  return false;
+}
+
+function shouldGeminiAssist(result) {
+  if (!result?.success || !Array.isArray(result.segmentation) || result.segmentation.length === 0) {
+    return false;
+  }
+
+  const hasLowConfidence = result.segmentation.some(item => Number(item?.probability || 0) < 0.88);
+  const hasSuspiciousLabel = result.segmentation.some(item =>
+    /unknown|ingredient|khursani/.test(normalizeIngredientLabel(item?.label))
+  );
+
+  // If we only got very few ingredients, Gemini can help fill likely misses.
+  return hasLowConfidence || hasSuspiciousLabel || result.segmentation.length <= 2;
+}
+
+function toSegmentationFromGeminiCandidates(candidates, provider = "gemini-recovery") {
+  if (!Array.isArray(candidates) || candidates.length === 0) return [];
+
+  return candidates.map(item => ({
+    label: toDisplayIngredientLabel(item.name),
+    probability: Number(item.confidence || 0),
+    box: null,
+    raw: {
+      source: provider,
+      geminiVerification: item
+    }
+  }));
+}
+
+async function getGeminiIngredientCandidates(base64Image) {
+  if (!genAI) return null;
+
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const prompt = `
+    Analyze this image and identify visible FOOD INGREDIENTS only.
+    Return only JSON in this exact format:
+    {
+      "top": {"name":"ingredient name", "confidence":0.0},
+      "ingredients": [
+        {"name":"ingredient name", "confidence":0.0}
+      ]
+    }
+
+    Rules:
+    - Use common ingredient name in English.
+    - confidence must be between 0 and 1
+    - Include 1 to 12 ingredients in "ingredients"
+    - Sort ingredients by confidence (highest first)
+    - No explanation, JSON only.
+    `;
+
+    const imagePart = {
+      inlineData: {
+        data: base64Image,
+        mimeType: "image/jpeg"
+      }
+    };
+
+    const result = await model.generateContent([prompt, imagePart]);
+    const response = await result.response;
+    const text = response.text();
+
+    const fencedJson = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const parseCandidate = fencedJson?.[1] || text;
+    const firstBrace = parseCandidate.indexOf("{");
+    const lastBrace = parseCandidate.lastIndexOf("}");
+    if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) return null;
+
+    const parsed = JSON.parse(parseCandidate.slice(firstBrace, lastBrace + 1));
+    const topName = toDisplayIngredientLabel(parsed?.top?.name || "");
+    const topConfidence = Number(parsed?.top?.confidence || 0);
+
+    const ingredients = Array.isArray(parsed?.ingredients)
+      ? parsed.ingredients
+          .map(item => ({
+            name: toDisplayIngredientLabel(item?.name || ""),
+            confidence: Number(item?.confidence || 0)
+          }))
+          .filter(item => item.name && !Number.isNaN(item.confidence))
+      : [];
+
+    if (topName && !Number.isNaN(topConfidence)) {
+      const topExists = ingredients.some(item => labelsLikelyMatch(item.name, topName));
+      if (!topExists) {
+        ingredients.unshift({ name: topName, confidence: topConfidence });
+      }
+    }
+
+    if (ingredients.length === 0) return null;
+
+    return ingredients
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, 12);
+  } catch (error) {
+    console.warn("Gemini verification failed:", error.message);
+    return null;
+  }
+}
+
+async function refineRoboflowWithGemini(base64Image, result) {
+  if (!result?.success || !Array.isArray(result.segmentation) || result.segmentation.length === 0) {
+    return result;
+  }
+
+  if (!shouldGeminiAssist(result)) {
+    return result;
+  }
+
+  const topIndex = result.segmentation.reduce((bestIdx, item, idx, arr) =>
+    (arr[bestIdx]?.probability || 0) >= (item.probability || 0) ? bestIdx : idx
+  , 0);
+
+  const topDetection = result.segmentation[topIndex];
+  const shouldVerifyTop = shouldGeminiVerify(topDetection);
+  const geminiCandidates = await getGeminiIngredientCandidates(base64Image);
+
+  if (!geminiCandidates || geminiCandidates.length === 0) {
+    return result;
+  }
+
+  const geminiTop = geminiCandidates[0];
+
+  let updatedSegmentation = [...result.segmentation];
+  let changed = false;
+
+  if (
+    shouldVerifyTop &&
+    geminiTop?.confidence >= GEMINI_VERIFY_THRESHOLD &&
+    !labelsLikelyMatch(topDetection.label, geminiTop.name)
+  ) {
+    const correctedLabel = normalizeIngredientLabel(geminiTop.name);
+    updatedSegmentation[topIndex] = {
+      ...updatedSegmentation[topIndex],
+      label: correctedLabel,
+      probability: Math.max(updatedSegmentation[topIndex].probability || 0, geminiTop.confidence),
+      raw: {
+        ...updatedSegmentation[topIndex].raw,
+        geminiVerification: geminiTop
+      }
+    };
+    changed = true;
+
+    console.log(
+      `Gemini corrected top detection from "${topDetection.label}" to "${correctedLabel}" ` +
+      `(rf=${topDetection.probability}, gemini=${geminiTop.confidence})`
+    );
+  }
+
+  const currentLabels = updatedSegmentation.map(item => item.label);
+  const missingHighConfidenceGemini = geminiCandidates
+    .filter(item => item.confidence >= GEMINI_VERIFY_THRESHOLD)
+    .filter(item => !currentLabels.some(existing => labelsLikelyMatch(existing, item.name)))
+    .slice(0, 3)
+    .map(item => ({
+      label: toDisplayIngredientLabel(item.name),
+      probability: item.confidence,
+      box: null,
+      raw: {
+        source: "gemini-assist",
+        geminiVerification: item
+      }
+    }));
+
+  if (missingHighConfidenceGemini.length > 0) {
+    updatedSegmentation = [...updatedSegmentation, ...missingHighConfidenceGemini];
+    changed = true;
+    console.log(
+      `Gemini added ${missingHighConfidenceGemini.length} missing ingredient(s): ` +
+      `${missingHighConfidenceGemini.map(item => item.label).join(", ")}`
+    );
+  }
+
+  if (!changed) {
+    return result;
+  }
+
+  return {
+    ...result,
+    segmentation: updatedSegmentation,
+    provider: `${result.provider}+gemini-assisted`,
+    count: updatedSegmentation.length,
+    note: "Roboflow detection refined and enriched with Gemini verification"
+  };
 }
 
 // Enhanced Roboflow detection with multiple methods
@@ -66,7 +307,8 @@ router.post("/detect-and-suggest", async (req, res) => {
     
     if (detectResults.success) {
       console.log("Roboflow detect successful");
-      return res.json(detectResults);
+      const refined = await refineRoboflowWithGemini(rawBase64, detectResults);
+      return res.json(refined);
     }
 
     // Method 2: Try the infer.roboflow.com API (alternative endpoint)
@@ -74,7 +316,8 @@ router.post("/detect-and-suggest", async (req, res) => {
     
     if (inferResults.success) {
       console.log("Roboflow infer successful");
-      return res.json(inferResults);
+      const refined = await refineRoboflowWithGemini(rawBase64, inferResults);
+      return res.json(refined);
     }
 
     // Method 3: Try upload with hosted model URL
@@ -82,7 +325,8 @@ router.post("/detect-and-suggest", async (req, res) => {
     
     if (hostedResults.success) {
       console.log("Roboflow hosted successful");
-      return res.json(hostedResults);
+      const refined = await refineRoboflowWithGemini(rawBase64, hostedResults);
+      return res.json(refined);
     }
 
     // Fallback to Gemini if all Roboflow methods fail
@@ -205,44 +449,88 @@ async function tryRoboflowHosted(base64Image, project, version, apiKey) {
 function processRoboflowResponse(data, method) {
   try {
     let items = [];
+    const imageWidth = data.image?.width || data.image_width || 640;
+    const imageHeight = data.image?.height || data.image_height || 640;
     
     // Handle different response formats
     if (Array.isArray(data.predictions)) {
       items = data.predictions.map(p => ({
-        label: p.class || p.label || p.name || "ingredient",
+        label: toDisplayIngredientLabel(p.class || p.label || p.name || "ingredient"),
         probability: p.confidence || p.conf || p.score || 0.5,
-        box: p.x && p.y && p.width && p.height ? {
-          x: (p.x - (p.width / 2)) / (data.image?.width || 640),
-          y: (p.y - (p.height / 2)) / (data.image?.height || 640),
-          w: p.width / (data.image?.width || 640),
-          h: p.height / (data.image?.height || 640)
+        box: Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.width) && Number.isFinite(p.height) ? {
+          x: (p.x - (p.width / 2)) / imageWidth,
+          y: (p.y - (p.height / 2)) / imageHeight,
+          w: p.width / imageWidth,
+          h: p.height / imageHeight
         } : null,
         raw: p
       }));
     } else if (Array.isArray(data.detections)) {
       items = data.detections.map(d => ({
-        label: d.class || d.label || d.name || "ingredient",
+        label: toDisplayIngredientLabel(d.class || d.label || d.name || "ingredient"),
         probability: d.confidence || d.conf || d.score || 0.5,
-        box: d.bbox ? {
-          x: d.bbox[0] / (data.image_width || 640),
-          y: d.bbox[1] / (data.image_height || 640),
-          w: d.bbox[2] / (data.image_width || 640),
-          h: d.bbox[3] / (data.image_height || 640)
+        box: Array.isArray(d.bbox) && d.bbox.length >= 4 ? {
+          x: d.bbox[0] / imageWidth,
+          y: d.bbox[1] / imageHeight,
+          w: d.bbox[2] / imageWidth,
+          h: d.bbox[3] / imageHeight
+        } : d.bbox && Number.isFinite(d.bbox.x) && Number.isFinite(d.bbox.y) && Number.isFinite(d.bbox.w) && Number.isFinite(d.bbox.h) ? {
+          x: d.bbox.x / imageWidth,
+          y: d.bbox.y / imageHeight,
+          w: d.bbox.w / imageWidth,
+          h: d.bbox.h / imageHeight
         } : null,
         raw: d
       }));
     } else if (data.predicted_classes) {
       // Classification format
       items = data.predicted_classes.map(cls => ({
-        label: cls.class || cls.name || "ingredient",
-        probability: cls.confidence || 0.5,
+        label: toDisplayIngredientLabel(typeof cls === "string" ? cls : cls.class || cls.name || "ingredient"),
+        probability: typeof cls === "string" ? 0.5 : cls.confidence || cls.conf || cls.score || 0.5,
         box: null,
         raw: cls
       }));
     }
 
-    // Filter out low confidence detections
-    items = items.filter(item => item.probability > 0.3);
+    const beforeFilter = [...items];
+
+    // Filter out low-confidence detections to reduce obvious misclassifications.
+    items = items.filter(item => item.probability >= MIN_ROBOFLOW_CONFIDENCE);
+
+    // If strict threshold removes everything but Roboflow returned predictions,
+    // keep the strongest candidates at a softer floor instead of returning empty.
+    if (items.length === 0 && beforeFilter.length > 0) {
+      const relaxedFloor = Math.max(0.35, MIN_ROBOFLOW_CONFIDENCE - 0.25);
+      items = beforeFilter
+        .filter(item => item.probability >= relaxedFloor)
+        .sort((a, b) => b.probability - a.probability)
+        .slice(0, 5);
+
+      if (items.length > 0) {
+        console.warn(
+          `Roboflow ${method} used relaxed threshold ${relaxedFloor} ` +
+          `from strict ${MIN_ROBOFLOW_CONFIDENCE}`
+        );
+      }
+    }
+
+    // Deduplicate by label and keep the highest-confidence detection
+    const bestByLabel = new Map();
+    for (const item of items) {
+      const current = bestByLabel.get(item.label);
+      if (!current || item.probability > current.probability) {
+        bestByLabel.set(item.label, item);
+      }
+    }
+    items = Array.from(bestByLabel.values());
+
+    if (items.length === 0) {
+      return {
+        success: false,
+        error: `No detections above confidence threshold (${MIN_ROBOFLOW_CONFIDENCE})`,
+        provider: `roboflow-${method}`,
+      };
+    }
 
     const segmentation = items.map(item => ({
       label: item.label,
@@ -253,7 +541,7 @@ function processRoboflowResponse(data, method) {
 
     console.log(`Processed ${items.length} ingredients from ${method} method`);
 
-    return { 
+    return {
       success: true, 
       segmentation, 
       providerData: data,
@@ -372,7 +660,7 @@ async function handleGeminiFallback(base64Image, res) {
     }
 
     const segmentation = ingredients.map(ing => ({
-      label: ing.name,
+      label: toDisplayIngredientLabel(ing.name),
       probability: ing.confidence,
       box: null,
       raw: ing
@@ -390,13 +678,30 @@ async function handleGeminiFallback(base64Image, res) {
 
   } catch (geminiError) {
     console.error("Enhanced Gemini fallback error:", geminiError);
+
+    // Recovery path: use lighter Gemini candidate extraction before giving up.
+    try {
+      const candidates = await getGeminiIngredientCandidates(base64Image);
+      const segmentation = toSegmentationFromGeminiCandidates(candidates, "gemini-recovery");
+      if (segmentation.length > 0) {
+        return res.json({
+          success: true,
+          segmentation,
+          provider: "gemini-recovery",
+          note: "Recovered ingredient detection using Gemini assist mode.",
+          count: segmentation.length
+        });
+      }
+    } catch (recoveryError) {
+      console.error("Gemini recovery detection error:", recoveryError);
+    }
     
     // Last resort: return empty results but with success=true
     return res.json({
       success: true,
       segmentation: [],
       provider: 'fallback',
-      note: "Could not detect ingredients. Please add them manually.",
+      note: "Could not detect ingredients (Roboflow + Gemini failed). Please add manually.",
       count: 0
     });
   }

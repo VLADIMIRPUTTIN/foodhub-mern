@@ -1,6 +1,5 @@
 import { Sheet, SheetContent, SheetTrigger } from "../../components/ui/sheet";
 import './MobileIngredientSheet.scss';
-import { useRef, useEffect } from 'react';
 
 const MobileIngredientSheet = ({
     isSheetOpen,
@@ -15,32 +14,6 @@ const MobileIngredientSheet = ({
     handleIngredientClick,
     isMobile
 }) => {
-    const searchRef = useRef(null);
-
-    // Add search icon programmatically
-    useEffect(() => {
-        if (isSheetOpen && searchRef.current) {
-            const addSearchIcon = () => {
-                const searchInput = searchRef.current;
-                if (!searchInput.parentNode.querySelector('.search-icon')) {
-                    const searchIcon = document.createElement('i');
-                    searchIcon.className = 'bx bx-search search-icon';
-                    searchIcon.style.position = 'absolute';
-                    searchIcon.style.left = '14px';
-                    searchIcon.style.top = '50%';
-                    searchIcon.style.transform = 'translateY(-50%)';
-                    searchIcon.style.color = '#CF996C';
-                    searchIcon.style.fontSize = '1.1rem';
-                    searchIcon.style.pointerEvents = 'none';
-                    searchInput.parentNode.style.position = 'relative';
-                    searchInput.parentNode.insertBefore(searchIcon, searchInput);
-                }
-            };
-
-            setTimeout(addSearchIcon, 100);
-        }
-    }, [isSheetOpen]);
-
     return (
         <div className="ingredients-sheet-mobile">
             <Sheet open={isSheetOpen} onOpenChange={handleSheetOpenChange}>
@@ -74,8 +47,8 @@ const MobileIngredientSheet = ({
                         <div className="sidebar-underline"></div>
                     </div>
                     <div className="search-wrapper">
+                        <i className="bx bx-search search-icon" aria-hidden="true"></i>
                         <input
-                            ref={searchRef}
                             type="text"
                             className="ingredient-search"
                             placeholder="Search ingredients..."

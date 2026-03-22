@@ -4,7 +4,7 @@
 }
 
 .gemini-recipe-suggestion-page {
-  background: rgba(0,0,0,0.22);
+  background: rgba(20, 12, 6, 0.38);
   min-height: 100vh;
   width: 100vw;
   position: fixed;
@@ -18,11 +18,11 @@
 }
 
 .gemini-recipe-modal {
-  background: linear-gradient(135deg, #fffbe8 0%, #f7e6d1 100%);
+  background: linear-gradient(160deg, #fffdf7 0%, #f8ebdb 45%, #f2dcc1 100%);
   border-radius: 20px;
-  box-shadow: 0 12px 40px rgba(207,153,108,0.18), 0 2px 8px rgba(44,32,16,0.10);
-  padding: 2rem 1.5rem 2rem 1.5rem;
-  max-width: 410px;
+  box-shadow: 0 18px 44px rgba(82, 45, 10, 0.24), 0 4px 14px rgba(44, 32, 16, 0.15);
+  padding: 1.3rem 1rem 1.2rem;
+  max-width: 520px;
   width: 96vw;
   max-height: 90vh;
   overflow-y: auto;
@@ -31,7 +31,8 @@
   flex-direction: column;
   align-items: stretch;
   margin-top: 16px;
-  animation: fadeIn 0.3s;
+  animation: fadeIn 0.32s ease;
+  border: 1px solid rgba(201, 122, 43, 0.18);
 }
 
 @keyframes fadeIn {
@@ -43,70 +44,100 @@
   position: sticky;
   top: 0;
   left: 0;
-  background: linear-gradient(90deg, #e26a00 60%, #cf996c 100%);
+  background: linear-gradient(90deg, #e26a00 55%, #cf996c 100%);
   color: #fff;
   border: none;
   border-radius: 10px;
-  padding: 0.55rem 1.3rem;
-  font-size: 1.18rem;
+  padding: 0.5rem 0.95rem;
+  font-size: 0.96rem;
   font-weight: 700;
   cursor: pointer;
   z-index: 2;
-  margin-bottom: 1.1rem;
-  margin-top: 0.5rem;
+  margin-bottom: 0.85rem;
+  margin-top: 0.2rem;
   align-self: flex-start;
-  box-shadow: 0 2px 8px rgba(207,153,108,0.13);
-  transition: background 0.18s, transform 0.13s;
+  box-shadow: 0 2px 8px rgba(207, 153, 108, 0.18);
+  transition: background 0.18s, transform 0.13s, box-shadow 0.13s;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
   &:hover {
     background: #cf996c;
-    transform: scale(1.06);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 11px rgba(207, 153, 108, 0.26);
   }
 }
 
 .gemini-recipe-info {
-  margin-top: 0.2rem;
-  margin-bottom: 1.2rem;
+  margin-top: 0.15rem;
+  margin-bottom: 0.95rem;
   color: #cf996c;
   text-align: center;
+
+  .gemini-recipe-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(226, 106, 0, 0.1);
+    border: 1px solid rgba(226, 106, 0, 0.22);
+    color: #bb5b02;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.24rem 0.55rem;
+    margin-bottom: 0.45rem;
+  }
+
   h1 {
-    font-size: 1.7rem;
+    font-size: clamp(1.2rem, 1rem + 1.2vw, 1.7rem);
     font-weight: 900;
-    margin-bottom: 0.22rem;
-    letter-spacing: -0.5px;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    margin-bottom: 0.2rem;
+    letter-spacing: -0.35px;
+    text-shadow: 0 2px 7px rgba(0, 0, 0, 0.07);
     line-height: 1.2;
+    color: #8d4f14;
   }
 }
 
 .gemini-recipe-ingredients-card {
-  background: linear-gradient(120deg, #fffbe8 60%, #f7e6d1 100%);
+  background: linear-gradient(135deg, #fffdf9, #fff4e6);
   border-radius: 14px;
-  padding: 1.1rem 1rem 1.1rem 1rem;
-  margin-bottom: 1.2rem;
-  box-shadow: 0 2px 12px rgba(207,153,108,0.07);
+  padding: 0.9rem;
+  margin-bottom: 0.9rem;
+  box-shadow: 0 2px 12px rgba(207, 153, 108, 0.1);
   border: 1.5px solid #cf996c22;
+
   h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     color: #c97a2b;
-    font-size: 1.22rem;
+    font-size: 1.04rem;
     font-weight: 900;
-    margin-bottom: 0.7rem;
-    letter-spacing: 0.5px;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    margin-bottom: 0.62rem;
+    letter-spacing: 0.35px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
+
   .gemini-recipe-ingredients-list {
     display: flex;
     flex-direction: column;
-    gap: 0.18rem;
+    gap: 0.35rem;
+
     .gemini-recipe-ingredient-row {
       background: #fff;
       border-radius: 8px;
-      padding: 0.45rem 0.9rem;
-      font-size: 1.13rem;
+      padding: 0.5rem 0.72rem;
+      font-size: 0.96rem;
       color: #7a5a36;
-      margin-bottom: 0.13rem;
-      box-shadow: 0 1px 4px #cf996c11;
-      font-weight: 500;
+      margin-bottom: 0;
+      box-shadow: 0 1px 4px #cf996c14;
+      font-weight: 600;
       letter-spacing: 0.01em;
+      border: 1px solid rgba(201, 122, 43, 0.14);
     }
   }
 }
@@ -114,100 +145,132 @@
 .gemini-recipe-steps-section {
   background: #fff;
   border-radius: 14px;
-  padding: 1.1rem 1rem 1.1rem 1rem;
-  box-shadow: 0 2px 12px rgba(207,153,108,0.07);
+  padding: 0.9rem;
+  box-shadow: 0 2px 12px rgba(207, 153, 108, 0.1);
   border: 1.5px solid #cf996c22;
+
   h2 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     color: #c97a2b;
-    font-size: 1.22rem;
+    font-size: 1.04rem;
     font-weight: 800;
     text-align: center;
-    margin-bottom: 0.7rem;
-    letter-spacing: 0.5px;
+    margin-bottom: 0.58rem;
+    letter-spacing: 0.35px;
   }
+
+  .gemini-recipe-steps-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
   .gemini-recipe-step {
     display: flex;
     align-items: flex-start;
-    gap: 0.7rem;
-    margin-bottom: 0.7rem;
+    gap: 0.62rem;
+    margin-bottom: 0.56rem;
+    background: #fff9f2;
+    border: 1px solid rgba(201, 122, 43, 0.14);
+    border-radius: 10px;
+    padding: 0.55rem 0.6rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
     .step-num {
       background: linear-gradient(135deg, #e26a00 60%, #e7b57a 100%);
       color: #fff;
-      font-size: 1.13rem;
+      font-size: 0.88rem;
       font-weight: 700;
       border-radius: 50%;
-      width: 2rem;
-      height: 2rem;
+      width: 1.5rem;
+      height: 1.5rem;
+      flex: 0 0 1.5rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-top: 0.1rem;
-      box-shadow: 0 2px 8px rgba(207,153,108,0.09);
+      margin-top: 0.08rem;
+      box-shadow: 0 2px 8px rgba(207, 153, 108, 0.1);
     }
+
     div {
       color: #7a5a36;
-      font-size: 1.13rem;
-      margin-top: 0.1rem;
-      line-height: 1.5;
-      font-weight: 500;
+      font-size: 0.95rem;
+      margin-top: 0.08rem;
+      line-height: 1.46;
+      font-weight: 600;
     }
   }
 }
 
 @media (max-width: 600px) {
   .gemini-recipe-suggestion-page {
-    padding-top: 60px; // itaas para hindi matakpan ng sidenav button
+    padding-top: 56px;
     align-items: flex-start;
   }
+
   .gemini-recipe-modal {
     max-width: 100vw;
     width: 100vw;
     min-width: 0;
-    padding: 0.7rem 0.1rem 1rem 0.1rem;
+    padding: 0.9rem 0.55rem 1rem;
     border-radius: 0 0 14px 14px;
     margin-top: 0;
-    box-shadow: 0 4px 16px rgba(207,153,108,0.13);
+    box-shadow: 0 6px 20px rgba(207, 153, 108, 0.18);
   }
+
   .gemini-recipe-back {
-    font-size: 1rem;
-    padding: 0.45rem 1rem;
+    font-size: 0.9rem;
+    padding: 0.45rem 0.85rem;
     border-radius: 8px;
-    margin-bottom: 0.7rem;
+    margin-bottom: 0.62rem;
     margin-top: 0.2rem;
   }
+
   .gemini-recipe-info {
-    margin-bottom: 0.7rem;
+    margin-bottom: 0.65rem;
+
+    .gemini-recipe-badge {
+      font-size: 0.72rem;
+    }
+
     h1 {
-      font-size: 1.18rem;
+      font-size: 1.08rem;
       margin-bottom: 0.13rem;
     }
   }
+
   .gemini-recipe-ingredients-card,
   .gemini-recipe-steps-section {
-    padding: 0.6rem 0.1rem 0.6rem 0.1rem;
+    padding: 0.65rem 0.55rem;
     border-radius: 8px;
-    margin-bottom: 0.7rem;
+    margin-bottom: 0.65rem;
   }
+
   .gemini-recipe-ingredients-card h2,
   .gemini-recipe-steps-section h2 {
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     margin-bottom: 0.4rem;
   }
-  .gemini-recipe-ingredient-row,
+
+  .gemini-recipe-ingredients-card .gemini-recipe-ingredient-row,
   .gemini-recipe-step div {
-    font-size: 0.98rem;
-    padding: 0.32rem 0.5rem;
-    border-radius: 6px;
+    font-size: 0.9rem;
   }
-  .gemini-recipe-ingredient-row {
-    margin-bottom: 0.09rem;
-  }
+
   .gemini-recipe-step .step-num {
-    width: 1.1rem;
-    height: 1.1rem;
-    font-size: 0.85rem;
+    width: 1.35rem;
+    height: 1.35rem;
+    font-size: 0.8rem;
+    flex: 0 0 1.35rem;
   }
-  .gemini-recipe-steps-list {
-    padding-left: 1.1rem;
+
+  .gemini-recipe-step {
+    padding: 0.5rem 0.55rem;
   }
 }

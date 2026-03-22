@@ -17,6 +17,7 @@ import RatingModal from '../components/RatingModal';
 import LoginPromptModal from '../components/ui/login-prompt-modal';
 import CommentModal from './components/CommentModal';
 import CameraModal from '../components/CameraModal';
+import BottomNavbar from '../components/BottomNavbar';
 import api from '../utils/apiClient';
 import { toast } from 'react-hot-toast';
 
@@ -467,6 +468,27 @@ const RecipePage = () => {
         }
     };
 
+    const handleCameraDetectedIngredients = (detectedIngredients = []) => {
+        if (!Array.isArray(detectedIngredients) || detectedIngredients.length === 0) {
+            return;
+        }
+
+        const cleaned = detectedIngredients
+            .map(item => (item || '').toString().trim())
+            .filter(Boolean);
+
+        if (cleaned.length === 0) {
+            return;
+        }
+
+        setSelectedIngredients(prev => {
+            const merged = new Set([...prev, ...cleaned]);
+            return Array.from(merged);
+        });
+
+        toast.success(`Detected ${cleaned.length} ingredient${cleaned.length > 1 ? 's' : ''} from camera`);
+    };
+
     // Sync URL with selected diets
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -632,6 +654,15 @@ const RecipePage = () => {
                 recipe={recipeToComment}
                 onCommentUpdate={handleCommentUpdate}
             />
+
+            <CameraModal
+                isOpen={cameraOpen}
+                onClose={() => setCameraOpen(false)}
+                onCapture={() => {}}
+                onIngredientsDetected={handleCameraDetectedIngredients}
+            />
+
+            <BottomNavbar onCameraClick={() => setCameraOpen(true)} />
         </div>
     );
 };
