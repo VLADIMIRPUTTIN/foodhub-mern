@@ -425,18 +425,18 @@
         display: flex;
         position: fixed;
         bottom: 0;
-        margin-left: 170px;
-        width: 20%;
-        border-radius: 200px;
-        background: linear-gradient(135deg, rgba(255, 245, 230, 0.95), rgba(254, 248, 235, 0.95));
+        left: 0;
+        right: 0;
+        width: 100%;
+        background: linear-gradient(135deg, rgba(255, 245, 230, 0.97), rgba(254, 248, 235, 0.97));
         backdrop-filter: blur(20px);
         justify-content: space-around;
         align-items: center;
-        margin-bottom: 10px;
-        padding: 50px 0 20px 0;
+        padding: 8px 4px 12px;
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
         z-index: 1000;
-        border-top: 5px solid rgba(207, 153, 108, 0.2);
+        border-top: 1px solid rgba(207, 153, 108, 0.2);
+        box-sizing: border-box;
 
         .nav-item {
             display: flex;
@@ -446,122 +446,102 @@
             color: #6B7280;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
-            padding: 8px 12px;
-            border-radius: 16px;
+            padding: 6px 10px;
+            border-radius: 12px;
+            flex: 1;
+            max-width: 72px;
 
             .icon {
-                font-size: 17px; // dati 20px
-                margin-bottom: 4px;
+                font-size: 20px;
+                margin-bottom: 3px;
                 color: #CF996C;
                 transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
 
             .text {
-                font-size: 11px; // dati 12px
+                font-size: 10px;
                 font-weight: 600;
                 letter-spacing: 0.2px;
+                white-space: nowrap;
             }
 
             &:hover {
                 color: #CF996C;
                 background: rgba(207, 153, 108, 0.13);
-                transform: scale(1.08); // scale lang, hindi translateY
+                transform: scale(1.08);
                 box-shadow: 0 2px 12px rgba(207, 153, 108, 0.10);
-                transition: 
-                  background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-                  color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-                  transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
-                  box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 
                 .icon {
-                  transform: scale(1.18);
-                  color: #BB8860;
-                  transition: color 0.2s, transform 0.2s;
+                    transform: scale(1.18);
+                    color: #BB8860;
                 }
-              }
+            }
 
-              // Optional: subtle tap effect
-              &:active {
+            &:active {
                 transform: scale(0.96);
                 background: rgba(207, 153, 108, 0.18);
-              }
+            }
 
-              &.active {
+            &.active {
                 color: #CF996C;
                 background: rgba(207, 153, 108, 0.13);
-                // REMOVE transform and transition for active state
                 transform: none;
                 box-shadow: 0 2px 12px rgba(207, 153, 108, 0.10);
-                transition: none;
 
                 .icon {
-                  transform: none;
-                  color: #BB8860;
-                  transition: none;
+                    transform: none;
+                    color: #BB8860;
                 }
             }
         }
 
         .create-recipe-btn {
             background: linear-gradient(135deg, #CF996C 0%, #BB8860 100%);
+            border: none;
             border-radius: 50%;
-            width: 56px;
-            height: 56px;
+            width: 54px;
+            height: 54px;
             display: flex;
             justify-content: center;
             align-items: center;
-            position: absolute;
+            position: relative;
             bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            box-shadow: 0 8px 20px rgba(207, 153, 108, 0.4);
-            text-decoration: none;
+            box-shadow: 0 6px 18px rgba(207, 153, 108, 0.45);
+            cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
 
             &:hover {
-                transform: translateX(-50%) scale(1.1) translateY(-2px);
-                box-shadow: 0 12px 24px rgba(207, 153, 108, 0.5);
+                transform: scale(1.1) translateY(-2px);
+                box-shadow: 0 10px 24px rgba(207, 153, 108, 0.55);
+            }
+
+            &:active {
+                transform: scale(0.95);
             }
 
             .icon {
                 color: #ffffff;
-                font-size: 22px;
             }
         }
 
         .profile-image {
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             overflow: hidden;
             border: 2px solid #CF996C;
             box-shadow: 0 2px 8px rgba(207, 153, 108, 0.3);
+            margin-bottom: 3px;
 
             img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
             }
-        }
-
-        // Usog pa-kaliwa ang unang dalawang button
-        .nav-item:first-child {
-            margin-left: 10px;   // dagdag space sa kaliwa
-            margin-right: 6px;   // dagdag space sa kanan
-        }
-        .nav-item:nth-child(2) {
-            margin-left: 0;
-            margin-right: 100px; // dati 10px, gawin 38px para mas malayo sa gitna
-        }
-
-        // Usog pa-kanan ang Shared at Profile
-        .nav-item:nth-last-child(2) {
-            margin-left: 38px;   // dati 28px, dagdagan para mas malayo sa gitna
-            margin-right: 8px;   // dagdagan ng kaunti para may space sa kanan
-        }
-        .nav-item:last-child {
-            margin-left: 8px;    // dagdagan ng kaunti para may space sa kaliwa
-            margin-right: 22px;  // mas malayo sa kanan
         }
     }
 }
