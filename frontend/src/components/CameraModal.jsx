@@ -90,6 +90,7 @@ const CameraModal = ({ isOpen, onClose, onCapture, onIngredientsDetected }) => {
   const [scanResults, setScanResults] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [ingredientNames, setIngredientNames] = useState([]);
+  const [latestDetectedNames, setLatestDetectedNames] = useState([]);
   const [geminiResult, setGeminiResult] = useState(null);
   const [showGeminiRecipe, setShowGeminiRecipe] = useState(false);
   const [geminiParsed, setGeminiParsed] = useState({ title: "", ingredients: [], steps: [] });
@@ -102,9 +103,42 @@ const CameraModal = ({ isOpen, onClose, onCapture, onIngredientsDetected }) => {
   const imgRef = useRef(null);
 
   // All useCallback hooks
+  const addIngredientToList = useCallback((name) => {
+    const cleanName = (name || "").trim();
+    if (!cleanName) return;
+
+    setIngredientNames((prev) => {
+      const exists = prev.some((item) => item.toLowerCase() === cleanName.toLowerCase());
+      if (exists) return prev;
+      return [...prev, cleanName];
+    });
+  }, []);
+
+  const addAllDetectedToList = useCallback(() => {
+    if (!latestDetectedNames.length) return;
+
+    setIngredientNames((prev) => {
+      const seen = new Set(prev.map((item) => item.toLowerCase()));
+      const next = [...prev];
+
+      for (const name of latestDetectedNames) {
+        const cleanName = (name || "").trim();
+        if (!cleanName) continue;
+        const key = cleanName.toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          next.push(cleanName);
+        }
+      }
+
+      return next;
+    });
+  }, [latestDetectedNames]);
+
   const handleAutoScan = useCallback(async (imageSrc) => {
     setScanning(true);
     setScanResults(null);
+    setLatestDetectedNames([]);
     
     try {
       const requestPath = `${API_BASE}/api/vision/detect-and-suggest`;
@@ -119,7 +153,7 @@ const CameraModal = ({ isOpen, onClose, onCapture, onIngredientsDetected }) => {
 
       if (!Array.isArray(detectedNames)) {
         setScanResults([]);
-        setIngredientNames([]);
+        setLatestDetectedNames([]);
         return;
       }
 
@@ -127,13 +161,13 @@ const CameraModal = ({ isOpen, onClose, onCapture, onIngredientsDetected }) => {
 
       if (data && data.segmentation) {
         setScanResults(data.segmentation);
-        setIngredientNames(uniqueDetected);
+        setLatestDetectedNames(uniqueDetected);
       } else if (data && data.detected) {
         setScanResults(data.detected.map(d => ({ label: d, box: null })));
-        setIngredientNames(uniqueDetected);
+        setLatestDetectedNames(uniqueDetected);
       } else {
         setScanResults([]);
-        setIngredientNames([]);
+        setLatestDetectedNames([]);
       }
 
       if (typeof onIngredientsDetected === "function" && uniqueDetected.length > 0) {
@@ -142,6 +176,7 @@ const CameraModal = ({ isOpen, onClose, onCapture, onIngredientsDetected }) => {
     } catch (e) {
       console.error("Auto-scan failed", e);
       setScanResults([]);
+      setLatestDetectedNames([]);
     } finally {
       setScanning(false);
     }
@@ -178,7 +213,7 @@ const CameraModal = ({ isOpen, onClose, onCapture, onIngredientsDetected }) => {
   const handleRetake = useCallback(() => {
     setPreview(null);
     setScanResults(null);
-    setIngredientNames([]);
+    setLatestDetectedNames([]);
     setUploadMode(false);
   }, []);
 
@@ -226,6 +261,7 @@ const CameraModal = ({ isOpen, onClose, onCapture, onIngredientsDetected }) => {
       setScanResults(null);
       setScanning(false);
       setIngredientNames([]);
+      setLatestDetectedNames([]);
       setGeminiResult(null);
       setShowGeminiRecipe(false);
       setGeminiParsed({ title: "", ingredients: [], steps: [] });
@@ -414,9 +450,50 @@ const CameraModal = ({ isOpen, onClose, onCapture, onIngredientsDetected }) => {
                 <Salad size={17} aria-hidden="true" />
                 <span>Detected Ingredients {scanning && "(Analyzing...)"}</span>
               </strong>
+
+              {latestDetectedNames.length > 0 && (
+                <div className="latest-scan-results">
+                  <div className="latest-scan-header">
+                    <span>Latest scan suggestions</span>
+                    <button
+                      type="button"
+                      className="camera-modal-btn add-all-detected"
+                      onClick={addAllDetectedToList}
+                    >
+                      <Plus size={15} aria-hidden="true" />
+                      <span>Add All</span>
+                    </button>
+                  </div>
+                  <div className="latest-scan-list">
+                    {latestDetectedNames.map((name, idx) => {
+                      const alreadyAdded = ingredientNames.some(
+                        (item) => item.toLowerCase() === name.toLowerCase()
+                      );
+
+                      return (
+                        <div className="latest-scan-chip" key={`${name}-${idx}`}>
+                          <span>{getBilingualIngredientLabel(name)}</span>
+                          <button
+                            type="button"
+                            className="camera-modal-btn chip-add"
+                            onClick={() => addIngredientToList(name)}
+                            disabled={alreadyAdded}
+                          >
+                            <Plus size={14} aria-hidden="true" />
+                            <span>{alreadyAdded ? "Added" : "Add"}</span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {ingredientNames.length === 0 && !scanning ? (
                 <div style={{color:'#888',padding:'8px 0'}}>
-                  {preview ? "No ingredients detected. Try rescanning or add manually." : "Take a photo or upload an image to detect ingredients."}
+                  {preview
+                    ? "No ingredients added yet. Use Add from latest scan, rescan another item, or add manually."
+                    : "Take a photo or upload an image to detect ingredients."}
                 </div>
               ) : (
                 <ul>
