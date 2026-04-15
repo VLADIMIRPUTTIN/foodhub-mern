@@ -11,6 +11,9 @@ const OnboardingPage = () => {
     const [selectedDietary, setSelectedDietary] = useState([]);
     const [selectedAllergies, setSelectedAllergies] = useState([]);
     const [selectedCuisines, setSelectedCuisines] = useState([]);
+    const [preferredDifficulty, setPreferredDifficulty] = useState('Any');
+    const [preferredCookingTime, setPreferredCookingTime] = useState('Any');
+    const [preferredBudgetLevel, setPreferredBudgetLevel] = useState('Any');
     const [isLoading, setIsLoading] = useState(false);
     const { user, setUser } = useAuthStore();
     const navigate = useNavigate();
@@ -47,6 +50,27 @@ const OnboardingPage = () => {
         { id: 'Mediterranean', label: 'Mediterranean', icon: '🌊' }
     ];
 
+    const difficultyOptions = [
+        { id: 'Any', label: 'Any', icon: '✨' },
+        { id: 'Easy', label: 'Easy', icon: '🟢' },
+        { id: 'Medium', label: 'Medium', icon: '🟡' },
+        { id: 'Hard', label: 'Hard', icon: '🔴' }
+    ];
+
+    const cookingTimeOptions = [
+        { id: 'Any', label: 'Any', icon: '⏱️' },
+        { id: 'Quick', label: '< 30 mins', icon: '⚡' },
+        { id: 'Balanced', label: '30-60 mins', icon: '🍳' },
+        { id: 'Leisure', label: '> 60 mins', icon: '🫕' }
+    ];
+
+    const budgetOptions = [
+        { id: 'Any', label: 'Any', icon: '💸' },
+        { id: 'Budget', label: 'Budget', icon: '🪙' },
+        { id: 'Moderate', label: 'Moderate', icon: '💵' },
+        { id: 'Premium', label: 'Premium', icon: '💎' }
+    ];
+
     const toggleSelection = (item, selectedItems, setSelectedItems) => {
         if (selectedItems.includes(item)) {
             setSelectedItems(selectedItems.filter(i => i !== item));
@@ -56,7 +80,7 @@ const OnboardingPage = () => {
     };
 
     const handleNext = () => {
-        if (currentStep < 3) {
+        if (currentStep < 4) {
             setCurrentStep(currentStep + 1);
         } else {
             handleComplete();
@@ -64,7 +88,7 @@ const OnboardingPage = () => {
     };
 
     const handleSkip = () => {
-        if (currentStep < 3) {
+        if (currentStep < 4) {
             setCurrentStep(currentStep + 1);
         } else {
             handleComplete();
@@ -84,6 +108,9 @@ const OnboardingPage = () => {
                     dietaryPreferences: selectedDietary,
                     allergies: selectedAllergies,
                     preferredCuisines: selectedCuisines,
+                    preferredDifficulty,
+                    preferredCookingTime,
+                    preferredBudgetLevel,
                     hasCompletedOnboarding: true
                 },
                 { withCredentials: true }
@@ -110,7 +137,7 @@ const OnboardingPage = () => {
                 <div className="progress-bar">
                     <div 
                         className="progress-fill" 
-                        style={{ width: `${(currentStep / 3) * 100}%` }}
+                        style={{ width: `${(currentStep / 4) * 100}%` }}
                     ></div>
                 </div>
 
@@ -180,6 +207,61 @@ const OnboardingPage = () => {
                             </div>
                         </div>
                     )}
+
+                    {currentStep === 4 && (
+                        <div className="step">
+                            <h2>More About Your Cooking Style 👨‍🍳</h2>
+                            <p>Add more info so recommendations can match your preferred difficulty, time, and budget.</p>
+
+                            <div className="preference-group">
+                                <h3>Preferred Difficulty</h3>
+                                <div className="extra-pref-grid">
+                                    {difficultyOptions.map(option => (
+                                        <button
+                                            key={option.id}
+                                            className={`extra-pref-card ${preferredDifficulty === option.id ? 'selected' : ''}`}
+                                            onClick={() => setPreferredDifficulty(option.id)}
+                                        >
+                                            <span className="extra-pref-icon">{option.icon}</span>
+                                            <span className="extra-pref-label">{option.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="preference-group">
+                                <h3>Preferred Cooking Time</h3>
+                                <div className="extra-pref-grid">
+                                    {cookingTimeOptions.map(option => (
+                                        <button
+                                            key={option.id}
+                                            className={`extra-pref-card ${preferredCookingTime === option.id ? 'selected' : ''}`}
+                                            onClick={() => setPreferredCookingTime(option.id)}
+                                        >
+                                            <span className="extra-pref-icon">{option.icon}</span>
+                                            <span className="extra-pref-label">{option.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="preference-group">
+                                <h3>Preferred Budget</h3>
+                                <div className="extra-pref-grid">
+                                    {budgetOptions.map(option => (
+                                        <button
+                                            key={option.id}
+                                            className={`extra-pref-card ${preferredBudgetLevel === option.id ? 'selected' : ''}`}
+                                            onClick={() => setPreferredBudgetLevel(option.id)}
+                                        >
+                                            <span className="extra-pref-icon">{option.icon}</span>
+                                            <span className="extra-pref-label">{option.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </motion.div>
 
                 <div className="step-actions">
@@ -202,7 +284,7 @@ const OnboardingPage = () => {
                                 Saving...
                             </>
                         ) : (
-                            currentStep === 3 ? 'Complete Setup' : 'Next Step'
+                            currentStep === 4 ? 'Complete Setup' : 'Next Step'
                         )}
                     </button>
                 </div>

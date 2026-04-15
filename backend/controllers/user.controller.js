@@ -117,7 +117,15 @@ export const updateProfile = async (req, res) => {
 // Add new function for updating preferences
 export const updatePreferences = async (req, res) => {
     try {
-        const { dietaryPreferences, allergies, preferredCuisines, hasCompletedOnboarding } = req.body;
+        const {
+            dietaryPreferences,
+            allergies,
+            preferredCuisines,
+            preferredDifficulty,
+            preferredCookingTime,
+            preferredBudgetLevel,
+            hasCompletedOnboarding
+        } = req.body;
         
         const user = await User.findById(req.userId);
         if (!user) {
@@ -128,6 +136,9 @@ export const updatePreferences = async (req, res) => {
         user.dietaryPreferences = dietaryPreferences || [];
         user.allergies = allergies || [];
         user.preferredCuisines = preferredCuisines || [];
+        user.preferredDifficulty = preferredDifficulty || user.preferredDifficulty;
+        user.preferredCookingTime = preferredCookingTime || user.preferredCookingTime;
+        user.preferredBudgetLevel = preferredBudgetLevel || user.preferredBudgetLevel;
         user.hasCompletedOnboarding = hasCompletedOnboarding !== undefined ? hasCompletedOnboarding : user.hasCompletedOnboarding;
 
         await user.save();

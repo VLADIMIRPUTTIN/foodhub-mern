@@ -122,6 +122,46 @@ const RecipePage = () => {
             if (hasMatch) score += 30;
         }
 
+        // Difficulty preference match
+        if (user.preferredDifficulty && user.preferredDifficulty !== 'Any') {
+            const recipeDifficulty = (recipe.difficulty || '').toLowerCase();
+            if (recipeDifficulty === user.preferredDifficulty.toLowerCase()) {
+                score += 15;
+            }
+        }
+
+        // Cooking time preference match
+        if (user.preferredCookingTime && user.preferredCookingTime !== 'Any') {
+            const minutes = Number(recipe.cookingTime || 0);
+            const isQuick = minutes > 0 && minutes < 30;
+            const isBalanced = minutes >= 30 && minutes <= 60;
+            const isLeisure = minutes > 60;
+
+            if (
+                (user.preferredCookingTime === 'Quick' && isQuick) ||
+                (user.preferredCookingTime === 'Balanced' && isBalanced) ||
+                (user.preferredCookingTime === 'Leisure' && isLeisure)
+            ) {
+                score += 10;
+            }
+        }
+
+        // Budget preference match
+        if (user.preferredBudgetLevel && user.preferredBudgetLevel !== 'Any') {
+            const price = Number(recipe.price || 0);
+            const isBudget = price > 0 && price <= 120;
+            const isModerate = price > 120 && price <= 300;
+            const isPremium = price > 300;
+
+            if (
+                (user.preferredBudgetLevel === 'Budget' && isBudget) ||
+                (user.preferredBudgetLevel === 'Moderate' && isModerate) ||
+                (user.preferredBudgetLevel === 'Premium' && isPremium)
+            ) {
+                score += 10;
+            }
+        }
+
         return score > 0 ? score : true;
     };
 
@@ -557,6 +597,9 @@ const RecipePage = () => {
                                     Personalized based on your preferences
                                     {user.preferredCuisines?.length > 0 && ` · ${user.preferredCuisines.slice(0, 2).join(', ')} cuisine`}
                                     {user.dietaryPreferences?.length > 0 && ` · ${user.dietaryPreferences.slice(0, 2).join(', ')}`}
+                                    {user.preferredDifficulty && user.preferredDifficulty !== 'Any' && ` · ${user.preferredDifficulty} difficulty`}
+                                    {user.preferredCookingTime && user.preferredCookingTime !== 'Any' && ` · ${user.preferredCookingTime} time`}
+                                    {user.preferredBudgetLevel && user.preferredBudgetLevel !== 'Any' && ` · ${user.preferredBudgetLevel} budget`}
                                 </p>
                             )}
                         </div>

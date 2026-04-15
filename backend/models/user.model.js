@@ -69,6 +69,21 @@ const userSchema = new mongoose.Schema(
 			type: [String],
 			default: [],
 		},
+		preferredDifficulty: {
+			type: String,
+			enum: ["Any", "Easy", "Medium", "Hard"],
+			default: "Any",
+		},
+		preferredCookingTime: {
+			type: String,
+			enum: ["Any", "Quick", "Balanced", "Leisure"],
+			default: "Any",
+		},
+		preferredBudgetLevel: {
+			type: String,
+			enum: ["Any", "Budget", "Moderate", "Premium"],
+			default: "Any",
+		},
 		googleId: {
 			type: String,
 			default: null,
