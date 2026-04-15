@@ -125,7 +125,7 @@ const OnboardingPage = () => {
                     {currentStep === 1 && (
                         <div className="step">
                             <h2>Welcome to FoodHub! 🍳</h2>
-                            <p>Let's personalize your experience. What are your dietary preferences?</p>
+                            <p>Let's personalize your experience. What are your food interests and dietary preferences?</p>
                             
                             <div className="options-grid">
                                 {dietaryOptions.map(option => (
@@ -163,8 +163,8 @@ const OnboardingPage = () => {
 
                     {currentStep === 3 && (
                         <div className="step">
-                            <h2>Favorite Cuisines? 🌍</h2>
-                            <p>What flavors make your taste buds happy?</p>
+                            <h2>Favorite Food Cuisines? 🌍</h2>
+                            <p>Tell us the cuisines you are most interested in so we can tailor your feed.</p>
                             
                             <div className="cuisines-grid">
                                 {cuisineOptions.map(cuisine => (

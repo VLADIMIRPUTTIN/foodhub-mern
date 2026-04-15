@@ -109,8 +109,8 @@ const PreferencesSetupPage = () => {
             case 1:
                 return (
                     <div className="step-content">
-                        <h2>What's your dietary preference?</h2>
-                        <p>This helps us recommend recipes that match your lifestyle</p>
+                        <h2>What are your food interests?</h2>
+                        <p>Select dietary preferences so we can recommend recipes that match your taste and lifestyle</p>
                         <div className="options-grid">
                             {dietaryOptions.map(option => (
                                 <motion.div
@@ -162,8 +162,8 @@ const PreferencesSetupPage = () => {
             case 3:
                 return (
                     <div className="step-content">
-                        <h2>What cuisines do you enjoy?</h2>
-                        <p>Select your favorite cuisines to get personalized recommendations</p>
+                        <h2>What food cuisines do you enjoy?</h2>
+                        <p>Select your favorite cuisines so your recommendations are more personalized</p>
                         <div className="options-grid">
                             {cuisineOptions.map(cuisine => (
                                 <motion.div
