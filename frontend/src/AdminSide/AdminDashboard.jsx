@@ -403,7 +403,7 @@ const AdminDashboard = () => {
             <div className="admin-dashboard">
                 <div className="access-denied">
                     <h2>Access Denied</h2>
-                    <p>You dont have administrator privileges.</p>
+                    <p>You don't have administrator privileges.</p>
                 </div>
             </div>
         );
