@@ -5,13 +5,22 @@ import {
     AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
-import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
+import Swal from 'sweetalert2';
+import { useAuthStore } from '../store/authStore';
+import {
+    REPORT_CATEGORIES,
+    REPORT_FORMATS,
+    generateReport,
+} from '../utils/reportGenerator';
 import './DashboardOverview.scss';
 
 const DashboardOverview = ({ stats, users, recipes, ingredients }) => {
+    const { user, isAdmin } = useAuthStore();
     const [timeRange, setTimeRange] = useState('week');
     const [exportLoading, setExportLoading] = useState(false);
+    const [showExportPanel, setShowExportPanel] = useState(false);
+    const [exportCategory, setExportCategory] = useState('all');
+    const [exportFormat, setExportFormat] = useState('excel');
 
     // Calculate user growth data
     const getUserGrowthData = () => {
@@ -212,375 +221,47 @@ const DashboardOverview = ({ stats, users, recipes, ingredients }) => {
         return data;
     };
 
-    // Export all data to Excel with better styling and time range filtering
-    const exportToExcel = async () => {
+    const handleExportReport = async () => {
+        if (!isAdmin()) {
+            Swal.fire('Access Denied', 'Only administrators can generate reports.', 'error');
+            return;
+        }
+
+        if (exportCategory === 'ingredients' && (!ingredients || ingredients.length === 0)) {
+            Swal.fire('No Data', 'No ingredients available to export.', 'warning');
+            return;
+        }
+
         setExportLoading(true);
-        
+
         try {
-            // Create workbook
-            const wb = XLSX.utils.book_new();
-
-            // Helper function to get date range based on timeRange
-            const getDateRange = () => {
-                const now = new Date();
-                const start = new Date();
-                
-                if (timeRange === 'week') {
-                    start.setDate(now.getDate() - 7);
-                } else if (timeRange === 'month') {
-                    start.setMonth(now.getMonth() - 1);
-                } else if (timeRange === 'year') {
-                    start.setFullYear(now.getFullYear() - 1);
-                }
-                
-                return { start, end: now };
-            };
-
-            const dateRange = getDateRange();
-            const timeRangeLabel = timeRange.charAt(0).toUpperCase() + timeRange.slice(1);
-
-            // Filter data based on time range
-            const filteredUsers = users.filter(user => {
-                const createdDate = new Date(user.createdAt);
-                return createdDate >= dateRange.start && createdDate <= dateRange.end;
+            await generateReport({
+                adminUser: user,
+                category: exportCategory,
+                format: exportFormat,
+                timeRange,
+                stats,
+                users,
+                recipes,
+                ingredients,
             });
 
-            const filteredRecipes = recipes.filter(recipe => {
-                const createdDate = new Date(recipe.createdAt);
-                return createdDate >= dateRange.start && createdDate <= dateRange.end;
+            setShowExportPanel(false);
+            Swal.fire({
+                icon: 'success',
+                title: 'Admin Report Generated',
+                text: `Your ${REPORT_CATEGORIES[exportCategory].label} report has been downloaded.`,
+                timer: 2500,
+                showConfirmButton: false,
             });
-
-            // 1. Summary Sheet with Styling
-            const summaryData = [
-                ['🍽️ FOODHUB SYSTEM REPORT'],
-                [`📊 ${timeRangeLabel} Overview Report`],
-                [`📅 Generated on: ${new Date().toLocaleString()}`],
-                [`📆 Date Range: ${dateRange.start.toLocaleDateString()} - ${dateRange.end.toLocaleDateString()}`],
-                [''],
-                ['📈 OVERALL STATISTICS'],
-                ['Metric', 'Value', 'Status'],
-                ['Total Users', stats.totalUsers, stats.totalUsers > 0 ? '✅ Active' : '⚠️ No Data'],
-                ['Total Recipes', stats.totalRecipes, stats.totalRecipes > 0 ? '✅ Active' : '⚠️ No Data'],
-                ['Pending Recipes', stats.pendingRecipes, stats.pendingRecipes > 0 ? '⏳ Pending' : '✅ Clear'],
-                ['Today\'s Logins', stats.todayLogins, stats.todayLogins > 0 ? '✅ Active' : '⚠️ Low'],
-                ['Total Ingredients', ingredients?.length || 0, ingredients?.length > 0 ? '✅ Available' : '⚠️ Empty'],
-                [''],
-                [`📊 ${timeRangeLabel.toUpperCase()} DATA`],
-                ['Metric', 'Value'],
-                [`New Users (${timeRangeLabel})`, filteredUsers.length],
-                [`New Recipes (${timeRangeLabel})`, filteredRecipes.length],
-                [''],
-                ['🍳 RECIPE BREAKDOWN'],
-                ['Type', 'Count', 'Percentage'],
-                ['Admin Recipes', recipes.filter(r => r.createdBy?.role === 'admin' || r.isPublic).length, `${((recipes.filter(r => r.createdBy?.role === 'admin' || r.isPublic).length / recipes.length) * 100).toFixed(1)}%`],
-                ['User Recipes', recipes.filter(r => r.createdBy?.role === 'user' && !r.isPublic).length, `${((recipes.filter(r => r.createdBy?.role === 'user' && !r.isPublic).length / recipes.length) * 100).toFixed(1)}%`],
-                ['Community Shared', recipes.filter(r => r.isShared && r.shareStatus === 'approved').length, `${((recipes.filter(r => r.isShared && r.shareStatus === 'approved').length / recipes.length) * 100).toFixed(1)}%`],
-                [''],
-                ['👥 USER ENGAGEMENT'],
-                ['Status', 'Count', 'Percentage'],
-                ['Active Users (7 days)', users.filter(u => {
-                    if (!u.lastLogin) return false;
-                    const daysSinceLogin = (Date.now() - new Date(u.lastLogin).getTime()) / (1000 * 60 * 60 * 24);
-                    return daysSinceLogin <= 7;
-                }).length, `${((users.filter(u => {
-                    if (!u.lastLogin) return false;
-                    const daysSinceLogin = (Date.now() - new Date(u.lastLogin).getTime()) / (1000 * 60 * 60 * 24);
-                    return daysSinceLogin <= 7;
-                }).length / users.length) * 100).toFixed(1)}%`],
-                ['Inactive Users', users.filter(u => {
-                    if (!u.lastLogin) return true;
-                    const daysSinceLogin = (Date.now() - new Date(u.lastLogin).getTime()) / (1000 * 60 * 60 * 24);
-                    return daysSinceLogin > 7;
-                }).length, `${((users.filter(u => {
-                    if (!u.lastLogin) return true;
-                    const daysSinceLogin = (Date.now() - new Date(u.lastLogin).getTime()) / (1000 * 60 * 60 * 24);
-                    return daysSinceLogin > 7;
-                }).length / users.length) * 100).toFixed(1)}%`],
-                [''],
-                ['✅ RECIPE STATUS BREAKDOWN'],
-                ['Status', 'Count', 'Percentage'],
-                ['Approved', recipes.filter(r => r.shareStatus === 'approved').length, `${((recipes.filter(r => r.shareStatus === 'approved').length / recipes.length) * 100).toFixed(1)}%`],
-                ['Pending', recipes.filter(r => r.shareStatus === 'pending').length, `${((recipes.filter(r => r.shareStatus === 'pending').length / recipes.length) * 100).toFixed(1)}%`],
-                ['Rejected', recipes.filter(r => r.shareStatus === 'rejected').length, `${((recipes.filter(r => r.shareStatus === 'rejected').length / recipes.length) * 100).toFixed(1)}%`],
-                ['Not Shared', recipes.filter(r => r.shareStatus === 'not_shared').length, `${((recipes.filter(r => r.shareStatus === 'not_shared').length / recipes.length) * 100).toFixed(1)}%`]
-            ];
-            const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-            
-            // Apply column widths
-            summarySheet['!cols'] = [
-                { wch: 30 },
-                { wch: 20 },
-                { wch: 20 }
-            ];
-            
-            XLSX.utils.book_append_sheet(wb, summarySheet, '📊 Summary');
-
-            // 2. Users Sheet (Filtered by time range)
-            const usersData = [
-                [`👥 USERS - ${timeRangeLabel} Data`],
-                [''],
-                ['Name', 'Email', 'Role', 'Status', 'Verified', 'Created At', 'Last Login', 'Days Since Login']
-            ];
-            
-            const displayUsers = timeRange === 'week' || timeRange === 'month' || timeRange === 'year' ? filteredUsers : users;
-            
-            displayUsers.forEach(user => {
-                const daysSinceLogin = user.lastLogin 
-                    ? Math.floor((Date.now() - new Date(user.lastLogin).getTime()) / (1000 * 60 * 60 * 24))
-                    : 'Never';
-                    
-                usersData.push([
-                    user.name,
-                    user.email,
-                    user.role.toUpperCase(),
-                    user.status === 'active' ? '✅ Active' : '❌ Inactive',
-                    user.isVerified ? '✅ Yes' : '❌ No',
-                    new Date(user.createdAt).toLocaleDateString(),
-                    user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never',
-                    daysSinceLogin
-                ]);
-            });
-            
-            usersData.push([''], [`Total Users in ${timeRangeLabel}:`, displayUsers.length]);
-            
-            const usersSheet = XLSX.utils.aoa_to_sheet(usersData);
-            usersSheet['!cols'] = [
-                { wch: 20 },
-                { wch: 30 },
-                { wch: 10 },
-                { wch: 12 },
-                { wch: 10 },
-                { wch: 15 },
-                { wch: 15 },
-                { wch: 18 }
-            ];
-            XLSX.utils.book_append_sheet(wb, usersSheet, '👥 Users');
-
-            // 3. Recipes Sheet (Filtered by time range)
-            const recipesData = [
-                [`🍳 RECIPES - ${timeRangeLabel} Data`],
-                [''],
-                ['Title', 'Category', 'Cuisine', 'Created By', 'Type', 'Status', 'Shared', 'Cooking Time', 'Difficulty', 'Rating', 'Created At']
-            ];
-            
-            const displayRecipes = timeRange === 'week' || timeRange === 'month' || timeRange === 'year' ? filteredRecipes : recipes;
-            
-            displayRecipes.forEach(recipe => {
-                recipesData.push([
-                    recipe.title,
-                    recipe.category || 'N/A',
-                    recipe.cuisine || 'N/A',
-                    recipe.createdBy?.name || 'Unknown',
-                    recipe.isPublic ? '👨‍🍳 Admin' : '👤 User',
-                    recipe.shareStatus === 'approved' ? '✅ Approved' : 
-                    recipe.shareStatus === 'pending' ? '⏳ Pending' : 
-                    recipe.shareStatus === 'rejected' ? '❌ Rejected' : '🔒 Not Shared',
-                    recipe.isShared ? '✅ Yes' : '❌ No',
-                    recipe.cookingTime ? `${recipe.cookingTime} mins` : 'N/A',
-                    recipe.difficulty ? `${recipe.difficulty.charAt(0).toUpperCase() + recipe.difficulty.slice(1)}` : 'N/A',
-                    recipe.averageRating ? `⭐ ${recipe.averageRating.toFixed(1)}` : '⭐ 0',
-                    new Date(recipe.createdAt).toLocaleDateString()
-                ]);
-            });
-            
-            recipesData.push([''], [`Total Recipes in ${timeRangeLabel}:`, displayRecipes.length]);
-            
-            const recipesSheet = XLSX.utils.aoa_to_sheet(recipesData);
-            recipesSheet['!cols'] = [
-                { wch: 30 },
-                { wch: 15 },
-                { wch: 15 },
-                { wch: 20 },
-                { wch: 12 },
-                { wch: 15 },
-                { wch: 10 },
-                { wch: 15 },
-                { wch: 12 },
-                { wch: 10 },
-                { wch: 15 }
-            ];
-            XLSX.utils.book_append_sheet(wb, recipesSheet, '🍳 Recipes');
-
-            // 4. Ingredients Sheet
-            if (ingredients && ingredients.length > 0) {
-                const ingredientsData = [
-                    ['🥬 INGREDIENTS DATABASE'],
-                    [''],
-                    ['#', 'Ingredient Name', 'ID']
-                ];
-                ingredients.forEach((ingredient, index) => {
-                    ingredientsData.push([
-                        index + 1,
-                        ingredient.name,
-                        ingredient._id
-                    ]);
-                });
-                ingredientsData.push([''], ['Total Ingredients:', ingredients.length]);
-                
-                const ingredientsSheet = XLSX.utils.aoa_to_sheet(ingredientsData);
-                ingredientsSheet['!cols'] = [
-                    { wch: 8 },
-                    { wch: 40 },
-                    { wch: 30 }
-                ];
-                XLSX.utils.book_append_sheet(wb, ingredientsSheet, '🥬 Ingredients');
-            }
-
-            // 5. Recipe Categories Distribution
-            const categoriesData = [
-                [`📁 RECIPE CATEGORIES - ${timeRangeLabel}`],
-                [''],
-                ['Category', 'Count', 'Percentage', 'Visual']
-            ];
-            const totalCategoryRecipes = getRecipeCategoriesData().reduce((sum, cat) => sum + cat.value, 0);
-            getRecipeCategoriesData().forEach((cat, index) => {
-                const percentage = ((cat.value / totalCategoryRecipes) * 100).toFixed(1);
-                const bars = '█'.repeat(Math.round(percentage / 5));
-                categoriesData.push([
-                    cat.name,
-                    cat.value,
-                    `${percentage}%`,
-                    bars
-                ]);
-            });
-            categoriesData.push([''], ['Total:', totalCategoryRecipes, '100%']);
-            
-            const categoriesSheet = XLSX.utils.aoa_to_sheet(categoriesData);
-            categoriesSheet['!cols'] = [
-                { wch: 20 },
-                { wch: 10 },
-                { wch: 12 },
-                { wch: 30 }
-            ];
-            XLSX.utils.book_append_sheet(wb, categoriesSheet, '📁 Categories');
-
-            // 6. Popular Cuisines
-            const cuisinesData = [
-                [`🌍 POPULAR CUISINES - ${timeRangeLabel}`],
-                [''],
-                ['Rank', 'Cuisine', 'Count', 'Percentage', 'Visual']
-            ];
-            const totalCuisineRecipes = getPopularCuisinesData().reduce((sum, c) => sum + c.value, 0);
-            getPopularCuisinesData().forEach((cuisine, index) => {
-                const percentage = ((cuisine.value / totalCuisineRecipes) * 100).toFixed(1);
-                const bars = '█'.repeat(Math.round(percentage / 5));
-                cuisinesData.push([
-                    `#${index + 1}`,
-                    cuisine.name,
-                    cuisine.value,
-                    `${percentage}%`,
-                    bars
-                ]);
-            });
-            cuisinesData.push([''], ['', 'Total:', totalCuisineRecipes, '100%']);
-            
-            const cuisinesSheet = XLSX.utils.aoa_to_sheet(cuisinesData);
-            cuisinesSheet['!cols'] = [
-                { wch: 8 },
-                { wch: 20 },
-                { wch: 10 },
-                { wch: 12 },
-                { wch: 30 }
-            ];
-            XLSX.utils.book_append_sheet(wb, cuisinesSheet, '🌍 Cuisines');
-
-            // 7. User Growth Data
-            const userGrowthData = [
-                [`📈 USER GROWTH - ${timeRangeLabel}`],
-                [''],
-                ['Date', 'Total Users', 'Growth']
-            ];
-            const growthData = getUserGrowthData();
-            growthData.forEach((item, index) => {
-                const growth = index > 0 ? item.users - growthData[index - 1].users : 0;
-                const growthIcon = growth > 0 ? '📈' : growth < 0 ? '📉' : '➡️';
-                userGrowthData.push([
-                    item.date,
-                    item.users,
-                    `${growthIcon} ${growth >= 0 ? '+' : ''}${growth}`
-                ]);
-            });
-            
-            const userGrowthSheet = XLSX.utils.aoa_to_sheet(userGrowthData);
-            userGrowthSheet['!cols'] = [
-                { wch: 15 },
-                { wch: 15 },
-                { wch: 15 }
-            ];
-            XLSX.utils.book_append_sheet(wb, userGrowthSheet, '📈 User Growth');
-
-            // 8. Recipe Creation Trend
-            const recipeTrendData = [
-                [`📊 RECIPE CREATION TREND - ${timeRangeLabel}`],
-                [''],
-                ['Date', 'Total Recipes', 'Admin Recipes', 'User Recipes', 'Trend']
-            ];
-            const trendData = getRecipeCreationTrendData();
-            trendData.forEach((item, index) => {
-                const trend = index > 0 ? item.total - trendData[index - 1].total : 0;
-                const trendIcon = trend > 0 ? '📈' : trend < 0 ? '📉' : '➡️';
-                recipeTrendData.push([
-                    item.date,
-                    item.total,
-                    item.admin,
-                    item.user,
-                    `${trendIcon} ${trend >= 0 ? '+' : ''}${trend}`
-                ]);
-            });
-            
-            const recipeTrendSheet = XLSX.utils.aoa_to_sheet(recipeTrendData);
-            recipeTrendSheet['!cols'] = [
-                { wch: 15 },
-                { wch: 15 },
-                { wch: 15 },
-                { wch: 15 },
-                { wch: 15 }
-            ];
-            XLSX.utils.book_append_sheet(wb, recipeTrendSheet, '📊 Recipe Trend');
-
-            // 9. Dietary Preferences
-            if (dietaryPreferencesData.length > 0) {
-                const dietaryData = [
-                    ['🥗 DIETARY PREFERENCES'],
-                    [''],
-                    ['Dietary Tag', 'Recipe Count', 'Percentage', 'Visual']
-                ];
-                const totalDietary = dietaryPreferencesData.reduce((sum, d) => sum + d.value, 0);
-                dietaryPreferencesData.forEach(diet => {
-                    const percentage = ((diet.value / totalDietary) * 100).toFixed(1);
-                    const bars = '█'.repeat(Math.round(percentage / 5));
-                    dietaryData.push([
-                        diet.subject,
-                        diet.value,
-                        `${percentage}%`,
-                        bars
-                    ]);
-                });
-                dietaryData.push([''], ['Total:', totalDietary, '100%']);
-                
-                const dietarySheet = XLSX.utils.aoa_to_sheet(dietaryData);
-                dietarySheet['!cols'] = [
-                    { wch: 20 },
-                    { wch: 15 },
-                    { wch: 12 },
-                    { wch: 30 }
-                ];
-                XLSX.utils.book_append_sheet(wb, dietarySheet, '🥗 Dietary');
-            }
-
-            // Generate Excel file
-            const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-            const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            
-            // Save file with time range in filename
-            const fileName = `FoodHub_${timeRangeLabel}_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
-            saveAs(data, fileName);
-            
-            setExportLoading(false);
         } catch (error) {
-            console.error('Error exporting to Excel:', error);
+            console.error('Error generating report:', error);
+            const message = error.message?.includes('Access denied')
+                ? 'Only administrators can generate reports.'
+                : 'Failed to generate report. Please try again.';
+            Swal.fire('Error', message, 'error');
+        } finally {
             setExportLoading(false);
-            alert('Failed to export data to Excel. Please try again.');
         }
     };
 
@@ -629,18 +310,105 @@ const DashboardOverview = ({ stats, users, recipes, ingredients }) => {
                             Year
                         </button>
                     </div>
-                    <motion.button
-                        className="export-btn"
-                        onClick={exportToExcel}
-                        disabled={exportLoading}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        <i className={`bx ${exportLoading ? 'bx-loader-alt bx-spin' : 'bx-download'}`}></i>
-                        {exportLoading ? 'Exporting...' : 'Export to Excel'}
-                    </motion.button>
+                    {isAdmin() && (
+                        <motion.button
+                            className="export-btn"
+                            onClick={() => setShowExportPanel((prev) => !prev)}
+                            disabled={exportLoading}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <i className={`bx ${exportLoading ? 'bx-loader-alt bx-spin' : 'bx-export'}`}></i>
+                            {exportLoading ? 'Generating...' : 'Generate Admin Report'}
+                        </motion.button>
+                    )}
                 </div>
             </motion.div>
+
+            {isAdmin() && showExportPanel && (
+                <motion.div
+                    className="export-panel"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    <div className="export-panel-header">
+                        <h3><i className="bx bx-shield-quarter"></i> Admin Report Generation</h3>
+                        <p>Administrator-only export. Select category and format for your report.</p>
+                    </div>
+
+                    <div className="export-section">
+                        <label className="export-label">Report Category</label>
+                        <div className="category-grid">
+                            {Object.values(REPORT_CATEGORIES).map((cat) => (
+                                <button
+                                    key={cat.id}
+                                    type="button"
+                                    className={`category-option ${exportCategory === cat.id ? 'active' : ''}`}
+                                    onClick={() => setExportCategory(cat.id)}
+                                >
+                                    <i className={`bx ${cat.icon}`}></i>
+                                    <span className="cat-label">{cat.label}</span>
+                                    <span className="cat-desc">{cat.description}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="export-section">
+                        <label className="export-label">Export Format</label>
+                        <div className="format-grid">
+                            {Object.values(REPORT_FORMATS).map((fmt) => (
+                                <button
+                                    key={fmt.id}
+                                    type="button"
+                                    className={`format-option ${exportFormat === fmt.id ? 'active' : ''}`}
+                                    onClick={() => setExportFormat(fmt.id)}
+                                >
+                                    <i className={`bx ${fmt.icon}`}></i>
+                                    <span>{fmt.label}</span>
+                                    {fmt.id === 'pdf' && (
+                                        <small>Admin-only PDF with header, footer & page numbers</small>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="export-preview">
+                        <i className="bx bx-info-circle"></i>
+                        <span>
+                            Admin <strong>{user?.name}</strong> will generate a
+                            <strong> {REPORT_CATEGORIES[exportCategory].label}</strong> report
+                            as <strong>{exportFormat.toUpperCase()}</strong> for the
+                            <strong> {timeRange}</strong> period.
+                            {exportFormat === 'pdf' && ' PDF includes admin-branded header, footer with your name, and page numbers.'}
+                        </span>
+                    </div>
+
+                    <div className="export-actions">
+                        <button
+                            type="button"
+                            className="cancel-btn"
+                            onClick={() => setShowExportPanel(false)}
+                            disabled={exportLoading}
+                        >
+                            Cancel
+                        </button>
+                        <motion.button
+                            type="button"
+                            className="generate-btn"
+                            onClick={handleExportReport}
+                            disabled={exportLoading}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                        >
+                            <i className={`bx ${exportLoading ? 'bx-loader-alt bx-spin' : 'bx-download'}`}></i>
+                            {exportLoading ? 'Generating Admin Report...' : 'Download Admin Report'}
+                        </motion.button>
+                    </div>
+                </motion.div>
+            )}
 
             {/* Quick Stats Cards */}
             <div className="quick-stats-grid">
